@@ -1,12 +1,5 @@
 package space.nows.mcnows.integration.kdl;
 
-import dev.kdl.KdlDocument;
-import dev.kdl.KdlNode;
-import dev.kdl.KdlValue;
-import dev.kdl.parse.KdlParser;
-import space.nows.mcnows.core.mod.ModDescriptor;
-import space.nows.mcnows.core.mod.ModMetadataReader;
-
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Path;
@@ -16,6 +9,14 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.jar.JarFile;
+
+import dev.kdl.KdlDocument;
+import dev.kdl.KdlNode;
+import dev.kdl.KdlValue;
+import dev.kdl.parse.KdlParseException;
+import dev.kdl.parse.KdlParser;
+import space.nows.mcnows.core.mod.ModDescriptor;
+import space.nows.mcnows.core.mod.ModMetadataReader;
 
 public final class KdlModMetadataReader implements ModMetadataReader {
     public static final String METADATA_PATH = "nows.mod.kdl";
@@ -27,7 +28,7 @@ public final class KdlModMetadataReader implements ModMetadataReader {
             if (entry == null) return Optional.empty();
             try (InputStream input = jar.getInputStream(entry)) {
                 return Optional.of(parse(KdlParser.v2().parse(input), jarPath));
-            } catch (RuntimeException e) {
+            } catch (KdlParseException | RuntimeException e) {
                 throw new IOException("Invalid " + METADATA_PATH + " in " + jarPath + ": " + e.getMessage(), e);
             }
         }
