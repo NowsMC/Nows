@@ -1,0 +1,4 @@
+mod id="nows_example" name="Nows Example Mod" version="0.3.0" minecraft="26.2" {
+    entrypoint "space.nows.mcnows.example.ExampleMod"
+    mixin "nows_example.mixins.json"
+}

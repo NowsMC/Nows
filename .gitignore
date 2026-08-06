@@ -1,0 +1,10 @@
+.gradle/
+build/
+**/build/
+.nows/
+.gradle-bootstrap/
+.idea/
+*.iml
+# Never commit GitHub Packages credentials or copied release payloads.
+local.properties
+repos/NowsInstaller/vendor/

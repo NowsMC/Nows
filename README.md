@@ -1,0 +1,188 @@
+# Nows
+
+Nows is an experimental Minecraft Java mod loader built around a small stable kernel and replaceable integrations.
+
+- Website/domain: **https://nows.space**
+- Java/Maven namespace: **`space.nows.mcnows`**
+- Current source version: **0.3.0**
+- Current target: **Minecraft Java 26.2**
+- No Java agent, `premain`, or `java.lang.instrument`
+- Development names: **official Mojang mappings**
+
+## Architecture rule
+
+`nows-core` is deliberately boring. It contains only contracts that should survive loader changes: `ModInitializer`, `ClassTransformer`, `NowsContext`, typed services, format-neutral mod descriptors/discovery and `NowsClassLoader`.
+
+Everything likely to change is outside core:
+
+For the exact change boundary and dependency direction, see [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md).
+
+
+```text
+Nows/
+├─ core/                         stable kernel, no external runtime stack
+├─ minecraft/                    Minecraft launch/version policy
+├─ integrations/
+│  ├─ kdl/                       nows.mod.kdl + KDL4J
+│  ├─ geb/                       GEB event bus
+│  ├─ logging/                   Reactor Loggers + Async Log4j support pieces
+│  └─ mixin/                     Nows IMixinService integration
+├─ runtime/                      composes the modules; contains main()
+├─ repos/
+│  ├─ NowsInstaller/             internet installer
+│  └─ NowsGradlePlugin/          mappings/dev tooling/Gradle workarounds
+└─ example-mod/
+```
+
+Normal installation is intentionally modular: the Official Launcher receives several Nows library JARs plus only the third-party libraries Nows owns. `./gradlew allJar` is an optional monolithic path that merges the Nows modules and Nows-owned runtime libraries while still excluding libraries supplied by Minecraft.
+
+## Runtime stack
+
+Requested components are isolated by integration:
+
+```kotlin
+implementation("foo.zaaarf.geb:processor:0.4.9")
+implementation("foo.zaaarf.geb:core:0.5.4")
+annotationProcessor("foo.zaaarf.geb:processor:0.4.9")
+implementation("dev.kdl:kdl4j:1.0.1")
+implementation("io.projectreactor:reactor-core:3.8.6")
+implementation("com.lmax:disruptor:4.0.0")
+implementation("net.fabricmc:sponge-mixin:0.17.3+mixin.0.8.7")
+```
+
+Minecraft-owned Log4j2, SLF4J, Gson, Guava and JSpecify are not bundled into the loader distribution again. See [`docs/DEPENDENCY_OWNERSHIP.md`](docs/DEPENDENCY_OWNERSHIP.md) for the delivery boundary. Reactor is forced onto the game's existing SLF4J backend, while the installed profile enables Log4j2's async context with:
+
+```text
+-Dlog4j2.contextSelector=org.apache.logging.log4j.core.async.AsyncLoggerContextSelector
+```
+
+## KDL is replaceable metadata
+
+The core never imports KDL4J. `integrations/kdl` implements the `ModMetadataReader` SPI and turns `nows.mod.kdl` into a generic `ModDescriptor`.
+
+```kdl
+mod id="my_mod" name="My Mod" version="1.0.0" minecraft="26.2" {
+    entrypoint "com.example.MyMod"
+    transformer "com.example.MyTransformer"
+    mixin "my_mod.mixins.json"
+}
+```
+
+Unknown future declaration names can be retained without changing core because declarations are stored by key rather than by fixed record fields.
+
+## GEB without coupling core to GEB
+
+`integrations/geb` registers the GEB instance in `NowsServices`. Mods that want it can use:
+
+```java
+GEB bus = GebIntegration.eventBus(context);
+```
+
+A mod that does not care about GEB still compiles against `nows-core` without pulling GEB into its API.
+
+## Mixin without Java agent
+
+`integrations/mixin` provides Nows' own `IMixinService` and `IGlobalPropertyService`. The Mixin transformer is inserted directly into `NowsClassLoader` before class definition, including synthetic class generation. Fabric Loader is not required.
+
+## NowsInstaller
+
+`repos/NowsInstaller` is internet-first. It downloads a release manifest from:
+
+```text
+https://nows.space/releases/nows/<nows-version>/install.properties
+```
+
+and installs all listed Nows modules/libraries into the normal `.minecraft/libraries` tree before generating an inherited Official Launcher version profile.
+
+### GitHub Package rule
+
+`dev.kdl:kdl4j:1.0.1` requires GitHub Packages access at **build/release time**. The installer build resolves the original JAR once and stores it inside `NowsInstaller.jar` under:
+
+```text
+META-INF/nows/embedded-libs/kdl4j-1.0.1.jar
+```
+
+At install time it copies that untouched JAR to:
+
+```text
+.minecraft/libraries/dev/kdl/kdl4j/1.0.1/kdl4j-1.0.1.jar
+```
+
+so players do not need `GITHUB_TOKEN`. Other libraries are downloaded over the internet according to the release manifest.
+
+Build credentials remain the usual:
+
+```properties
+gpr.user=YOUR_GITHUB_USER
+gpr.key=TOKEN_WITH_READ_PACKAGES
+```
+
+## NowsGradlePlugin
+
+Plugin id:
+
+```kotlin
+plugins {
+    id("space.nows.mcnows") version "0.3.0"
+}
+
+nows {
+    minecraftVersion.set("26.2")
+    officialMappings.set(true)
+    nowsVersion.set("0.3.0")
+    addGeb.set(true)
+    addMixin.set(true)
+}
+```
+
+The plugin owns Minecraft development setup rather than the loader core. `nowsPrepareMinecraft` downloads the official client artifact and official `client_mappings` metadata. For modern unobfuscated Minecraft it detects Mojang-named classes and skips remapping. For older obfuscated versions it reads Mojang's ProGuard mapping file with Mapping IO and remaps **obfuscated -> official Mojang names** with Tiny Remapper.
+
+It also wires the prepared development client JAR into `compileOnly`, makes Java compilation depend on preparation, adds the matching `nows-core` API, and can add GEB and Mixin compile/annotation-processor tooling to mod projects.
+
+Tiny Remapper 0.14.0 is used by the Gradle plugin; it was published in May 2026. The loader runtime itself does not depend on Tiny Remapper for Minecraft 26.x.
+
+## Build
+
+```bash
+./gradlew dist
+```
+
+Optional single-JAR experiment:
+
+```bash
+./gradlew allJar
+```
+
+Build the installer (requires GitHub Packages credentials for the embedded KDL4J payload):
+
+```bash
+./gradlew :repos:NowsInstaller:jar
+```
+
+Build/test the Gradle plugin:
+
+```bash
+./gradlew :repos:NowsGradlePlugin:build
+```
+
+## Why this split
+
+The intended change boundary is:
+
+```text
+stable                         expected to evolve
+─────────────────────          ─────────────────────────────
+nows-core contracts      <---  KDL schema/parser
+classloader kernel       <---  Mixin host details
+service registry         <---  event implementation
+format-neutral mods      <---  logging implementation
+                               Minecraft version behavior
+                               installer protocol/UI
+                               Gradle mappings/dev tooling
+```
+
+That lets Nows replace KDL, upgrade Mixin, change logging, support a new Minecraft layout, or rewrite the installer/Gradle tooling without turning the loader API and classloading kernel into a moving target.
+
+## Gradle bootstrap
+
+The source archive keeps a text-only Gradle bootstrap fallback: if `gradle-wrapper.jar` is absent, `gradlew`/`gradlew.bat` download Gradle 9.1.0 and verify its published SHA-256 before execution. `gradle-wrapper.properties` carries the same distribution checksum.
