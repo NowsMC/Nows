@@ -20,7 +20,7 @@ allprojects {
                 username = providers.gradleProperty("gpr.user")
                     .orElse(providers.environmentVariable("GITHUB_ACTOR"))
                     .orNull ?: "x-access-token"
-                password = providers.gradleProperty("gpr.key")
+                password = providers.gradleProperty("gpr.token")
                     .orElse(providers.environmentVariable("GITHUB_TOKEN"))
                     .orNull ?: ""
             }
