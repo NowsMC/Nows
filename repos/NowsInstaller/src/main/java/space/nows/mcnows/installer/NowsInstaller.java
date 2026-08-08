@@ -164,11 +164,17 @@ public final class NowsInstaller {
     ) throws IOException {
         String profile = "nows-" + options.nowsVersion + "-" + options.minecraftVersion;
         Instant now = Instant.now();
+        Path versionDir = options.minecraftDir.resolve("versions").resolve(profile);
+        Files.createDirectories(versionDir);
+        boolean copiedInheritedJar = copyInheritedVersionJar(options, versionDir.resolve(profile + ".jar"));
         StringBuilder json = new StringBuilder();
 
         json.append("{\n");
         json.append("  \"id\": ").append(quote(profile)).append(",\n");
         json.append("  \"inheritsFrom\": ").append(quote(options.minecraftVersion)).append(",\n");
+        if (!copiedInheritedJar) {
+            json.append("  \"jar\": ").append(quote(options.minecraftVersion)).append(",\n");
+        }
         json.append("  \"mainClass\": ")
                 .append(quote(manifest.getProperty("mainClass", "space.nows.mcnows.runtime.NowsLauncher")))
                 .append(",\n");
@@ -202,10 +208,20 @@ public final class NowsInstaller {
         json.append("  }\n");
         json.append("}\n");
 
-        Path versionDir = options.minecraftDir.resolve("versions").resolve(profile);
-        Files.createDirectories(versionDir);
         writeString(versionDir.resolve(profile + ".json"), json.toString());
         return profile;
+    }
+
+    private static boolean copyInheritedVersionJar(Options options, Path target) throws IOException {
+        Path source = options.minecraftDir
+                .resolve("versions")
+                .resolve(options.minecraftVersion)
+                .resolve(options.minecraftVersion + ".jar");
+        if (!Files.isRegularFile(source)) {
+            return false;
+        }
+        Files.copy(source, target, StandardCopyOption.REPLACE_EXISTING, StandardCopyOption.COPY_ATTRIBUTES);
+        return true;
     }
 
     @SuppressWarnings("unchecked")
