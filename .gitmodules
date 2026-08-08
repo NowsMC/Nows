@@ -1,3 +1,6 @@
 [submodule "repos/NowsWeb"]
 	path = repos/NowsWeb
 	url = git@github.com:NowsMC/NowsWeb.git
+[submodule "repos/NowsApiMod"]
+	path = repos/NowsApiMod
+	url = git@github.com:NowsMC/NowsApiMod.git
