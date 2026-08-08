@@ -96,7 +96,7 @@ A mod that does not care about GEB still compiles against `nows-core` without pu
 https://nows.space/releases/nows/<nows-version>/install.properties
 ```
 
-and installs all listed Nows modules/libraries into the normal `.minecraft/libraries` tree before generating an inherited Official Launcher version profile.
+and installs all listed Nows modules/libraries into the normal `.minecraft/libraries` tree before generating an inherited Official Launcher version and merging a Nows installation entry into `launcher_profiles.json`. Existing launcher profiles are preserved and `launcher_profiles.json` is backed up before modification.
 
 ### GitHub Package rule
 

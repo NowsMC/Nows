@@ -13,7 +13,10 @@ import java.nio.file.StandardCopyOption;
 import java.security.MessageDigest;
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.Base64;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Properties;
 
 /**
@@ -51,7 +54,8 @@ public final class NowsInstaller {
             listener.log("[NowsInstaller] installed " + library.coordinate());
         }
 
-        installVersionJson(options, manifest, launcherLibraries);
+        String profile = installVersionJson(options, manifest, launcherLibraries);
+        installLauncherProfile(options, profile);
         listener.log("[NowsInstaller] Installed nows-" + options.nowsVersion + "-" + options.minecraftVersion);
     }
 
@@ -153,7 +157,7 @@ public final class NowsInstaller {
         Files.copy(source, destination, StandardCopyOption.REPLACE_EXISTING);
     }
 
-    private static void installVersionJson(
+    private static String installVersionJson(
             Options options,
             Properties manifest,
             List<InstalledLibrary> libraries
@@ -202,6 +206,70 @@ public final class NowsInstaller {
         Path versionDir = options.minecraftDir.resolve("versions").resolve(profile);
         Files.createDirectories(versionDir);
         writeString(versionDir.resolve(profile + ".json"), json.toString());
+        return profile;
+    }
+
+    @SuppressWarnings("unchecked")
+    private static void installLauncherProfile(Options options, String versionProfile) throws IOException {
+        Path profilesFile = options.minecraftDir.resolve("launcher_profiles.json");
+        Map<String, Object> root;
+        if (Files.isRegularFile(profilesFile)) {
+            String json = readString(profilesFile);
+            Object parsed = Json.parse(json);
+            if (!(parsed instanceof Map<?, ?>)) {
+                throw new IOException("Minecraft launcher_profiles.json root is not a JSON object: " + profilesFile);
+            }
+            root = (Map<String, Object>) parsed;
+            backupLauncherProfiles(profilesFile);
+        } else {
+            root = new LinkedHashMap<>();
+        }
+
+        Object existingProfiles = root.get("profiles");
+        Map<String, Object> profiles;
+        if (existingProfiles == null) {
+            profiles = new LinkedHashMap<>();
+            root.put("profiles", profiles);
+        } else if (existingProfiles instanceof Map<?, ?>) {
+            profiles = (Map<String, Object>) existingProfiles;
+        } else {
+            throw new IOException("Minecraft launcher_profiles.json profiles field is not a JSON object: " + profilesFile);
+        }
+
+        profiles.put(versionProfile, launcherProfile(options, versionProfile));
+        Files.createDirectories(options.minecraftDir);
+        writeString(profilesFile, Json.write(root));
+    }
+
+    private static Map<String, Object> launcherProfile(Options options, String versionProfile) throws IOException {
+        Instant now = Instant.now();
+        Map<String, Object> profile = new LinkedHashMap<>();
+        profile.put("name", "Nows " + options.nowsVersion + " - Minecraft " + options.minecraftVersion);
+        profile.put("type", "custom");
+        profile.put("created", now.toString());
+        profile.put("lastUsed", now.toString());
+        profile.put("lastVersionId", versionProfile);
+        String icon = launcherIcon();
+        if (icon != null) {
+            profile.put("icon", icon);
+        }
+        return profile;
+    }
+
+    private static void backupLauncherProfiles(Path profilesFile) throws IOException {
+        String stamp = String.valueOf(System.currentTimeMillis());
+        Path backup = profilesFile.resolveSibling(profilesFile.getFileName() + ".nows-backup-" + stamp);
+        Files.copy(profilesFile, backup, StandardCopyOption.COPY_ATTRIBUTES);
+    }
+
+    private static String launcherIcon() throws IOException {
+        String resource = "/META-INF/nows/branding/nows.png";
+        try (InputStream input = NowsInstaller.class.getResourceAsStream(resource)) {
+            if (input == null) {
+                return null;
+            }
+            return "data:image/png;base64," + Base64.getEncoder().encodeToString(readAllBytes(input));
+        }
     }
 
     private static Properties loadProperties(Options options, String location) throws Exception {
@@ -378,6 +446,23 @@ public final class NowsInstaller {
         }
     }
 
+    private static String readString(Path path) throws IOException {
+        try (InputStream input = Files.newInputStream(path)) {
+            return new String(readAllBytes(input), StandardCharsets.UTF_8);
+        }
+    }
+
+    private static byte[] readAllBytes(InputStream input) throws IOException {
+        byte[] buffer = new byte[8192];
+        int read;
+        try (java.io.ByteArrayOutputStream output = new java.io.ByteArrayOutputStream()) {
+            while ((read = input.read(buffer)) >= 0) {
+                output.write(buffer, 0, read);
+            }
+            return output.toByteArray();
+        }
+    }
+
     private static boolean isBlank(String value) {
         return value == null || value.trim().isEmpty();
     }
@@ -396,6 +481,243 @@ public final class NowsInstaller {
                 .replace("\n", "\\n")
                 .replace("\r", "\\r")
                 .replace("\t", "\\t");
+    }
+
+    private static final class Json {
+        private Json() {}
+
+        static Object parse(String json) throws IOException {
+            Parser parser = new Parser(json);
+            Object value = parser.parseValue();
+            parser.skipWhitespace();
+            if (!parser.isEnd()) {
+                throw parser.error("Unexpected trailing JSON content");
+            }
+            return value;
+        }
+
+        static String write(Object value) {
+            StringBuilder out = new StringBuilder();
+            writeValue(out, value, 0);
+            out.append('\n');
+            return out.toString();
+        }
+
+        @SuppressWarnings("unchecked")
+        private static void writeValue(StringBuilder out, Object value, int indent) {
+            if (value == null) {
+                out.append("null");
+            } else if (value instanceof String) {
+                out.append(quote((String) value));
+            } else if (value instanceof Number || value instanceof Boolean) {
+                out.append(value);
+            } else if (value instanceof Map<?, ?>) {
+                Map<String, Object> map = (Map<String, Object>) value;
+                out.append('{');
+                if (!map.isEmpty()) {
+                    boolean first = true;
+                    for (Map.Entry<String, Object> entry : map.entrySet()) {
+                        if (first) first = false; else out.append(',');
+                        out.append('\n');
+                        indent(out, indent + 2);
+                        out.append(quote(entry.getKey())).append(": ");
+                        writeValue(out, entry.getValue(), indent + 2);
+                    }
+                    out.append('\n');
+                    indent(out, indent);
+                }
+                out.append('}');
+            } else if (value instanceof List<?>) {
+                List<Object> list = (List<Object>) value;
+                out.append('[');
+                if (!list.isEmpty()) {
+                    boolean first = true;
+                    for (Object item : list) {
+                        if (first) first = false; else out.append(',');
+                        out.append('\n');
+                        indent(out, indent + 2);
+                        writeValue(out, item, indent + 2);
+                    }
+                    out.append('\n');
+                    indent(out, indent);
+                }
+                out.append(']');
+            } else {
+                out.append(quote(String.valueOf(value)));
+            }
+        }
+
+        private static void indent(StringBuilder out, int indent) {
+            for (int i = 0; i < indent; i++) {
+                out.append(' ');
+            }
+        }
+
+        private static final class Parser {
+            private final String json;
+            private int index;
+
+            Parser(String json) {
+                this.json = json == null ? "" : json;
+            }
+
+            boolean isEnd() {
+                return index >= json.length();
+            }
+
+            Object parseValue() throws IOException {
+                skipWhitespace();
+                if (isEnd()) {
+                    throw error("Unexpected end of JSON");
+                }
+                char c = json.charAt(index);
+                if (c == '{') return parseObject();
+                if (c == '[') return parseArray();
+                if (c == '"') return parseString();
+                if (c == 't') return parseLiteral("true", Boolean.TRUE);
+                if (c == 'f') return parseLiteral("false", Boolean.FALSE);
+                if (c == 'n') return parseLiteral("null", null);
+                if (c == '-' || Character.isDigit(c)) return parseNumber();
+                throw error("Unexpected JSON token '" + c + "'");
+            }
+
+            private Map<String, Object> parseObject() throws IOException {
+                expect('{');
+                Map<String, Object> object = new LinkedHashMap<>();
+                skipWhitespace();
+                if (peek('}')) {
+                    index++;
+                    return object;
+                }
+                while (true) {
+                    skipWhitespace();
+                    String key = parseString();
+                    skipWhitespace();
+                    expect(':');
+                    object.put(key, parseValue());
+                    skipWhitespace();
+                    if (peek('}')) {
+                        index++;
+                        return object;
+                    }
+                    expect(',');
+                }
+            }
+
+            private List<Object> parseArray() throws IOException {
+                expect('[');
+                List<Object> array = new ArrayList<>();
+                skipWhitespace();
+                if (peek(']')) {
+                    index++;
+                    return array;
+                }
+                while (true) {
+                    array.add(parseValue());
+                    skipWhitespace();
+                    if (peek(']')) {
+                        index++;
+                        return array;
+                    }
+                    expect(',');
+                }
+            }
+
+            private String parseString() throws IOException {
+                expect('"');
+                StringBuilder out = new StringBuilder();
+                while (!isEnd()) {
+                    char c = json.charAt(index++);
+                    if (c == '"') {
+                        return out.toString();
+                    }
+                    if (c != '\\') {
+                        out.append(c);
+                        continue;
+                    }
+                    if (isEnd()) {
+                        throw error("Unterminated JSON escape");
+                    }
+                    char escaped = json.charAt(index++);
+                    switch (escaped) {
+                        case '"': out.append('"'); break;
+                        case '\\': out.append('\\'); break;
+                        case '/': out.append('/'); break;
+                        case 'b': out.append('\b'); break;
+                        case 'f': out.append('\f'); break;
+                        case 'n': out.append('\n'); break;
+                        case 'r': out.append('\r'); break;
+                        case 't': out.append('\t'); break;
+                        case 'u':
+                            if (index + 4 > json.length()) {
+                                throw error("Incomplete unicode escape");
+                            }
+                            out.append((char) Integer.parseInt(json.substring(index, index + 4), 16));
+                            index += 4;
+                            break;
+                        default:
+                            throw error("Unsupported JSON escape '\\" + escaped + "'");
+                    }
+                }
+                throw error("Unterminated JSON string");
+            }
+
+            private Object parseLiteral(String literal, Object value) throws IOException {
+                if (!json.startsWith(literal, index)) {
+                    throw error("Expected " + literal);
+                }
+                index += literal.length();
+                return value;
+            }
+
+            private Number parseNumber() throws IOException {
+                int start = index;
+                if (peek('-')) index++;
+                while (!isEnd() && Character.isDigit(json.charAt(index))) index++;
+                boolean floating = false;
+                if (!isEnd() && json.charAt(index) == '.') {
+                    floating = true;
+                    index++;
+                    while (!isEnd() && Character.isDigit(json.charAt(index))) index++;
+                }
+                if (!isEnd() && (json.charAt(index) == 'e' || json.charAt(index) == 'E')) {
+                    floating = true;
+                    index++;
+                    if (!isEnd() && (json.charAt(index) == '+' || json.charAt(index) == '-')) index++;
+                    while (!isEnd() && Character.isDigit(json.charAt(index))) index++;
+                }
+                String number = json.substring(start, index);
+                try {
+                    return floating ? Double.valueOf(number) : Long.valueOf(number);
+                } catch (NumberFormatException e) {
+                    throw error("Invalid JSON number " + number);
+                }
+            }
+
+            private void expect(char expected) throws IOException {
+                skipWhitespace();
+                if (isEnd() || json.charAt(index) != expected) {
+                    throw error("Expected '" + expected + "'");
+                }
+                index++;
+            }
+
+            private boolean peek(char expected) {
+                return !isEnd() && json.charAt(index) == expected;
+            }
+
+            private void skipWhitespace() {
+                while (!isEnd()) {
+                    char c = json.charAt(index);
+                    if (c == ' ' || c == '\n' || c == '\r' || c == '\t') index++;
+                    else return;
+                }
+            }
+
+            private IOException error(String message) {
+                return new IOException(message + " at character " + index);
+            }
+        }
     }
 
     interface InstallerListener {

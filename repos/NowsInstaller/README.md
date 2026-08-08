@@ -2,9 +2,26 @@
 
 Internet-first Official Launcher installer for Nows, with a local offline mode for development testing.
 
-The installer itself contains no loader architecture. It reads `install.properties` from `nows.space`, installs each declared artifact under `.minecraft/libraries`, then writes an inherited Launcher version profile whose `mainClass` is `space.nows.mcnows.runtime.NowsLauncher`.
+The installer itself contains no loader architecture. It reads `install.properties` from `nows.space`, installs each declared artifact under `.minecraft/libraries`, writes an inherited Launcher version whose `mainClass` is `space.nows.mcnows.runtime.NowsLauncher`, then merges a Nows installation entry into `launcher_profiles.json`.
 
 The installer is compiled with Java 8 bytecode so it can run on Java 8 and newer.
+
+## Launcher profile safety
+
+NowsInstaller writes only the Nows version directory and Nows launcher profile:
+
+```text
+.minecraft/versions/nows-<nows-version>-<minecraft-version>/
+.minecraft/launcher_profiles.json
+```
+
+Before changing an existing `launcher_profiles.json`, it creates a sibling backup named `launcher_profiles.json.nows-backup-<timestamp>`. Existing Fabric, Forge, Quilt, vanilla, or other custom profiles are preserved; the installer only creates or replaces the profile whose id is `nows-<nows-version>-<minecraft-version>`.
+
+The profile icon is embedded from:
+
+```text
+src/main/resources/META-INF/nows/branding/nows.png
+```
 
 ## Build outputs
 
