@@ -114,6 +114,21 @@ Mapping/remapping logic should not leak into the runtime loader unless runtime r
   - use `implementation` when a dependency is internal;
   - use `compileOnly` when Minecraft/runtime is expected to provide the dependency.
 
+## Logging policy
+
+`integrations/logging/` owns Nows logging policy. Runtime and integrations should get loggers through `NowsLog` instead of configuring third-party logging directly.
+
+The default backend is `slf4j`, which flows into Minecraft's existing SLF4J -> Log4j2 backend. For local diagnostics, set:
+
+```text
+-Dnows.logging.backend=slf4j
+-Dnows.logging.backend=console
+-Dnows.logging.backend=verbose-console
+-Dnows.logging.backend=jdk
+```
+
+If the requested backend is unavailable, Nows falls back to JDK logging.
+
 ## Dependency preferences
 
 Important libraries currently intended for Nows include:
