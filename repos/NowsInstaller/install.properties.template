@@ -6,7 +6,7 @@ mavenBaseUrl=https://repo1.maven.org/maven2
 
 # Nows modular jars are downloaded from nows.space. Keep these independently replaceable.
 # If nows.space is unavailable, NowsInstaller falls back to mavenBaseUrl + artifact path.
-artifact.count=18
+artifact.count=19
 artifact.0.coordinate=space.nows.mcnows:nows-core:0.3.0
 artifact.0.path=space/nows/mcnows/nows-core/0.3.0/nows-core-0.3.0.jar
 artifact.0.url=https://nows.space/releases/nows/0.3.0/nows-core-0.3.0.jar
@@ -67,3 +67,8 @@ artifact.16.url=https://repo1.maven.org/maven2/org/ow2/asm/asm-analysis/9.8/asm-
 artifact.17.coordinate=org.ow2.asm:asm-util:9.8
 artifact.17.path=org/ow2/asm/asm-util/9.8/asm-util-9.8.jar
 artifact.17.url=https://repo1.maven.org/maven2/org/ow2/asm/asm-util/9.8/asm-util-9.8.jar
+
+# Version-specific Minecraft API adapter for the default installer target.
+artifact.18.coordinate=space.nows.mcnows:nows-mc-26.2:0.3.0
+artifact.18.path=space/nows/mcnows/nows-mc-26.2/0.3.0/nows-mc-26.2-0.3.0.jar
+artifact.18.url=https://nows.space/releases/nows/0.3.0/nows-mc-26.2-0.3.0.jar

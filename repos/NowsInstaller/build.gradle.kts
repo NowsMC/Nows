@@ -53,6 +53,7 @@ val offlinePayloadDir = layout.buildDirectory.dir("generated/offline-installer")
 val offlineModuleArtifacts = mapOf(
     ":core" to "space/nows/mcnows/nows-core/${project.version}/nows-core-${project.version}.jar",
     ":minecraft" to "space/nows/mcnows/nows-minecraft/${project.version}/nows-minecraft-${project.version}.jar",
+    ":mc:26.2" to "space/nows/mcnows/nows-mc-26.2/${project.version}/nows-mc-26.2-${project.version}.jar",
     ":integrations:kdl" to "space/nows/mcnows/nows-integration-kdl/${project.version}/nows-integration-kdl-${project.version}.jar",
     ":integrations:geb" to "space/nows/mcnows/nows-integration-geb/${project.version}/nows-integration-geb-${project.version}.jar",
     ":integrations:logging" to "space/nows/mcnows/nows-integration-logging/${project.version}/nows-integration-logging-${project.version}.jar",

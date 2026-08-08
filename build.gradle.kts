@@ -52,6 +52,7 @@ tasks.register("dist") {
     dependsOn(
         ":core:jar",
         ":minecraft:jar",
+        ":mc:26.2:jar",
         ":integrations:kdl:jar",
         ":integrations:geb:jar",
         ":integrations:logging:jar",
