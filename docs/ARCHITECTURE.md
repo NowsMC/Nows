@@ -78,7 +78,7 @@ Normal installer artifact resolution is:
 3. If that URL is missing or fails, fall back to `artifact.<n>.mavenUrl` or `mavenBaseUrl + artifact.<n>.path`.
 4. For local/offline development, copy from local paths when `--offline`, `--artifactDir` or `source=local` is used.
 
-`NowsInstaller-offline` is a separate Java 8-compatible installer JAR that embeds the install manifest and all manifest artifacts needed by Nows, then copies those embedded payloads into the Minecraft libraries directory without network access. `NowsInstallerDevOffline` is the local-development flavor: its Nows module payloads come from this workspace's Gradle project JAR tasks and are installed without contacting `nows.space` or Maven at installer runtime.
+`NowsInstaller-offline` is a separate Java 8-compatible installer JAR that embeds the install manifest and all manifest artifacts needed by Nows, then copies those embedded payloads into the Minecraft libraries directory without network access. Its Nows module payloads come from the workspace's Gradle project JAR tasks when built locally, so the same offline installer covers local-development installation.
 
 GitHub Packages-only dependencies, currently KDL4J, may be embedded into installer artifacts and copied into the Minecraft libraries directory when necessary. Normal Nows users must not need GitHub credentials just to install or run Nows.
 

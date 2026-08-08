@@ -60,7 +60,6 @@ tasks.register("dist") {
         ":repos:NowsInstaller:jar",
         ":repos:NowsInstaller:guiJar",
         ":repos:NowsInstaller:offlineJar",
-        ":repos:NowsInstaller:devOfflineJar",
         ":repos:NowsGradlePlugin:jar",
         ":example-mod:jar"
     )
