@@ -141,11 +141,9 @@ nows {
 }
 ```
 
-The plugin owns Minecraft development setup rather than the loader core. `nowsPrepareMinecraft` downloads the official client artifact and official `client_mappings` metadata. For modern unobfuscated Minecraft it detects Mojang-named classes and skips remapping. For older obfuscated versions it reads Mojang's ProGuard mapping file with Mapping IO and remaps **obfuscated -> official Mojang names** with Tiny Remapper.
+The plugin owns Minecraft development setup rather than the loader core. `nowsPrepareMinecraft` downloads the official client artifact and official `client_mappings` metadata. For modern unobfuscated Minecraft it detects Mojang-named classes and skips remapping. For older obfuscated versions it reads Mojang's ProGuard mapping file with Nows' own parser and remaps **obfuscated -> official Mojang names** with the Nows ASM remapper.
 
 It also wires the prepared development client JAR into `compileOnly`, makes Java compilation depend on preparation, adds the matching `nows-core` API, and can add GEB and Mixin compile/annotation-processor tooling to mod projects.
-
-Tiny Remapper 0.14.0 is used by the Gradle plugin; it was published in May 2026. The loader runtime itself does not depend on Tiny Remapper for Minecraft 26.x.
 
 ## Build
 

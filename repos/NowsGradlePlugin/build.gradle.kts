@@ -3,9 +3,6 @@ plugins {
     `maven-publish`
 }
 
-val tinyRemapperVersion = providers.gradleProperty("tiny_remapper_version")
-val mappingIoVersion = providers.gradleProperty("mapping_io_version")
-
 repositories {
     mavenCentral()
     maven("https://repo.spongepowered.org/repository/maven-public/")
@@ -13,8 +10,8 @@ repositories {
 
 dependencies {
     implementation("com.google.code.gson:gson:2.14.0")
-    implementation("net.fabricmc:tiny-remapper:${tinyRemapperVersion.get()}")
-    implementation("net.fabricmc:mapping-io:${mappingIoVersion.get()}")
+    implementation("org.ow2.asm:asm:9.8")
+    implementation("org.ow2.asm:asm-commons:9.8")
 }
 
 gradlePlugin {

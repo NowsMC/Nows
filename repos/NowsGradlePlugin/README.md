@@ -14,7 +14,7 @@ It currently provides:
 - Mojang version metadata/client download;
 - SHA-1 and size verification using Mojang metadata;
 - direct use of already Mojang-named modern client JARs;
-- legacy runtime-name -> official-Mojang-name remapping through Mapping IO + Tiny Remapper;
+- legacy runtime-name -> official-Mojang-name remapping through Nows' own ProGuard-mapping parser and ASM remapper;
 - automatic development Minecraft `compileOnly` classpath;
 - Nows core API dependency;
 - optional GEB compile/annotation-processor setup;

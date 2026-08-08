@@ -119,6 +119,8 @@ Official Mojang mappings are the canonical development namespace. For modern Min
 
 Mapping/remapping logic should not leak into the runtime loader unless runtime remapping is actually required.
 
+Nows owns its development remapper. The Gradle plugin reads Mojang's official ProGuard mapping file directly and remaps class, field and method references through ASM. Do not depend on Tiny Remapper, Mapping IO or Fabric tooling for this path.
+
 The Gradle plugin must be usable both from a published plugin artifact and as an included build inside this monorepo. Local fixtures such as `repos/NowsApiMod/` should exercise the same plugin path that an external mod project would use.
 
 The plugin may reuse `.nows/minecraft/<version>/client-dev.jar` as a local cache, but each project task should write its own build output. Two Gradle tasks must not claim the same output file.
