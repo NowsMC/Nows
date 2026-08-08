@@ -1,5 +1,6 @@
 package space.nows.mcnows.gradle;
 
+import org.gradle.api.file.RegularFileProperty;
 import org.gradle.api.model.ObjectFactory;
 import org.gradle.api.provider.Property;
 
@@ -12,6 +13,7 @@ public abstract class NowsExtension {
     private final Property<Boolean> officialMappings;
     private final Property<Boolean> addGeb;
     private final Property<Boolean> addMixin;
+    private final RegularFileProperty developmentClientJar;
 
     @Inject
     public NowsExtension(ObjectFactory objects) {
@@ -20,6 +22,7 @@ public abstract class NowsExtension {
         officialMappings = objects.property(Boolean.class).convention(true);
         addGeb = objects.property(Boolean.class).convention(true);
         addMixin = objects.property(Boolean.class).convention(true);
+        developmentClientJar = objects.fileProperty();
     }
 
     public Property<String> getMinecraftVersion() { return minecraftVersion; }
@@ -27,4 +30,5 @@ public abstract class NowsExtension {
     public Property<Boolean> getOfficialMappings() { return officialMappings; }
     public Property<Boolean> getAddGeb() { return addGeb; }
     public Property<Boolean> getAddMixin() { return addMixin; }
+    public RegularFileProperty getDevelopmentClientJar() { return developmentClientJar; }
 }

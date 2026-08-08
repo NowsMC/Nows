@@ -26,7 +26,7 @@ dependencies {
     allJarLibraries("io.projectreactor:reactor-core:${reactorVersion.get()}") { isTransitive = false }
     allJarLibraries("org.reactivestreams:reactive-streams:1.0.4") { isTransitive = false }
     allJarLibraries("com.lmax:disruptor:${disruptorVersion.get()}") { isTransitive = false }
-    allJarLibraries("net.fabricmc:sponge-mixin:${mixinVersion.get()}") { isTransitive = false }
+    allJarLibraries("org.spongepowered:mixin:${mixinVersion.get()}") { isTransitive = false }
     allJarLibraries("org.ow2.asm:asm:9.8") { isTransitive = false }
     allJarLibraries("org.ow2.asm:asm-tree:9.8") { isTransitive = false }
     allJarLibraries("org.ow2.asm:asm-commons:9.8") { isTransitive = false }

@@ -4,6 +4,15 @@ Nows is intended to be a small, modern, modular Minecraft mod loader. Prefer sim
 
 The project uses a stable kernel / replaceable policy split: `core/` owns loader invariants, while Minecraft behavior, integrations, runtime composition and tooling live outside the kernel.
 
+In short:
+
+- `core/` defines what a Nows mod loader is.
+- `minecraft/` knows how Nows is launched inside a Minecraft client.
+- `mc/<minecraft version>/` is allowed to talk directly to that exact Minecraft version.
+- `integrations/*` attach optional third-party systems to the loader.
+- `runtime/` wires the selected pieces together for a launcher profile.
+- `repos/*` contains distribution, developer tooling, web and optional companion projects that can evolve independently.
+
 ## Ownership boundaries
 
 | Module | Owns | Expected change rate |
@@ -18,10 +27,11 @@ The project uses a stable kernel / replaceable policy split: `core/` owns loader
 | `runtime/` | composition root that selects and connects core, Minecraft support and integrations | medium |
 | `repos/NowsInstaller/` | user-facing launcher installation/update tooling and dependency delivery | high |
 | `repos/NowsGradlePlugin/` | developer tooling, Minecraft dependency preparation, Mojang mappings, remapping when needed and Gradle integration | high |
+| `repos/NowsApiMod/` | optional companion mod and fixture for Gradle plugin, KDL metadata, Mixin and version-specific API adapters; separate repository/submodule | high |
 | `repos/NowsWeb/` | web surface for docs, downloads and release metadata; kept as a git submodule with separate frontend tooling | high |
 | `example-mod/` | local example and smoke-test mod | medium |
 
-`repos/*` projects are tooling or distribution surfaces. They are intentionally outside the runtime loader architecture and must not push policy back into `nows-core`.
+`repos/*` projects are tooling, distribution or companion-mod surfaces. They are intentionally outside the runtime loader architecture and must not push policy back into `nows-core`.
 
 ## Stable kernel: `core/`
 
@@ -56,15 +66,21 @@ If one of those policies is replaced, `nows-core` should normally remain binary/
 core
  ^
  |-- minecraft
+ |-- mc/<minecraft version>
  |-- integrations/kdl
  |-- integrations/geb
  |-- integrations/logging
  |-- integrations/mixin --> integrations/logging
  |
  +-- runtime (composition root, depends on core, minecraft and integrations)
+
+repos/NowsApiMod is a consumer/fixture of the public loader surface:
+core + mc/<minecraft version> + Gradle plugin + KDL + Mixin
 ```
 
 `core` must never depend on Minecraft, Mixin, KDL, GEB, Reactor, Gradle, installer code, web code or other integrations. Integrations may depend on `core`; `runtime/` wires the pieces together and should avoid reusable subsystem logic.
+
+`mc/<minecraft version>` modules are not part of the kernel. They are version adapters. They may import `net.minecraft.*` directly and may break when the target Minecraft version changes; that is expected and contained.
 
 ## Distribution and installer policy
 
@@ -85,6 +101,10 @@ GitHub Packages-only dependencies, currently KDL4J, may be embedded into install
 
 The optional `:runtime:allJar` task is the assembly point for a later monolithic distribution. It merges Nows modules and Nows-owned third-party runtime libraries while intentionally omitting Minecraft-owned Log4j2, SLF4J, Gson, Guava and JSpecify.
 
+Launcher version profiles should inherit from the target vanilla Minecraft profile. When the vanilla client JAR already exists locally, the installer may copy it to the Nows version directory as a profile-local version JAR. That copy is an alias of Mojang's vanilla client JAR, not a bundled Nows library and not a redistributed loader dependency. If the vanilla JAR is missing, the version JSON may use the inherited `jar` field so the launcher can resolve the parent version.
+
+`repos/NowsApiMod/` is not installed by default. It builds a normal optional mod JAR that users can place in `mods/` when they want the extra APIs or when developers need an end-to-end fixture for Gradle, KDL, Mixin and `mc/<version>` adapters.
+
 ## Gradle and mappings policy
 
 `repos/NowsGradlePlugin/` owns developer setup:
@@ -99,11 +119,17 @@ Official Mojang mappings are the canonical development namespace. For modern Min
 
 Mapping/remapping logic should not leak into the runtime loader unless runtime remapping is actually required.
 
+The Gradle plugin must be usable both from a published plugin artifact and as an included build inside this monorepo. Local fixtures such as `repos/NowsApiMod/` should exercise the same plugin path that an external mod project would use.
+
+The plugin may reuse `.nows/minecraft/<version>/client-dev.jar` as a local cache, but each project task should write its own build output. Two Gradle tasks must not claim the same output file.
+
+The repository policy is intentionally not Fabric-based. Use Maven Central and SpongePowered Maven for SpongePowered Mixin. Do not add `https://maven.fabricmc.net/` just to obtain Mixin.
+
 ## Technical rules
 
 - Do not use Java Agent, `premain` or `java.lang.instrument`.
 - Do not depend on Fabric Loader or another mod loader.
-- Mixin itself is allowed.
+- Mixin itself is allowed, but use the SpongePowered coordinate `org.spongepowered:mixin`.
 - Do not bundle libraries already provided by the target Minecraft version unless isolation makes it strictly necessary.
 - Keep build-time-only tools out of runtime artifacts.
 - Annotation processors must not accidentally become runtime dependencies.
@@ -139,7 +165,7 @@ Important libraries currently intended for Nows include:
 - `dev.kdl:kdl4j:1.0.1`
 - Reactor logging through `io.projectreactor:reactor-core`
 - Log4j2 Async Logger support through Disruptor
-- SpongePowered/Fabric Mixin
+- SpongePowered Mixin through `org.spongepowered:mixin`
 
 KDL4J may come from GitHub Packages. Release/build tooling may need credentials to resolve it, but installer/runtime users should not.
 
@@ -169,7 +195,19 @@ Per-version Minecraft API code belongs under `mc/<minecraft version>/`. These mo
 
 Per-version facts that are data rather than reusable Java behavior also live under `mc/<minecraft version>/nows-minecraft.properties`. The `minecraft` module packages those files and exposes them through `MinecraftVersionPolicy`. Runtime uses this policy for facts such as the client main class while keeping Minecraft classes in the game classloader.
 
-Nows follows the modern inherited Launcher-profile style used by Fabric and by Nows itself: inherit the vanilla version profile, add Nows libraries and use a Nows bootstrap main class. Forge also uses an inherited profile in current local examples, but with a larger Forge bootstrap library set. Nows should not make `net.minecraft.` parent-first; doing so risks resolving game classes from the wrong loader/classpath and can interfere with other launcher profiles.
+Nows follows the inherited Launcher-profile style: inherit the vanilla version profile, add Nows libraries and use a Nows bootstrap main class. Some other loaders may copy the vanilla client JAR into their own version directory; if Nows does that, it is only a launcher-version alias of the vanilla JAR. Nows should not make `net.minecraft.` parent-first; doing so risks resolving game classes from the wrong loader/classpath and can interfere with other launcher profiles.
+
+## Companion API mod
+
+`repos/NowsApiMod/` exists for useful features that should not be required by the loader itself. Examples include higher-level helper APIs, UI conveniences, mod-menu-style integration, test blocks/items and other user-facing helpers.
+
+Rules for `NowsApiMod`:
+
+- It may depend on public Nows APIs and `mc/<minecraft version>` adapters.
+- It must be optional; the loader must run without it.
+- It is a good place to test new KDL declaration names before promoting them to a stable integration.
+- It should exercise the Nows Gradle plugin rather than bypassing it with special monorepo-only wiring.
+- It should stay in its own repository so release cadence and API churn do not force loader releases.
 
 ## Code quality
 

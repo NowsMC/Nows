@@ -51,7 +51,7 @@ annotationProcessor("foo.zaaarf.geb:processor:0.4.9")
 implementation("dev.kdl:kdl4j:1.0.1")
 implementation("io.projectreactor:reactor-core:3.8.6")
 implementation("com.lmax:disruptor:4.0.0")
-implementation("net.fabricmc:sponge-mixin:0.17.3+mixin.0.8.7")
+implementation("org.spongepowered:mixin:0.8.7")
 ```
 
 Minecraft-owned Log4j2, SLF4J, Gson, Guava and JSpecify are not bundled into the loader distribution again. See [`docs/DEPENDENCY_OWNERSHIP.md`](docs/DEPENDENCY_OWNERSHIP.md) for the delivery boundary. Reactor is forced onto the game's existing SLF4J backend, while the installed profile enables Log4j2's async context with:

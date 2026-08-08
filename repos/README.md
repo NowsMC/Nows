@@ -4,6 +4,7 @@
 
 - `NowsInstaller/` — installs Nows into the Official Minecraft Launcher. Internet-first for now; GitHub Packages payloads can be embedded and extracted locally.
 - `NowsGradlePlugin/` — mod-development plugin for Mojang mappings, Minecraft development JAR preparation, compile tooling and Gradle compatibility workarounds.
+- `NowsApiMod/` — optional companion mod and local fixture for Nows Gradle plugin, KDL metadata, Mixin and version-specific Minecraft API adapters.
 - `NowsWeb/` — web surface for docs, downloads, and release metadata. Kept as a git submodule because it uses a separate frontend toolchain.
 
 They are included in this monorepo build today, but each directory is designed so it can become a standalone repository later without moving APIs into `nows-core`.

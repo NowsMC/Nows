@@ -1,8 +1,9 @@
 pluginManagement {
+    includeBuild("repos/NowsGradlePlugin")
     repositories {
         gradlePluginPortal()
         mavenCentral()
-        maven("https://maven.fabricmc.net/")
+        maven("https://repo.spongepowered.org/repository/maven-public/")
     }
 }
 
@@ -20,5 +21,6 @@ include(
     "runtime",
     "repos:NowsInstaller",
     "repos:NowsGradlePlugin",
+    "repos:NowsApiMod",
     "example-mod"
 )

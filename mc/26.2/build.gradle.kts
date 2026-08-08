@@ -8,6 +8,10 @@ dependencies {
     compileOnly(files(minecraftDevJar))
 }
 
+tasks.compileJava {
+    dependsOn(":minecraft:prepareMinecraft")
+}
+
 tasks.jar {
     archiveBaseName.set("nows-mc-$minecraftVersion")
 }

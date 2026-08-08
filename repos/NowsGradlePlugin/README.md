@@ -31,6 +31,7 @@ nows {
     minecraftVersion.set("26.2")
     nowsVersion.set("0.3.0")
     officialMappings.set(true)
+    developmentClientJar.set(layout.projectDirectory.file(".nows/minecraft/26.2/client-dev.jar"))
     addGeb.set(true)
     addMixin.set(true)
 }

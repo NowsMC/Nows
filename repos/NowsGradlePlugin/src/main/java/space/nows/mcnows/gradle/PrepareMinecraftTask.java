@@ -56,6 +56,24 @@ public abstract class PrepareMinecraftTask extends DefaultTask {
         Path mappings = dir.resolve("client_mappings.txt");
         Path development = getDevelopmentClientJar().get().getAsFile().toPath();
 
+        if (Files.isRegularFile(development) && containsNamedMinecraft(development)) {
+            getLogger().lifecycle("Nows: reusing prepared Mojang-named Minecraft {} at {}.", version, development);
+            return;
+        }
+        Path monorepoCache = getProject().getRootDir().toPath()
+                .resolve(".nows")
+                .resolve("minecraft")
+                .resolve(version)
+                .resolve("client-dev.jar");
+        if (!development.equals(monorepoCache)
+                && Files.isRegularFile(monorepoCache)
+                && containsNamedMinecraft(monorepoCache)) {
+            Files.createDirectories(development.getParent());
+            Files.copy(monorepoCache, development, StandardCopyOption.REPLACE_EXISTING);
+            getLogger().lifecycle("Nows: copied prepared Mojang-named Minecraft {} from {}.", version, monorepoCache);
+            return;
+        }
+
         JsonObject versionJson = resolveVersion(version);
         JsonObject downloads = versionJson.getAsJsonObject("downloads");
         DownloadSpec client = DownloadSpec.from(downloads.getAsJsonObject("client"));

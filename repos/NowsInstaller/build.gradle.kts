@@ -27,7 +27,7 @@ dependencies {
     offlineMavenArtifacts("io.projectreactor:reactor-core:${reactorVersion.get()}")
     offlineMavenArtifacts("org.reactivestreams:reactive-streams:1.0.4")
     offlineMavenArtifacts("com.lmax:disruptor:${disruptorVersion.get()}")
-    offlineMavenArtifacts("net.fabricmc:sponge-mixin:${mixinVersion.get()}")
+    offlineMavenArtifacts("org.spongepowered:mixin:${mixinVersion.get()}")
     offlineMavenArtifacts("org.ow2.asm:asm:9.8")
     offlineMavenArtifacts("org.ow2.asm:asm-tree:9.8")
     offlineMavenArtifacts("org.ow2.asm:asm-commons:9.8")
@@ -65,7 +65,7 @@ val offlineMavenArtifactPaths = mapOf(
     "reactor-core-${reactorVersion.get()}.jar" to "io/projectreactor/reactor-core/${reactorVersion.get()}/reactor-core-${reactorVersion.get()}.jar",
     "reactive-streams-1.0.4.jar" to "org/reactivestreams/reactive-streams/1.0.4/reactive-streams-1.0.4.jar",
     "disruptor-${disruptorVersion.get()}.jar" to "com/lmax/disruptor/${disruptorVersion.get()}/disruptor-${disruptorVersion.get()}.jar",
-    "sponge-mixin-${mixinVersion.get()}.jar" to "net/fabricmc/sponge-mixin/${mixinVersion.get()}/sponge-mixin-${mixinVersion.get()}.jar",
+    "mixin-${mixinVersion.get()}.jar" to "org/spongepowered/mixin/${mixinVersion.get()}/mixin-${mixinVersion.get()}.jar",
     "asm-9.8.jar" to "org/ow2/asm/asm/9.8/asm-9.8.jar",
     "asm-tree-9.8.jar" to "org/ow2/asm/asm-tree/9.8/asm-tree-9.8.jar",
     "asm-commons-9.8.jar" to "org/ow2/asm/asm-commons/9.8/asm-commons-9.8.jar",
@@ -75,6 +75,9 @@ val offlineMavenArtifactPaths = mapOf(
 
 val prepareOfflinePayload by tasks.registering(Copy::class) {
     dependsOn(offlineModuleArtifacts.keys.map { project(it).tasks.named("jar") })
+    doFirst {
+        delete(offlinePayloadDir)
+    }
     from("install.properties.template") {
         into("META-INF/nows/offline")
         rename { "install.properties" }

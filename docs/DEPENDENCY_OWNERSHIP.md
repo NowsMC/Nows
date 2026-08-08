@@ -19,7 +19,7 @@ These remain parent-first in `NowsClassLoader`.
 - Reactor Core 3.8.6 — internet install.
 - Reactive Streams 1.0.4 — internet install.
 - LMAX Disruptor 4.0.0 — internet install for Log4j2 async logging.
-- Fabric Mixin 0.17.3+mixin.0.8.7 — internet install.
+- SpongePowered Mixin 0.8.7 — SpongePowered Maven install.
 - ASM 9.8 modules required by Mixin — internet install.
 
 `foo.zaaarf.geb:processor:0.4.9` is a build/annotation-processing dependency and is not installed into the player runtime.

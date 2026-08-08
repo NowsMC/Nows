@@ -16,14 +16,20 @@ import org.gradle.api.tasks.compile.JavaCompile;
 public final class NowsGradlePlugin implements Plugin<Project> {
     private static final String GEB_CORE = "foo.zaaarf.geb:core:0.5.4";
     private static final String GEB_PROCESSOR = "foo.zaaarf.geb:processor:0.4.9";
-    private static final String MIXIN = "net.fabricmc:sponge-mixin:0.17.3+mixin.0.8.7";
+    private static final String MIXIN = "org.spongepowered:mixin:0.8.7";
+    private static final String GSON = "com.google.code.gson:gson:2.14.0";
+    private static final String GUAVA = "com.google.guava:guava:33.4.8-jre";
+    private static final String ASM = "org.ow2.asm:asm:9.8";
+    private static final String ASM_TREE = "org.ow2.asm:asm-tree:9.8";
+    private static final String ASM_COMMONS = "org.ow2.asm:asm-commons:9.8";
+    private static final String ASM_UTIL = "org.ow2.asm:asm-util:9.8";
 
     @Override
     public void apply(Project project) {
         NowsExtension extension = project.getExtensions().create("nows", NowsExtension.class);
 
         ensureRepository(project, "Nows", "https://nows.space/maven/releases");
-        ensureRepository(project, "Fabric", "https://maven.fabricmc.net/");
+        ensureRepository(project, "SpongePowered", "https://repo.spongepowered.org/repository/maven-public/");
         project.getRepositories().mavenCentral();
 
         var prepare = project.getTasks().register("nowsPrepareMinecraft", PrepareMinecraftTask.class, task -> {
@@ -32,6 +38,8 @@ public final class NowsGradlePlugin implements Plugin<Project> {
             task.getMinecraftVersion().set(extension.getMinecraftVersion());
             task.getOfficialMappings().set(extension.getOfficialMappings());
             task.getOutputDirectory().set(project.getLayout().getBuildDirectory().dir("nows/minecraft"));
+            task.getDevelopmentClientJar().set(extension.getDevelopmentClientJar().orElse(
+                    task.getOutputDirectory().file(extension.getMinecraftVersion().map(v -> v + "/client-dev.jar"))));
         });
 
         project.getPlugins().withType(JavaPlugin.class, ignored -> {
@@ -41,8 +49,10 @@ public final class NowsGradlePlugin implements Plugin<Project> {
             project.getTasks().withType(JavaCompile.class).configureEach(task -> task.dependsOn(prepare));
 
             project.afterEvaluate(p -> {
-                p.getDependencies().add("compileOnly",
-                        "space.nows.mcnows:nows-core:" + extension.getNowsVersion().get());
+                Project core = p.findProject(":core");
+                p.getDependencies().add("compileOnly", core != null
+                        ? core
+                        : "space.nows.mcnows:nows-core:" + extension.getNowsVersion().get());
 
                 if (extension.getAddGeb().get()) {
                     p.getDependencies().add("compileOnly", GEB_CORE);
@@ -51,6 +61,12 @@ public final class NowsGradlePlugin implements Plugin<Project> {
                 if (extension.getAddMixin().get()) {
                     p.getDependencies().add("compileOnly", MIXIN);
                     p.getDependencies().add("annotationProcessor", MIXIN);
+                    p.getDependencies().add("annotationProcessor", GSON);
+                    p.getDependencies().add("annotationProcessor", GUAVA);
+                    p.getDependencies().add("annotationProcessor", ASM);
+                    p.getDependencies().add("annotationProcessor", ASM_TREE);
+                    p.getDependencies().add("annotationProcessor", ASM_COMMONS);
+                    p.getDependencies().add("annotationProcessor", ASM_UTIL);
                 }
             });
         });

@@ -8,11 +8,9 @@ import org.spongepowered.asm.logging.ILogger;
 import org.spongepowered.asm.mixin.MixinEnvironment;
 import org.spongepowered.asm.mixin.transformer.IMixinTransformer;
 import org.spongepowered.asm.mixin.transformer.IMixinTransformerFactory;
-import org.spongepowered.asm.service.IAdviceProvider;
 import org.spongepowered.asm.service.IClassBytecodeProvider;
 import org.spongepowered.asm.service.IClassProvider;
 import org.spongepowered.asm.service.IClassTracker;
-import org.spongepowered.asm.service.IFeatureValidator;
 import org.spongepowered.asm.service.IMixinAuditTrail;
 import org.spongepowered.asm.service.IMixinInternal;
 import org.spongepowered.asm.service.IMixinService;
@@ -32,7 +30,7 @@ import java.util.Collections;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
-/** Connects Sponge/Fabric Mixin directly to NowsClassLoader; no javaagent is involved. */
+/** Connects SpongePowered Mixin directly to NowsClassLoader; no javaagent is involved. */
 public final class NowsMixinService implements IMixinService, IClassProvider, IClassBytecodeProvider,
         ITransformerProvider, IClassTracker {
 
@@ -206,17 +204,6 @@ public final class NowsMixinService implements IMixinService, IClassProvider, IC
     }
 
     @Override
-    public IFeatureValidator getFeatureValidator() {
-        return IFeatureValidator.ALLOW_ALL;
-    }
-
-    @Override
-    public IAdviceProvider getAdviceProvider() {
-        return (requiredCompatibility, requiredCompatibilityString) ->
-                "Nows targets Java 25; update Nows/Java for mixin compatibility " + requiredCompatibilityString;
-    }
-
-    @Override
     public Collection<String> getPlatformAgents() {
         return Collections.singletonList("org.spongepowered.asm.launch.platform.MixinPlatformAgentDefault");
     }
@@ -298,7 +285,7 @@ public final class NowsMixinService implements IMixinService, IClassProvider, IC
 
     @Override
     public MixinEnvironment.CompatibilityLevel getMaxCompatibilityLevel() {
-        return MixinEnvironment.CompatibilityLevel.JAVA_25;
+        return MixinEnvironment.CompatibilityLevel.JAVA_21;
     }
 
     @Override

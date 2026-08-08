@@ -6,6 +6,11 @@ plugins {
 val tinyRemapperVersion = providers.gradleProperty("tiny_remapper_version")
 val mappingIoVersion = providers.gradleProperty("mapping_io_version")
 
+repositories {
+    mavenCentral()
+    maven("https://repo.spongepowered.org/repository/maven-public/")
+}
+
 dependencies {
     implementation("com.google.code.gson:gson:2.14.0")
     implementation("net.fabricmc:tiny-remapper:${tinyRemapperVersion.get()}")

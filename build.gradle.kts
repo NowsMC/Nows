@@ -8,7 +8,7 @@ allprojects {
 
     repositories {
         mavenCentral()
-        maven("https://maven.fabricmc.net/")
+        maven("https://repo.spongepowered.org/repository/maven-public/")
 
         // KDL4J 1.0.1 is a GitHub Package. Only build-time resolution uses credentials.
         // NowsInstaller embeds the original JAR and extracts it into .minecraft/libraries,
@@ -62,6 +62,7 @@ tasks.register("dist") {
         ":repos:NowsInstaller:guiJar",
         ":repos:NowsInstaller:offlineJar",
         ":repos:NowsGradlePlugin:jar",
+        ":repos:NowsApiMod:jar",
         ":example-mod:jar"
     )
 }
