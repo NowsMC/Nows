@@ -34,6 +34,7 @@ artifact.7.source=embedded
 artifact.7.resource=/META-INF/nows/embedded-libs/kdl4j-1.0.1.jar
 
 # Public runtime libraries. Minecraft-owned Log4j/SLF4J/Gson/Guava/JSpecify are not duplicated.
+# Offline testing can reuse these paths by placing JARs under --artifactDir with the same relative layout.
 artifact.8.coordinate=foo.zaaarf.geb:core:0.5.4
 artifact.8.path=foo/zaaarf/geb/core/0.5.4/core-0.5.4.jar
 artifact.8.url=https://repo1.maven.org/maven2/foo/zaaarf/geb/core/0.5.4/core-0.5.4.jar

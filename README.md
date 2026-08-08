@@ -110,6 +110,8 @@ At install time it copies that untouched JAR to:
 
 so players do not need `GITHUB_TOKEN`. Other libraries are downloaded over the internet according to the release manifest.
 
+For local testing without downloads, pass `--offline --manifest <local install.properties> --artifactDir <local library root>`. Offline mode copies non-embedded artifacts from the local library root using the manifest's normal `artifact.*.path` layout.
+
 Build credentials remain the usual:
 
 ```properties

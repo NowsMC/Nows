@@ -33,12 +33,12 @@ public final class NowsInstaller {
 
     public static void main(String[] args) throws Exception {
         Options options = Options.parse(args);
-        URI manifestUri = options.manifest != null
-                ? URI.create(options.manifest)
-                : URI.create("https://nows.space/releases/nows/" + options.nowsVersion + "/install.properties");
+        String manifestLocation = options.manifest != null
+                ? options.manifest
+                : "https://nows.space/releases/nows/" + options.nowsVersion + "/install.properties";
 
-        System.out.println("[NowsInstaller] manifest: " + manifestUri);
-        Properties manifest = downloadProperties(manifestUri);
+        System.out.println("[NowsInstaller] manifest: " + manifestLocation);
+        Properties manifest = loadProperties(options, manifestLocation);
         verifyManifest(manifest, options);
 
         List<InstalledLibrary> launcherLibraries = new ArrayList<>();
@@ -71,11 +71,15 @@ public final class NowsInstaller {
 
         if (source.equals("embedded")) {
             copyEmbedded(required(manifest, prefix + "resource"), destination);
+        } else if (options.offline) {
+            copyLocalArtifact(options, manifest, prefix, relativePath, destination);
         } else if (source.equals("internet")) {
             if (sourceUrl.isBlank()) {
                 throw new IllegalArgumentException("Missing URL for internet artifact: " + coordinate);
             }
             download(URI.create(sourceUrl), destination);
+        } else if (source.equals("local")) {
+            copyLocalArtifact(options, manifest, prefix, relativePath, destination);
         } else {
             throw new IllegalArgumentException("Unknown artifact source '" + source + "' for " + coordinate);
         }
@@ -89,7 +93,21 @@ public final class NowsInstaller {
             }
         }
 
-        return new InstalledLibrary(coordinate, relativePath, sourceUrl, destination);
+        return new InstalledLibrary(coordinate, relativePath, options.offline ? "" : sourceUrl, destination);
+    }
+
+    private static void copyLocalArtifact(
+            Options options,
+            Properties manifest,
+            String prefix,
+            String relativePath,
+            Path destination
+    ) throws IOException {
+        Path source = localArtifactPath(options, manifest.getProperty(prefix + "file", "").trim(), relativePath);
+        if (!Files.isRegularFile(source)) {
+            throw new IOException("Offline artifact missing: " + source);
+        }
+        Files.copy(source, destination, StandardCopyOption.REPLACE_EXISTING);
     }
 
     private static void installVersionJson(
@@ -143,6 +161,18 @@ public final class NowsInstaller {
         Files.writeString(versionDir.resolve(profile + ".json"), json.toString(), StandardCharsets.UTF_8);
     }
 
+    private static Properties loadProperties(Options options, String location) throws Exception {
+        if (options.offline || isLocalLocation(location)) {
+            Path path = localManifestPath(options, location);
+            Properties properties = new Properties();
+            try (InputStream input = Files.newInputStream(path)) {
+                properties.load(input);
+            }
+            return properties;
+        }
+        return downloadProperties(URI.create(location));
+    }
+
     private static Properties downloadProperties(URI uri) throws Exception {
         HttpResponse<InputStream> response = HTTP.send(
                 HttpRequest.newBuilder(uri).GET().build(),
@@ -155,6 +185,52 @@ public final class NowsInstaller {
             properties.load(input);
         }
         return properties;
+    }
+
+    private static boolean isLocalLocation(String location) {
+        if (!hasUriScheme(location)) {
+            return true;
+        }
+        String scheme = URI.create(location).getScheme();
+        return scheme == null || scheme.equals("file");
+    }
+
+    private static Path localManifestPath(Options options, String location) {
+        if (!hasUriScheme(location)) {
+            return Path.of(location).toAbsolutePath().normalize();
+        }
+        URI uri = URI.create(location);
+        if (!uri.getScheme().equals("file")) {
+            if (options.offline) {
+                throw new IllegalArgumentException("Offline install requires a local --manifest file");
+            }
+            throw new IllegalArgumentException("Not a local manifest location: " + location);
+        }
+        return Path.of(uri).toAbsolutePath().normalize();
+    }
+
+    private static boolean hasUriScheme(String location) {
+        for (int i = 0; i < location.length(); i++) {
+            char c = location.charAt(i);
+            if (c == ':') {
+                return i > 0;
+            }
+            if (!(Character.isLetterOrDigit(c) || c == '+' || c == '-' || c == '.')) {
+                return false;
+            }
+        }
+        return false;
+    }
+
+    private static Path localArtifactPath(Options options, String manifestFile, String relativePath) {
+        if (!manifestFile.isBlank()) {
+            Path path = Path.of(manifestFile);
+            if (path.isAbsolute()) {
+                return path.normalize();
+            }
+            return options.artifactDir().resolve(path).normalize();
+        }
+        return options.artifactDir().resolve(relativePath).normalize();
     }
 
     private static void download(URI uri, Path destination) throws Exception {
@@ -238,18 +314,31 @@ public final class NowsInstaller {
         final String minecraftVersion;
         final Path minecraftDir;
         final String manifest;
+        final boolean offline;
+        final Path artifactDir;
 
-        private Options(String nowsVersion, String minecraftVersion, Path minecraftDir, String manifest) {
+        private Options(
+                String nowsVersion,
+                String minecraftVersion,
+                Path minecraftDir,
+                String manifest,
+                boolean offline,
+                Path artifactDir
+        ) {
             this.nowsVersion = nowsVersion;
             this.minecraftVersion = minecraftVersion;
             this.minecraftDir = minecraftDir;
             this.manifest = manifest;
+            this.offline = offline;
+            this.artifactDir = artifactDir;
         }
 
         static Options parse(String[] args) {
             String nows = "0.3.0";
             String minecraft = "26.2";
             String manifest = null;
+            boolean offline = false;
+            Path artifactDir = null;
             Path minecraftDir = Path.of(System.getProperty("user.home"), ".minecraft")
                     .toAbsolutePath().normalize();
 
@@ -260,10 +349,30 @@ public final class NowsInstaller {
                     case "--minecraftDir" -> minecraftDir = Path.of(requireValue(args, ++i, "--minecraftDir"))
                             .toAbsolutePath().normalize();
                     case "--manifest" -> manifest = requireValue(args, ++i, "--manifest");
+                    case "--offline" -> offline = true;
+                    case "--artifactDir" -> artifactDir = Path.of(requireValue(args, ++i, "--artifactDir"))
+                            .toAbsolutePath().normalize();
                     default -> throw new IllegalArgumentException("Unknown option: " + args[i]);
                 }
             }
-            return new Options(nows, minecraft, minecraftDir, manifest);
+            if (offline && manifest == null) {
+                throw new IllegalArgumentException("Offline install requires --manifest pointing to a local file");
+            }
+            return new Options(nows, minecraft, minecraftDir, manifest, offline, artifactDir);
+        }
+
+        Path artifactDir() {
+            if (artifactDir != null) {
+                return artifactDir;
+            }
+            if (manifest != null && isLocalLocation(manifest)) {
+                Path manifestPath = localManifestPath(this, manifest);
+                Path parent = manifestPath.getParent();
+                if (parent != null) {
+                    return parent;
+                }
+            }
+            return Path.of("").toAbsolutePath().normalize();
         }
 
         private static String requireValue(String[] args, int index, String option) {
