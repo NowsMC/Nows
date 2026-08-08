@@ -2,18 +2,17 @@ package space.nows.mcnows.installer;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.OutputStream;
+import java.net.HttpURLConnection;
 import java.net.URI;
-import java.net.http.HttpClient;
-import java.net.http.HttpRequest;
-import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import java.security.MessageDigest;
 import java.time.Instant;
 import java.util.ArrayList;
-import java.util.HexFormat;
 import java.util.List;
 import java.util.Properties;
 
@@ -25,19 +24,24 @@ import java.util.Properties;
  * of nows-core.</p>
  */
 public final class NowsInstaller {
-    private static final HttpClient HTTP = HttpClient.newBuilder()
-            .followRedirects(HttpClient.Redirect.NORMAL)
-            .build();
-
     private NowsInstaller() {}
 
     public static void main(String[] args) throws Exception {
         Options options = Options.parse(args);
+        install(options, new InstallerListener() {
+            @Override
+            public void log(String message) {
+                System.out.println(message);
+            }
+        });
+    }
+
+    static void install(Options options, InstallerListener listener) throws Exception {
         String manifestLocation = options.manifest != null
                 ? options.manifest
                 : "https://nows.space/releases/nows/" + options.nowsVersion + "/install.properties";
 
-        System.out.println("[NowsInstaller] manifest: " + manifestLocation);
+        listener.log("[NowsInstaller] manifest: " + manifestLocation);
         Properties manifest = loadProperties(options, manifestLocation);
         verifyManifest(manifest, options);
 
@@ -46,11 +50,11 @@ public final class NowsInstaller {
         for (int i = 0; i < count; i++) {
             InstalledLibrary library = installArtifact(options, manifest, i);
             launcherLibraries.add(library);
-            System.out.println("[NowsInstaller] installed " + library.coordinate());
+            listener.log("[NowsInstaller] installed " + library.coordinate());
         }
 
         installVersionJson(options, manifest, launcherLibraries);
-        System.out.println("[NowsInstaller] Installed nows-" + options.nowsVersion + "-" + options.minecraftVersion);
+        listener.log("[NowsInstaller] Installed nows-" + options.nowsVersion + "-" + options.minecraftVersion);
     }
 
     private static InstalledLibrary installArtifact(Options options, Properties manifest, int index) throws Exception {
@@ -74,7 +78,7 @@ public final class NowsInstaller {
         } else if (options.offline) {
             copyLocalArtifact(options, manifest, prefix, relativePath, destination);
         } else if (source.equals("internet")) {
-            if (sourceUrl.isBlank()) {
+            if (isBlank(sourceUrl)) {
                 throw new IllegalArgumentException("Missing URL for internet artifact: " + coordinate);
             }
             download(URI.create(sourceUrl), destination);
@@ -137,7 +141,7 @@ public final class NowsInstaller {
             json.append("\"path\":").append(quote(lib.relativePath())).append(',');
             json.append("\"sha1\":").append(quote(sha1(lib.file()))).append(',');
             json.append("\"size\":").append(Files.size(lib.file()));
-            if (!lib.sourceUrl().isBlank()) {
+            if (!isBlank(lib.sourceUrl())) {
                 json.append(",\"url\":").append(quote(lib.sourceUrl()));
             }
             json.append("}}}");
@@ -158,7 +162,7 @@ public final class NowsInstaller {
 
         Path versionDir = options.minecraftDir.resolve("versions").resolve(profile);
         Files.createDirectories(versionDir);
-        Files.writeString(versionDir.resolve(profile + ".json"), json.toString(), StandardCharsets.UTF_8);
+        writeString(versionDir.resolve(profile + ".json"), json.toString());
     }
 
     private static Properties loadProperties(Options options, String location) throws Exception {
@@ -174,15 +178,12 @@ public final class NowsInstaller {
     }
 
     private static Properties downloadProperties(URI uri) throws Exception {
-        HttpResponse<InputStream> response = HTTP.send(
-                HttpRequest.newBuilder(uri).GET().build(),
-                HttpResponse.BodyHandlers.ofInputStream());
-        if (response.statusCode() / 100 != 2) {
-            throw new IOException("HTTP " + response.statusCode() + " for " + uri);
-        }
+        HttpURLConnection connection = openConnection(uri);
         Properties properties = new Properties();
-        try (InputStream input = response.body()) {
+        try (InputStream input = connection.getInputStream()) {
             properties.load(input);
+        } finally {
+            connection.disconnect();
         }
         return properties;
     }
@@ -197,7 +198,7 @@ public final class NowsInstaller {
 
     private static Path localManifestPath(Options options, String location) {
         if (!hasUriScheme(location)) {
-            return Path.of(location).toAbsolutePath().normalize();
+            return Paths.get(location).toAbsolutePath().normalize();
         }
         URI uri = URI.create(location);
         if (!uri.getScheme().equals("file")) {
@@ -206,7 +207,7 @@ public final class NowsInstaller {
             }
             throw new IllegalArgumentException("Not a local manifest location: " + location);
         }
-        return Path.of(uri).toAbsolutePath().normalize();
+        return Paths.get(uri).toAbsolutePath().normalize();
     }
 
     private static boolean hasUriScheme(String location) {
@@ -223,8 +224,8 @@ public final class NowsInstaller {
     }
 
     private static Path localArtifactPath(Options options, String manifestFile, String relativePath) {
-        if (!manifestFile.isBlank()) {
-            Path path = Path.of(manifestFile);
+        if (!isBlank(manifestFile)) {
+            Path path = Paths.get(manifestFile);
             if (path.isAbsolute()) {
                 return path.normalize();
             }
@@ -236,14 +237,30 @@ public final class NowsInstaller {
     private static void download(URI uri, Path destination) throws Exception {
         Path temp = destination.resolveSibling(destination.getFileName() + ".part");
         Files.deleteIfExists(temp);
-        HttpResponse<Path> response = HTTP.send(
-                HttpRequest.newBuilder(uri).GET().build(),
-                HttpResponse.BodyHandlers.ofFile(temp));
-        if (response.statusCode() / 100 != 2) {
+        HttpURLConnection connection = openConnection(uri);
+        try (InputStream input = connection.getInputStream()) {
+            Files.copy(input, temp, StandardCopyOption.REPLACE_EXISTING);
+        } catch (IOException e) {
             Files.deleteIfExists(temp);
-            throw new IOException("HTTP " + response.statusCode() + " for " + uri);
+            throw e;
+        } finally {
+            connection.disconnect();
         }
         Files.move(temp, destination, StandardCopyOption.REPLACE_EXISTING);
+    }
+
+    private static HttpURLConnection openConnection(URI uri) throws IOException {
+        HttpURLConnection connection = (HttpURLConnection) uri.toURL().openConnection();
+        connection.setInstanceFollowRedirects(true);
+        connection.setConnectTimeout(30_000);
+        connection.setReadTimeout(30_000);
+        connection.setRequestMethod("GET");
+        int status = connection.getResponseCode();
+        if (status / 100 != 2) {
+            connection.disconnect();
+            throw new IOException("HTTP " + status + " for " + uri);
+        }
+        return connection;
     }
 
     private static void copyEmbedded(String resource, Path destination) throws IOException {
@@ -269,7 +286,7 @@ public final class NowsInstaller {
 
     private static String required(Properties properties, String key) {
         String value = properties.getProperty(key);
-        if (value == null || value.isBlank()) {
+        if (value == null || isBlank(value)) {
             throw new IllegalArgumentException("Missing install manifest property: " + key);
         }
         return value.trim();
@@ -285,10 +302,31 @@ public final class NowsInstaller {
                     digest.update(buffer, 0, read);
                 }
             }
-            return HexFormat.of().formatHex(digest.digest());
+            return toHex(digest.digest());
         } catch (java.security.NoSuchAlgorithmException e) {
             throw new AssertionError(e);
         }
+    }
+
+    private static String toHex(byte[] bytes) {
+        char[] out = new char[bytes.length * 2];
+        char[] hex = "0123456789abcdef".toCharArray();
+        for (int i = 0; i < bytes.length; i++) {
+            int value = bytes[i] & 0xff;
+            out[i * 2] = hex[value >>> 4];
+            out[i * 2 + 1] = hex[value & 0x0f];
+        }
+        return new String(out);
+    }
+
+    private static void writeString(Path path, String value) throws IOException {
+        try (OutputStream output = Files.newOutputStream(path)) {
+            output.write(value.getBytes(StandardCharsets.UTF_8));
+        }
+    }
+
+    private static boolean isBlank(String value) {
+        return value == null || value.trim().isEmpty();
     }
 
     private static String sha256(Path path) throws IOException { return digest(path, "SHA-256"); }
@@ -307,9 +345,30 @@ public final class NowsInstaller {
                 .replace("\t", "\\t");
     }
 
-    private record InstalledLibrary(String coordinate, String relativePath, String sourceUrl, Path file) {}
+    interface InstallerListener {
+        void log(String message);
+    }
 
-    private static final class Options {
+    private static final class InstalledLibrary {
+        private final String coordinate;
+        private final String relativePath;
+        private final String sourceUrl;
+        private final Path file;
+
+        InstalledLibrary(String coordinate, String relativePath, String sourceUrl, Path file) {
+            this.coordinate = coordinate;
+            this.relativePath = relativePath;
+            this.sourceUrl = sourceUrl;
+            this.file = file;
+        }
+
+        String coordinate() { return coordinate; }
+        String relativePath() { return relativePath; }
+        String sourceUrl() { return sourceUrl; }
+        Path file() { return file; }
+    }
+
+    static final class Options {
         final String nowsVersion;
         final String minecraftVersion;
         final Path minecraftDir;
@@ -339,20 +398,27 @@ public final class NowsInstaller {
             String manifest = null;
             boolean offline = false;
             Path artifactDir = null;
-            Path minecraftDir = Path.of(System.getProperty("user.home"), ".minecraft")
+            Path minecraftDir = Paths.get(System.getProperty("user.home"), ".minecraft")
                     .toAbsolutePath().normalize();
 
             for (int i = 0; i < args.length; i++) {
-                switch (args[i]) {
-                    case "--nows" -> nows = requireValue(args, ++i, "--nows");
-                    case "--minecraft" -> minecraft = requireValue(args, ++i, "--minecraft");
-                    case "--minecraftDir" -> minecraftDir = Path.of(requireValue(args, ++i, "--minecraftDir"))
+                String arg = args[i];
+                if ("--nows".equals(arg)) {
+                    nows = requireValue(args, ++i, "--nows");
+                } else if ("--minecraft".equals(arg)) {
+                    minecraft = requireValue(args, ++i, "--minecraft");
+                } else if ("--minecraftDir".equals(arg)) {
+                    minecraftDir = Paths.get(requireValue(args, ++i, "--minecraftDir"))
                             .toAbsolutePath().normalize();
-                    case "--manifest" -> manifest = requireValue(args, ++i, "--manifest");
-                    case "--offline" -> offline = true;
-                    case "--artifactDir" -> artifactDir = Path.of(requireValue(args, ++i, "--artifactDir"))
+                } else if ("--manifest".equals(arg)) {
+                    manifest = requireValue(args, ++i, "--manifest");
+                } else if ("--offline".equals(arg)) {
+                    offline = true;
+                } else if ("--artifactDir".equals(arg)) {
+                    artifactDir = Paths.get(requireValue(args, ++i, "--artifactDir"))
                             .toAbsolutePath().normalize();
-                    default -> throw new IllegalArgumentException("Unknown option: " + args[i]);
+                } else {
+                    throw new IllegalArgumentException("Unknown option: " + arg);
                 }
             }
             if (offline && manifest == null) {
@@ -372,7 +438,7 @@ public final class NowsInstaller {
                     return parent;
                 }
             }
-            return Path.of("").toAbsolutePath().normalize();
+            return Paths.get("").toAbsolutePath().normalize();
         }
 
         private static String requireValue(String[] args, int index, String option) {

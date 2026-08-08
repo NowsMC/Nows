@@ -96,7 +96,7 @@ and installs all listed Nows modules/libraries into the normal `.minecraft/libra
 
 ### GitHub Package rule
 
-`dev.kdl:kdl4j:1.0.1` requires GitHub Packages access at **build/release time**. The installer build resolves the original JAR once and stores it inside `NowsInstaller.jar` under:
+`dev.kdl:kdl4j:1.0.1` requires GitHub Packages access at **build/release time**. The installer build resolves the original JAR once and stores it inside the installer JARs under:
 
 ```text
 META-INF/nows/embedded-libs/kdl4j-1.0.1.jar
@@ -155,10 +155,17 @@ Optional single-JAR experiment:
 ./gradlew allJar
 ```
 
-Build the installer (requires GitHub Packages credentials for the embedded KDL4J payload):
+Build the CLI and Swing UI installers (requires GitHub Packages credentials for the embedded KDL4J payload):
 
 ```bash
-./gradlew :repos:NowsInstaller:jar
+./gradlew :repos:NowsInstaller:assemble
+```
+
+Outputs:
+
+```text
+repos/NowsInstaller/build/libs/NowsInstaller-cli-<version>.jar
+repos/NowsInstaller/build/libs/NowsInstaller-ui-<version>.jar
 ```
 
 Build/test the Gradle plugin:

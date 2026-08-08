@@ -58,6 +58,7 @@ tasks.register("dist") {
         ":integrations:mixin:jar",
         ":runtime:jar",
         ":repos:NowsInstaller:jar",
+        ":repos:NowsInstaller:guiJar",
         ":repos:NowsGradlePlugin:jar",
         ":example-mod:jar"
     )
