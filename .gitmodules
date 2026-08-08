@@ -1,0 +1,3 @@
+[submodule "repos/NowsWeb"]
+	path = repos/NowsWeb
+	url = ../NowsWeb.git
