@@ -130,6 +130,16 @@ val offlineJar by tasks.registering(Jar::class) {
     manifest { attributes("Main-Class" to "space.nows.mcnows.installer.NowsInstallerOffline") }
 }
 
+val devOfflineJar by tasks.registering(Jar::class) {
+    group = "build"
+    description = "Builds a development offline installer from this workspace's project JARs."
+    dependsOn(tasks.classes, prepareOfflinePayload)
+    archiveBaseName.set("NowsInstallerDevOffline")
+    from(sourceSets.main.get().output)
+    from(offlinePayloadDir)
+    manifest { attributes("Main-Class" to "space.nows.mcnows.installer.NowsInstallerDevOffline") }
+}
+
 tasks.assemble {
-    dependsOn(guiJar, offlineJar)
+    dependsOn(guiJar, offlineJar, devOfflineJar)
 }

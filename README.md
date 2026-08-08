@@ -171,6 +171,7 @@ Outputs:
 repos/NowsInstaller/build/libs/NowsInstaller-cli-<version>.jar
 repos/NowsInstaller/build/libs/NowsInstaller-ui-<version>.jar
 repos/NowsInstaller/build/libs/NowsInstaller-offline-<version>.jar
+repos/NowsInstaller/build/libs/NowsInstallerDevOffline-<version>.jar
 ```
 
 Build/test the Gradle plugin:

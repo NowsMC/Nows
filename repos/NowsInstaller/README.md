@@ -18,6 +18,7 @@ This builds separate installer JARs:
 build/libs/NowsInstaller-cli-<version>.jar
 build/libs/NowsInstaller-ui-<version>.jar
 build/libs/NowsInstaller-offline-<version>.jar
+build/libs/NowsInstallerDevOffline-<version>.jar
 ```
 
 Run the CLI installer with:
@@ -36,6 +37,12 @@ Run the fully offline installer with:
 
 ```bash
 java -jar build/libs/NowsInstaller-offline-<version>.jar
+```
+
+Run the development offline installer with:
+
+```bash
+java -jar build/libs/NowsInstallerDevOffline-<version>.jar
 ```
 
 ## GitHub Packages
@@ -63,6 +70,8 @@ Use `install.properties.template` as the release template. Release automation sh
 ## Fully offline installer
 
 `NowsInstaller-offline-<version>.jar` embeds the release manifest plus every non-Minecraft artifact listed by the installer manifest. At install time it copies those embedded payloads into `.minecraft/libraries` and writes the same launcher profile as the normal installer.
+
+`NowsInstallerDevOffline-<version>.jar` uses the same embedded install path, but its Nows module payloads are taken from this workspace's Gradle project JAR tasks (`:core:jar`, `:runtime:jar`, integrations, and Minecraft support). It is meant for local testing after building the project; running the installer does not contact `nows.space` or Maven.
 
 ## Offline local testing
 
