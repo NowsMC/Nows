@@ -9,6 +9,10 @@ Nows is an experimental Minecraft Java mod loader built around a small stable ke
 - No Java agent, `premain`, or `java.lang.instrument`
 - Development names: **official Mojang mappings**
 
+## License
+
+Nows is licensed under the Apache License, Version 2.0. Earlier private development commits may have carried MIT license text; those commits were kept in a private development repository and were not public releases of Nows. The project license for Nows source, documentation and release artifacts is Apache License 2.0 from this point forward.
+
 ## Architecture rule
 
 `nows-core` is deliberately boring. It contains only contracts that should survive loader changes: `ModInitializer`, `ClassTransformer`, `NowsContext`, typed services, format-neutral mod descriptors/discovery and `NowsClassLoader`.
