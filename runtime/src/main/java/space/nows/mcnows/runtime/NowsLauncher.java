@@ -14,6 +14,7 @@ import space.nows.mcnows.integration.logging.NowsLog;
 import space.nows.mcnows.minecraft.GameJarLocator;
 import space.nows.mcnows.minecraft.LaunchArguments;
 import space.nows.mcnows.minecraft.MinecraftCompatibility;
+import space.nows.mcnows.minecraft.MinecraftVersionPolicy;
 import space.nows.mcnows.mixin.NowsMixinBootstrap;
 
 import java.lang.reflect.InvocationTargetException;
@@ -39,6 +40,12 @@ public final class NowsLauncher {
     private static void launch(String[] args) throws Exception {
         LaunchArguments launch = phase("Parse launch arguments", () -> LaunchArguments.parse(args));
         LOG.info("Launch target: Minecraft {}, game directory {}", launch.minecraftVersion(), launch.gameDirectory());
+
+        MinecraftVersionPolicy policy = phase("Load Minecraft version policy", () ->
+                MinecraftVersionPolicy.load(launch.minecraftVersion()));
+        LOG.info("Minecraft policy: {} main class {} ({})",
+                policy.minecraftVersion(), policy.clientMainClass(),
+                policy.bundled() ? policy.resourcePath() : "default policy");
 
         Path gameJar = phase("Locate Minecraft client JAR", GameJarLocator::locateClientJar);
         LOG.info("Minecraft client JAR: {}", gameJar);
@@ -71,7 +78,8 @@ public final class NowsLauncher {
 
                 LOG.info("Starting Minecraft {} with {} Nows mod(s)", launch.minecraftVersion(), mods.size());
                 phase("Invoke Minecraft main", () ->
-                        invokeMinecraftMain(gameLoader, launch.minecraftArguments().toArray(String[]::new)));
+                        invokeMinecraftMain(gameLoader, policy.clientMainClass(),
+                                launch.minecraftArguments().toArray(String[]::new)));
             } finally {
                 NowsMixinBootstrap.detach(gameLoader);
                 Thread.currentThread().setContextClassLoader(NowsLauncher.class.getClassLoader());
@@ -120,9 +128,9 @@ public final class NowsLauncher {
         }
     }
 
-    private static void invokeMinecraftMain(ClassLoader loader, String[] args) throws Exception {
+    private static void invokeMinecraftMain(ClassLoader loader, String mainClassName, String[] args) throws Exception {
         try {
-            Class<?> main = Class.forName("net.minecraft.client.main.Main", true, loader);
+            Class<?> main = Class.forName(mainClassName, true, loader);
             main.getMethod("main", String[].class).invoke(null, (Object) args);
         } catch (InvocationTargetException e) {
             Throwable cause = e.getCause();

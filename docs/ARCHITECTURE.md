@@ -10,6 +10,7 @@ The project uses a stable kernel / replaceable policy split: `core/` owns loader
 | --- | --- | --- |
 | `core/` | stable loader kernel, lifecycle contracts, services, class loading, transformation contracts and discovery abstractions | low |
 | `minecraft/` | Minecraft-specific runtime behavior, launch/bootstrap details and version-sensitive compatibility | medium/high |
+| `mc/<minecraft version>/` | small version-specific Minecraft launch/API policy packaged into the `minecraft` module | high |
 | `integrations/kdl/` | `nows.mod.kdl` parsing through KDL4J | medium |
 | `integrations/geb/` | GEB event integration | medium |
 | `integrations/logging/` | Reactor logging bridge and async logging support | medium |
@@ -163,6 +164,10 @@ Only the integration that understands `future-feature` needs to change.
 Do not optimize the core around one Minecraft version.
 
 Put version-sensitive behavior behind Minecraft/tooling modules so changes in Minecraft, Gradle, mappings, Mixin or metadata formats do not force changes to `core`.
+
+Per-version facts that are data rather than reusable Java behavior belong under `mc/<minecraft version>/`. The `minecraft` module packages those files and exposes them through `MinecraftVersionPolicy`. Runtime uses this policy for facts such as the client main class while keeping Minecraft classes in the game classloader.
+
+Nows follows the modern inherited Launcher-profile style used by Fabric and by Nows itself: inherit the vanilla version profile, add Nows libraries and use a Nows bootstrap main class. Forge also uses an inherited profile in current local examples, but with a larger Forge bootstrap library set. Nows should not make `net.minecraft.` parent-first; doing so risks resolving game classes from the wrong loader/classpath and can interfere with other launcher profiles.
 
 ## Code quality
 

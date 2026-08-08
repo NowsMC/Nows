@@ -169,7 +169,6 @@ public final class NowsInstaller {
         json.append("{\n");
         json.append("  \"id\": ").append(quote(profile)).append(",\n");
         json.append("  \"inheritsFrom\": ").append(quote(options.minecraftVersion)).append(",\n");
-        json.append("  \"jar\": ").append(quote(options.minecraftVersion)).append(",\n");
         json.append("  \"mainClass\": ")
                 .append(quote(manifest.getProperty("mainClass", "space.nows.mcnows.runtime.NowsLauncher")))
                 .append(",\n");

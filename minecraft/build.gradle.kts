@@ -10,6 +10,13 @@ dependencies {
 
 tasks.jar { archiveBaseName.set("nows-minecraft") }
 
+tasks.processResources {
+    from(rootProject.layout.projectDirectory.dir("mc")) {
+        into("META-INF/nows/mc")
+        include("*/nows-minecraft.properties")
+    }
+}
+
 val prepareMinecraft by tasks.registering(JavaExec::class) {
     group = "nows"
     description = "Prepares the Mojang-named Minecraft JAR used by this monorepo's example mod."
