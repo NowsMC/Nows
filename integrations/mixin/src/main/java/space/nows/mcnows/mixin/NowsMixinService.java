@@ -19,7 +19,9 @@ import org.spongepowered.asm.service.IMixinService;
 import org.spongepowered.asm.service.ITransformer;
 import org.spongepowered.asm.service.ITransformerProvider;
 import org.spongepowered.asm.util.ReEntranceLock;
+import reactor.util.Logger;
 import space.nows.mcnows.core.classloading.NowsClassLoader;
+import space.nows.mcnows.integration.logging.NowsLog;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -27,17 +29,48 @@ import java.net.URI;
 import java.net.URL;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 
 /** Connects Sponge/Fabric Mixin directly to NowsClassLoader; no javaagent is involved. */
 public final class NowsMixinService implements IMixinService, IClassProvider, IClassBytecodeProvider,
         ITransformerProvider, IClassTracker {
 
+    private static final Logger LOG = NowsLog.get(NowsMixinService.class);
+    private static final IMixinAuditTrail AUDIT_TRAIL = new NowsMixinAuditTrail();
+    private static final Set<String> INVALID_CLASSES = ConcurrentHashMap.newKeySet();
+    private static final Set<String> TRANSFORMER_EXCLUSIONS = ConcurrentHashMap.newKeySet();
     private static volatile NowsClassLoader loader;
     private static volatile IMixinTransformer transformer;
     private final ReEntranceLock lock = new ReEntranceLock(1);
 
     public static void attach(NowsClassLoader targetLoader) {
+        if (targetLoader == null) {
+            throw new IllegalArgumentException("Nows Mixin service cannot attach a null game class loader");
+        }
+        NowsClassLoader previous = loader;
+        if (previous != null && previous != targetLoader) {
+            LOG.warn("Replacing attached Nows Mixin class loader; previous loader should already be detached");
+        }
         loader = targetLoader;
+        INVALID_CLASSES.clear();
+        TRANSFORMER_EXCLUSIONS.clear();
+        LOG.debug("Nows Mixin service attached to {}", targetLoader);
+    }
+
+    public static void detach(NowsClassLoader targetLoader) {
+        NowsClassLoader current = loader;
+        if (current == null) {
+            return;
+        }
+        if (current != targetLoader) {
+            LOG.warn("Ignoring request to detach non-current Nows Mixin class loader {}", targetLoader);
+            return;
+        }
+        loader = null;
+        INVALID_CLASSES.clear();
+        TRANSFORMER_EXCLUSIONS.clear();
+        LOG.debug("Nows Mixin service detached from {}", targetLoader);
     }
 
     public static IMixinTransformer transformer() {
@@ -57,6 +90,9 @@ public final class NowsMixinService implements IMixinService, IClassProvider, IC
     }
 
     private byte[] getClassBytes(String name, boolean runTransformers) throws ClassNotFoundException, IOException {
+        if (runTransformers) {
+            LOG.trace("Mixin requested transformed bytecode for {}; Nows provides raw bytes before its transformer chain", name);
+        }
         byte[] bytes = loader().getRawClassBytes(name);
         if (bytes == null) throw new ClassNotFoundException(name);
         return bytes;
@@ -123,6 +159,7 @@ public final class NowsMixinService implements IMixinService, IClassProvider, IC
     public void offer(IMixinInternal internal) {
         if (internal instanceof IMixinTransformerFactory factory) {
             transformer = factory.createTransformer();
+            LOG.debug("Mixin transformer factory offered {}", internal.getClass().getName());
         }
     }
 
@@ -165,7 +202,7 @@ public final class NowsMixinService implements IMixinService, IClassProvider, IC
 
     @Override
     public IMixinAuditTrail getAuditTrail() {
-        return null;
+        return AUDIT_TRAIL;
     }
 
     @Override
@@ -202,6 +239,11 @@ public final class NowsMixinService implements IMixinService, IClassProvider, IC
 
     @Override
     public void registerInvalidClass(String className) {
+        if (className == null || className.isBlank()) {
+            return;
+        }
+        INVALID_CLASSES.add(className);
+        LOG.debug("Mixin registered invalid class {}", className);
     }
 
     @Override
@@ -211,6 +253,17 @@ public final class NowsMixinService implements IMixinService, IClassProvider, IC
 
     @Override
     public String getClassRestrictions(String className) {
+        if (className == null || className.isBlank()) {
+            return "";
+        }
+        if (INVALID_CLASSES.contains(className)) {
+            return "INVALID";
+        }
+        for (String exclusion : TRANSFORMER_EXCLUSIONS) {
+            if (className.startsWith(exclusion)) {
+                return "PACKAGE_CLASSLOADER_EXCLUSION";
+            }
+        }
         return "";
     }
 
@@ -226,6 +279,11 @@ public final class NowsMixinService implements IMixinService, IClassProvider, IC
 
     @Override
     public void addTransformerExclusion(String name) {
+        if (name == null || name.isBlank()) {
+            return;
+        }
+        TRANSFORMER_EXCLUSIONS.add(name);
+        LOG.debug("Mixin transformer exclusion {}", name);
     }
 
     @Override
@@ -246,5 +304,22 @@ public final class NowsMixinService implements IMixinService, IClassProvider, IC
     @Override
     public ILogger getLogger(String name) {
         return NowsMixinLogger.get(name);
+    }
+
+    private static final class NowsMixinAuditTrail implements IMixinAuditTrail {
+        @Override
+        public void onApply(String targetClassName, String mixinClassName) {
+            LOG.debug("Mixin applied: {} -> {}", mixinClassName, targetClassName);
+        }
+
+        @Override
+        public void onPostProcess(String className) {
+            LOG.trace("Mixin post-processed {}", className);
+        }
+
+        @Override
+        public void onGenerate(String generatorName, String className) {
+            LOG.debug("Mixin generated: {} by {}", className, generatorName);
+        }
     }
 }

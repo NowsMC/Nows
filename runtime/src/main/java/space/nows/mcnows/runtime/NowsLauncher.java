@@ -55,22 +55,27 @@ public final class NowsLauncher {
         for (ModContainer mod : mods) urls.add(mod.path().toUri().toURL());
 
         try (NowsClassLoader gameLoader = new NowsClassLoader(urls.toArray(URL[]::new), NowsLauncher.class.getClassLoader())) {
-            phase("Configure shared packages", () -> configureSharedPackages(gameLoader));
-            Thread.currentThread().setContextClassLoader(gameLoader);
+            try {
+                phase("Configure shared packages", () -> configureSharedPackages(gameLoader));
+                Thread.currentThread().setContextClassLoader(gameLoader);
 
-            phase("Install Mixin integration", () -> NowsMixinBootstrap.install(gameLoader, mods));
-            phase("Load class transformers", () -> loadTransformers(gameLoader, mods));
+                phase("Install Mixin integration", () -> NowsMixinBootstrap.install(gameLoader, mods));
+                phase("Load class transformers", () -> loadTransformers(gameLoader, mods));
 
-            NowsServices services = new NowsServices();
-            phase("Install GEB integration", () -> GebIntegration.install(services, gameLoader));
+                NowsServices services = new NowsServices();
+                phase("Install GEB integration", () -> GebIntegration.install(services, gameLoader));
 
-            NowsContext context = new NowsContext(
-                    launch.minecraftVersion(), launch.gameDirectory(), mods, gameLoader, services);
-            phase("Run mod entrypoints", () -> runEntrypoints(gameLoader, mods, context));
+                NowsContext context = new NowsContext(
+                        launch.minecraftVersion(), launch.gameDirectory(), mods, gameLoader, services);
+                phase("Run mod entrypoints", () -> runEntrypoints(gameLoader, mods, context));
 
-            LOG.info("Starting Minecraft {} with {} Nows mod(s)", launch.minecraftVersion(), mods.size());
-            phase("Invoke Minecraft main", () ->
-                    invokeMinecraftMain(gameLoader, launch.minecraftArguments().toArray(String[]::new)));
+                LOG.info("Starting Minecraft {} with {} Nows mod(s)", launch.minecraftVersion(), mods.size());
+                phase("Invoke Minecraft main", () ->
+                        invokeMinecraftMain(gameLoader, launch.minecraftArguments().toArray(String[]::new)));
+            } finally {
+                NowsMixinBootstrap.detach(gameLoader);
+                Thread.currentThread().setContextClassLoader(NowsLauncher.class.getClassLoader());
+            }
         }
     }
 
