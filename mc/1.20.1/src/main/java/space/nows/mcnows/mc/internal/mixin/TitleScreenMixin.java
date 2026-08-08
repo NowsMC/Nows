@@ -1,0 +1,20 @@
+package space.nows.mcnows.mc.internal.mixin;
+
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.screens.TitleScreen;
+import org.spongepowered.asm.mixin.Mixin;
+import org.spongepowered.asm.mixin.injection.At;
+import org.spongepowered.asm.mixin.injection.Inject;
+import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
+import space.nows.mcnows.mc.internal.NowsMinecraftClientHooks;
+
+@Mixin(value = TitleScreen.class, remap = false)
+public abstract class TitleScreenMixin {
+    @Inject(method = "render(Lnet/minecraft/client/gui/GuiGraphics;IIF)V", at = @At("TAIL"), remap = false)
+    private void nows$renderTitleBadge(GuiGraphics graphics, int mouseX, int mouseY, float delta, CallbackInfo ci) {
+        Minecraft minecraft = Minecraft.getInstance();
+        graphics.drawString(minecraft.font, NowsMinecraftClientHooks.brandLine(), 2, 2, 0xFFFFFFFF, true);
+        graphics.drawString(minecraft.font, NowsMinecraftClientHooks.modLine(), 2, 12, 0xFFB8B8B8, true);
+    }
+}

@@ -97,7 +97,6 @@ val prepareOfflineManifest by tasks.registering {
         manifest["releaseBaseUrl"] = releaseBaseUrl
         manifest["artifact.18.coordinate"] = "space.nows.mcnows:nows-mc-$minecraft:$nows"
         manifest["artifact.18.path"] = "space/nows/mcnows/nows-mc-$minecraft/$nows/nows-mc-$minecraft-$nows.jar"
-
         val count = manifest.getProperty("artifact.count").toInt()
         for (index in 0 until count) {
             val prefix = "artifact.$index."

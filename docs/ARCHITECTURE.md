@@ -111,7 +111,11 @@ The optional `:runtime:allJar` task is the assembly point for a later monolithic
 
 Launcher version profiles should inherit from the target vanilla Minecraft profile. When the vanilla client JAR already exists locally, the installer may copy it to the Nows version directory as a profile-local version JAR. That copy is an alias of Mojang's vanilla client JAR, not a bundled Nows library and not a redistributed loader dependency. If the vanilla JAR is missing, the version JSON may use the inherited `jar` field so the launcher can resolve the parent version.
 
-`repos/NowsApiMod/` is not installed by default. It builds a normal optional mod JAR that users can place in `mods/` when they want the extra APIs or when developers need an end-to-end fixture for Gradle, KDL, Mixin and `mc/<version>` adapters.
+Nows launcher profiles should use a profile-local game directory under `.minecraft/nows/profiles/<profile-id>/`. This gives Nows its own `mods/` directory and avoids forcing Nows-only user mods into global `.minecraft/mods`, where other loaders may try to inspect them.
+
+The title-screen Nows badge and mod-count display are required loader proof-of-life, so they belong to `mc/<minecraft version>` rather than `repos/NowsApiMod/`. Each supported `mc/<version>` adapter can declare built-in Mixin configs through `runtime.builtinMixinConfigs` in `nows-minecraft.properties`; runtime registers those configs before mod-declared configs and passes the Nows version, Minecraft version and discovered mod count into the version adapter's client hook.
+
+`repos/NowsApiMod/` builds a normal optional companion mod JAR. It is published as an optional artifact, but the 0.3.0 installer does not install it by default and the loader runtime must not require it.
 
 Release files are staged locally under `.publishing/` by `publishLayout`. That directory is intentionally ignored by Git because it is an upload staging area for `files.nows.space` backed by CDN/object storage.
 
@@ -211,6 +215,8 @@ Per-version Minecraft API code belongs under `mc/<minecraft version>/`. These mo
 
 Per-version facts that are data rather than reusable Java behavior also live under `mc/<minecraft version>/nows-minecraft.properties`. The `minecraft` module packages those files and exposes them through `MinecraftVersionPolicy`. Runtime uses this policy for facts such as the client main class while keeping Minecraft classes in the game classloader.
 
+Per-version client UI hooks also belong under `mc/<minecraft version>/`. For example, Minecraft 1.20.1 renders title screens through `GuiGraphics`, while Minecraft 26.2 extracts render state through `GuiGraphicsExtractor`; those differences should be handled by the matching version adapter, not by core or an optional companion mod.
+
 Nows follows the inherited Launcher-profile style: inherit the vanilla version profile, add Nows libraries and use a Nows bootstrap main class. Some other loaders may copy the vanilla client JAR into their own version directory; if Nows does that, it is only a launcher-version alias of the vanilla JAR. Nows should not make `net.minecraft.` parent-first; doing so risks resolving game classes from the wrong loader/classpath and can interfere with other launcher profiles.
 
 ## Companion API mod
@@ -221,6 +227,7 @@ Rules for `NowsApiMod`:
 
 - It may depend on public Nows APIs and `mc/<minecraft version>` adapters.
 - It must be optional; the loader must run without it.
+- It may keep `src/mc_<minecraft_version>/` source sets for optional features that need direct Minecraft APIs, but required loader-visible behavior belongs in `mc/<minecraft version>/`.
 - It is a good place to test new KDL declaration names before promoting them to a stable integration.
 - It should exercise the Nows Gradle plugin rather than bypassing it with special monorepo-only wiring.
 - It should stay in its own repository so release cadence and API churn do not force loader releases.

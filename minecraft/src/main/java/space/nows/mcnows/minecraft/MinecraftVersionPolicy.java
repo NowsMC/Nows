@@ -2,6 +2,7 @@ package space.nows.mcnows.minecraft;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.List;
 import java.util.Objects;
 import java.util.Properties;
 
@@ -9,6 +10,7 @@ import java.util.Properties;
 public record MinecraftVersionPolicy(
         String minecraftVersion,
         String clientMainClass,
+        List<String> builtInMixinConfigs,
         String resourcePath,
         boolean bundled) {
     private static final String DEFAULT_CLIENT_MAIN_CLASS = "net.minecraft.client.main.Main";
@@ -21,7 +23,7 @@ public record MinecraftVersionPolicy(
         ClassLoader loader = MinecraftVersionPolicy.class.getClassLoader();
         try (InputStream input = loader.getResourceAsStream(resourcePath)) {
             if (input == null) {
-                return new MinecraftVersionPolicy(normalized, DEFAULT_CLIENT_MAIN_CLASS, resourcePath, false);
+                return new MinecraftVersionPolicy(normalized, DEFAULT_CLIENT_MAIN_CLASS, List.of(), resourcePath, false);
             }
             properties.load(input);
         }
@@ -35,6 +37,7 @@ public record MinecraftVersionPolicy(
         return new MinecraftVersionPolicy(
                 normalized,
                 read(properties, "client.mainClass", DEFAULT_CLIENT_MAIN_CLASS),
+                readList(properties, "runtime.builtinMixinConfigs"),
                 resourcePath,
                 true);
     }
@@ -56,5 +59,16 @@ public record MinecraftVersionPolicy(
             return fallback;
         }
         return value.trim();
+    }
+
+    private static List<String> readList(Properties properties, String key) {
+        String value = properties.getProperty(key);
+        if (value == null || value.isBlank()) {
+            return List.of();
+        }
+        return List.of(value.split(",")).stream()
+                .map(String::trim)
+                .filter(item -> !item.isEmpty())
+                .toList();
     }
 }

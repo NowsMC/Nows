@@ -1,0 +1,24 @@
+package space.nows.mcnows.mc.internal;
+
+public final class NowsMinecraftClientHooks {
+    private static volatile String nowsVersion = "0.3.0";
+    private static volatile String minecraftVersion = "26.2";
+    private static volatile int modCount;
+
+    private NowsMinecraftClientHooks() {
+    }
+
+    public static void configure(String nows, String minecraft, int mods) {
+        nowsVersion = nows;
+        minecraftVersion = minecraft;
+        modCount = mods;
+    }
+
+    public static String brandLine() {
+        return "Nows " + nowsVersion + " | Minecraft " + minecraftVersion;
+    }
+
+    public static String modLine() {
+        return modCount + " Nows mod" + (modCount == 1 ? "" : "s") + " loaded";
+    }
+}

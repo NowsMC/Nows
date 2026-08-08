@@ -22,11 +22,24 @@ public final class NowsMixinBootstrap {
     }
 
     public static void install(NowsClassLoader loader, List<ModContainer> mods) {
+        install(loader, List.of(), mods);
+    }
+
+    public static void install(NowsClassLoader loader, List<String> builtInConfigs, List<ModContainer> mods) {
         NowsMixinService.attach(loader);
         Thread.currentThread().setContextClassLoader(loader);
         MixinBootstrap.init();
 
         Set<String> configs = new LinkedHashSet<>();
+        for (String config : builtInConfigs) {
+            validateBuiltInMixinConfig(loader, config);
+            if (!configs.add(config)) {
+                LOG.warn("Duplicate built-in Mixin config declaration ignored after first registration: {}", config);
+                continue;
+            }
+            Mixins.addConfiguration(config);
+            LOG.info("Built-in Mixin config: {}", config);
+        }
         for (ModContainer mod : mods) {
             for (String config : mod.descriptor().declarations("mixin")) {
                 validateMixinConfig(loader, mod, config);
@@ -68,6 +81,19 @@ public final class NowsMixinBootstrap {
         } catch (IOException e) {
             throw new IllegalStateException("Could not read Mixin config " + config
                     + " declared by mod " + mod.descriptor().id() + " in " + mod.path(), e);
+        }
+    }
+
+    private static void validateBuiltInMixinConfig(NowsClassLoader loader, String config) {
+        if (config == null || config.isBlank()) {
+            throw new IllegalArgumentException("Built-in Mixin config declaration is blank");
+        }
+        try (InputStream input = loader.getResourceAsStream(config)) {
+            if (input == null) {
+                throw new IllegalStateException("Missing built-in Mixin config " + config);
+            }
+        } catch (IOException e) {
+            throw new IllegalStateException("Could not read built-in Mixin config " + config, e);
         }
     }
 }

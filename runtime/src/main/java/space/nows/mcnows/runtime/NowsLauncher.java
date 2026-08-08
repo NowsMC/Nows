@@ -18,6 +18,7 @@ import space.nows.mcnows.minecraft.MinecraftVersionPolicy;
 import space.nows.mcnows.mixin.NowsMixinBootstrap;
 
 import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.net.URL;
 import java.nio.file.Path;
 import java.util.ArrayList;
@@ -66,7 +67,10 @@ public final class NowsLauncher {
                 phase("Configure shared packages", () -> configureSharedPackages(gameLoader));
                 Thread.currentThread().setContextClassLoader(gameLoader);
 
-                phase("Install Mixin integration", () -> NowsMixinBootstrap.install(gameLoader, mods));
+                phase("Configure Minecraft client hooks", () ->
+                        configureMinecraftClientHooks(launch.minecraftVersion(), mods.size()));
+                phase("Install Mixin integration", () ->
+                        NowsMixinBootstrap.install(gameLoader, policy.builtInMixinConfigs(), mods));
                 phase("Load class transformers", () -> loadTransformers(gameLoader, mods));
 
                 NowsServices services = new NowsServices();
@@ -100,6 +104,27 @@ public final class NowsLauncher {
             loader.addParentFirstPrefix(prefix);
         }
         LOG.debug("Configured {} parent-first package prefix(es)", prefixes.size());
+    }
+
+    private static void configureMinecraftClientHooks(String minecraftVersion, int modCount) throws Exception {
+        String hookClassName = "space.nows.mcnows.mc.internal.NowsMinecraftClientHooks";
+        try {
+            Class<?> hookClass = Class.forName(hookClassName, true, NowsLauncher.class.getClassLoader());
+            Method configure = hookClass.getMethod("configure", String.class, String.class, int.class);
+            configure.invoke(null, nowsVersion(), minecraftVersion, modCount);
+            LOG.debug("Configured Minecraft client hooks from {}", hookClassName);
+        } catch (ClassNotFoundException ignored) {
+            LOG.debug("No Minecraft client hooks available for {}", minecraftVersion);
+        }
+    }
+
+    private static String nowsVersion() {
+        Package runtimePackage = NowsLauncher.class.getPackage();
+        String implementationVersion = runtimePackage == null ? null : runtimePackage.getImplementationVersion();
+        if (implementationVersion != null && !implementationVersion.isBlank()) {
+            return implementationVersion;
+        }
+        return System.getProperty("nows.version", "0.3.0");
     }
 
     private static void loadTransformers(NowsClassLoader loader, List<ModContainer> mods) throws Exception {

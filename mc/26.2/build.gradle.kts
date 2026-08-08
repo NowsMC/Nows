@@ -6,6 +6,7 @@ val minecraftDevJar = rootProject.layout.projectDirectory.file(".nows/minecraft/
 dependencies {
     compileOnly(project(":core"))
     compileOnly(files(minecraftDevJar))
+    compileOnly("org.spongepowered:mixin:${providers.gradleProperty("mixin_version").get()}")
 }
 
 tasks.compileJava {

@@ -53,10 +53,15 @@ public final class NowsInstaller {
             launcherLibraries.add(library);
             listener.log("[NowsInstaller] installed " + library.coordinate());
         }
+        installMods(options, manifest, listener);
 
         String profile = installVersionJson(options, manifest, launcherLibraries);
         installLauncherProfile(options, profile);
-        listener.log("[NowsInstaller] Installed nows-" + options.nowsVersion + "-" + options.minecraftVersion);
+        listener.log("[NowsInstaller] Installed " + profile);
+    }
+
+    private static String profileId(Options options) {
+        return "nows-" + options.nowsVersion + "-" + options.minecraftVersion;
     }
 
     private static InstalledLibrary installArtifact(Options options, Properties manifest, int index) throws Exception {
@@ -157,12 +162,90 @@ public final class NowsInstaller {
         Files.copy(source, destination, StandardCopyOption.REPLACE_EXISTING);
     }
 
+    private static void installMods(Options options, Properties manifest, InstallerListener listener) throws Exception {
+        int count = Integer.parseInt(manifest.getProperty("mod.count", "0"));
+        if (count <= 0) {
+            return;
+        }
+        Path modsDir = profileModsDirectory(options);
+        Files.createDirectories(modsDir);
+        for (int i = 0; i < count; i++) {
+            String fileName = installMod(options, manifest, i, modsDir);
+            listener.log("[NowsInstaller] installed companion mod " + fileName);
+        }
+    }
+
+    private static String installMod(Options options, Properties manifest, int index, Path modsDir) throws Exception {
+        String prefix = "mod." + index + ".";
+        String fileName = required(manifest, prefix + "file");
+        if (fileName.contains("/") || fileName.contains("\\")) {
+            throw new IllegalArgumentException("Companion mod file must be a file name only: " + fileName);
+        }
+        String source = manifest.getProperty(prefix + "source", "internet").trim();
+        String sourceUrl = manifest.getProperty(prefix + "url", "").trim();
+        String expectedSha256 = manifest.getProperty(prefix + "sha256", "").trim();
+
+        Path destination = modsDir.resolve(fileName);
+        if (Files.isRegularFile(destination) && !expectedSha256.isEmpty()
+                && sha256(destination).equalsIgnoreCase(expectedSha256)) {
+            return fileName;
+        }
+
+        if (source.equals("embedded")) {
+            copyEmbedded(required(manifest, prefix + "resource"), destination);
+        } else if (options.embeddedArtifacts) {
+            copyEmbedded("/META-INF/nows/offline-mods/" + fileName, destination);
+        } else if (options.offline) {
+            copyLocalMod(options, manifest, prefix, fileName, destination);
+        } else if (source.equals("internet")) {
+            if (isBlank(sourceUrl)) {
+                throw new IllegalArgumentException("Missing URL for companion mod: " + fileName);
+            }
+            download(URI.create(sourceUrl), destination);
+        } else if (source.equals("local")) {
+            copyLocalMod(options, manifest, prefix, fileName, destination);
+        } else {
+            throw new IllegalArgumentException("Unknown companion mod source '" + source + "' for " + fileName);
+        }
+
+        if (!expectedSha256.isEmpty()) {
+            String actual = sha256(destination);
+            if (!actual.equalsIgnoreCase(expectedSha256)) {
+                Files.deleteIfExists(destination);
+                throw new IOException("SHA-256 mismatch for companion mod " + fileName + ": expected "
+                        + expectedSha256 + ", got " + actual);
+            }
+        }
+        return fileName;
+    }
+
+    private static void copyLocalMod(
+            Options options,
+            Properties manifest,
+            String prefix,
+            String fileName,
+            Path destination
+    ) throws IOException {
+        String manifestFile = manifest.getProperty(prefix + "localFile", "").trim();
+        Path source;
+        if (isBlank(manifestFile)) {
+            source = options.artifactDir().resolve("mods").resolve(fileName).normalize();
+        } else {
+            Path path = Paths.get(manifestFile);
+            source = path.isAbsolute() ? path.normalize() : options.artifactDir().resolve(path).normalize();
+        }
+        if (!Files.isRegularFile(source)) {
+            throw new IOException("Offline companion mod missing: " + source);
+        }
+        Files.copy(source, destination, StandardCopyOption.REPLACE_EXISTING);
+    }
+
     private static String installVersionJson(
             Options options,
             Properties manifest,
             List<InstalledLibrary> libraries
     ) throws IOException {
-        String profile = "nows-" + options.nowsVersion + "-" + options.minecraftVersion;
+        String profile = profileId(options);
         Instant now = Instant.now();
         Path versionDir = options.minecraftDir.resolve("versions").resolve(profile);
         Files.createDirectories(versionDir);
@@ -258,17 +341,28 @@ public final class NowsInstaller {
 
     private static Map<String, Object> launcherProfile(Options options, String versionProfile) throws IOException {
         Instant now = Instant.now();
+        Path gameDir = profileGameDirectory(options);
+        Files.createDirectories(gameDir.resolve("mods"));
         Map<String, Object> profile = new LinkedHashMap<>();
         profile.put("name", "Nows " + options.nowsVersion + " - Minecraft " + options.minecraftVersion);
         profile.put("type", "custom");
         profile.put("created", now.toString());
         profile.put("lastUsed", now.toString());
         profile.put("lastVersionId", versionProfile);
+        profile.put("gameDir", gameDir.toString());
         String icon = launcherIcon();
         if (icon != null) {
             profile.put("icon", icon);
         }
         return profile;
+    }
+
+    private static Path profileGameDirectory(Options options) {
+        return options.minecraftDir.resolve("nows").resolve("profiles").resolve(profileId(options));
+    }
+
+    private static Path profileModsDirectory(Options options) {
+        return profileGameDirectory(options).resolve("mods");
     }
 
     private static void backupLauncherProfiles(Path profilesFile) throws IOException {
@@ -823,15 +917,17 @@ public final class NowsInstaller {
             return new Options(nows, minecraft, minecraftDir, manifest, offline, artifactDir, null, false);
         }
 
-        Options withEmbeddedOfflinePayload() {
+        Options withEmbeddedOfflinePayload() throws IOException {
+            String resource = "/META-INF/nows/offline/install.properties";
+            Properties embeddedManifest = loadEmbeddedProperties(resource);
             return new Options(
-                    nowsVersion,
-                    minecraftVersion,
+                    embeddedManifest.getProperty("nows.version", nowsVersion),
+                    embeddedManifest.getProperty("minecraft.version", minecraftVersion),
                     minecraftDir,
                     manifest,
                     false,
                     artifactDir,
-                    "/META-INF/nows/offline/install.properties",
+                    resource,
                     true
             );
         }

@@ -7,6 +7,7 @@ val hasMinecraftDevJar = providers.provider { minecraftDevJar.asFile.isFile }
 dependencies {
     compileOnly(project(":core"))
     compileOnly(files(minecraftDevJar))
+    compileOnly("org.spongepowered:mixin:${providers.gradleProperty("mixin_version").get()}")
 }
 
 tasks.withType<JavaCompile>().configureEach {

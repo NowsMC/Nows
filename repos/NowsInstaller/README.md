@@ -12,10 +12,13 @@ NowsInstaller writes only the Nows version directory and Nows launcher profile:
 
 ```text
 .minecraft/versions/nows-<nows-version>-<minecraft-version>/
+.minecraft/nows/profiles/nows-<nows-version>-<minecraft-version>/
 .minecraft/launcher_profiles.json
 ```
 
 Before changing an existing `launcher_profiles.json`, it creates a sibling backup named `launcher_profiles.json.nows-backup-<timestamp>`. Existing Fabric, Forge, Quilt, vanilla, or other custom profiles are preserved; the installer only creates or replaces the profile whose id is `nows-<nows-version>-<minecraft-version>`.
+
+The launcher profile uses a Nows-specific `gameDir`, so users can keep Nows mods under that profile's own `mods/` directory rather than global `.minecraft/mods`.
 
 The profile icon is embedded from:
 
@@ -77,9 +80,11 @@ https://files.nows.space/releases/nows/<nows-version>/<minecraft-version>/instal
 
 Use `install.properties.template` as the release template. Release automation should fill SHA-256 values before publishing. For `source=internet` artifacts, the normal installer first tries `artifact.<n>.url`; if that download fails or the URL is missing, it falls back to `artifact.<n>.mavenUrl` or `mavenBaseUrl + artifact.<n>.path`.
 
+The manifest may also include `mod.<n>` companion mod entries. These are copied to the Nows profile-local `mods/` directory. The 0.3.0 default manifest does not use this for `NowsApiMod`; the title-screen badge is provided by the required `mc/<minecraft-version>` adapter instead.
+
 ## Fully offline installer
 
-`NowsInstaller-offline-<version>.jar` embeds the release manifest plus every non-Minecraft artifact listed by the installer manifest. Its Nows module payloads are taken from this workspace's Gradle project JAR tasks (`:core:jar`, `:runtime:jar`, integrations, and Minecraft support), so a local build installs the local project output. At install time it copies those embedded payloads into `.minecraft/libraries` and writes the same launcher profile as the normal installer without contacting `files.nows.space` or Maven.
+`NowsInstaller-offline-<version>.jar` embeds the release manifest and every non-Minecraft artifact listed by the installer manifest. Its Nows module payloads are taken from this workspace's Gradle project JAR tasks (`:core:jar`, `:runtime:jar`, integrations, and Minecraft support), so a local build installs the local project output. At install time it copies those embedded payloads into `.minecraft/libraries` and writes the same launcher profile as the normal installer without contacting `files.nows.space` or Maven.
 
 The CLI/UI installers are generic entrypoints. The fully offline installer is Minecraft-version-specific because it embeds one processed manifest and one `nows-mc-<minecraft-version>` adapter. `./gradlew publishLayout` copies it into the upload layout with the Minecraft version in the filename:
 
