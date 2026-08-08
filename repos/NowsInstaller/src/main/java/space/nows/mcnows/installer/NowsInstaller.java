@@ -37,9 +37,7 @@ public final class NowsInstaller {
     }
 
     static void install(Options options, InstallerListener listener) throws Exception {
-        String manifestLocation = options.manifest != null
-                ? options.manifest
-                : "https://nows.space/releases/nows/" + options.nowsVersion + "/install.properties";
+        String manifestLocation = options.manifestLocation();
 
         listener.log("[NowsInstaller] manifest: " + manifestLocation);
         Properties manifest = loadProperties(options, manifestLocation);
@@ -75,13 +73,12 @@ public final class NowsInstaller {
 
         if (source.equals("embedded")) {
             copyEmbedded(required(manifest, prefix + "resource"), destination);
+        } else if (options.embeddedArtifacts) {
+            copyEmbedded("/META-INF/nows/offline-libraries/" + relativePath, destination);
         } else if (options.offline) {
             copyLocalArtifact(options, manifest, prefix, relativePath, destination);
         } else if (source.equals("internet")) {
-            if (isBlank(sourceUrl)) {
-                throw new IllegalArgumentException("Missing URL for internet artifact: " + coordinate);
-            }
-            download(URI.create(sourceUrl), destination);
+            downloadInternetArtifact(manifest, prefix, relativePath, coordinate, sourceUrl, destination);
         } else if (source.equals("local")) {
             copyLocalArtifact(options, manifest, prefix, relativePath, destination);
         } else {
@@ -97,7 +94,49 @@ public final class NowsInstaller {
             }
         }
 
-        return new InstalledLibrary(coordinate, relativePath, options.offline ? "" : sourceUrl, destination);
+        return new InstalledLibrary(coordinate, relativePath, options.offline || options.embeddedArtifacts ? "" : sourceUrl, destination);
+    }
+
+    private static void downloadInternetArtifact(
+            Properties manifest,
+            String prefix,
+            String relativePath,
+            String coordinate,
+            String sourceUrl,
+            Path destination
+    ) throws Exception {
+        String fallbackUrl = mavenFallbackUrl(manifest, prefix, relativePath);
+        if (!isBlank(sourceUrl)) {
+            try {
+                download(URI.create(sourceUrl), destination);
+                return;
+            } catch (IOException primaryFailure) {
+                if (isBlank(fallbackUrl) || fallbackUrl.equals(sourceUrl)) {
+                    throw primaryFailure;
+                }
+                download(URI.create(fallbackUrl), destination);
+                return;
+            }
+        }
+        if (isBlank(fallbackUrl)) {
+            throw new IllegalArgumentException("Missing URL for internet artifact: " + coordinate);
+        }
+        download(URI.create(fallbackUrl), destination);
+    }
+
+    private static String mavenFallbackUrl(Properties manifest, String prefix, String relativePath) {
+        String explicit = manifest.getProperty(prefix + "mavenUrl", "").trim();
+        if (!isBlank(explicit)) {
+            return explicit;
+        }
+        String base = manifest.getProperty("mavenBaseUrl", "https://repo1.maven.org/maven2").trim();
+        if (isBlank(base)) {
+            return "";
+        }
+        if (!base.endsWith("/")) {
+            base += "/";
+        }
+        return base + relativePath;
     }
 
     private static void copyLocalArtifact(
@@ -166,6 +205,9 @@ public final class NowsInstaller {
     }
 
     private static Properties loadProperties(Options options, String location) throws Exception {
+        if (options.embeddedManifestResource != null) {
+            return loadEmbeddedProperties(options.embeddedManifestResource);
+        }
         if (options.offline || isLocalLocation(location)) {
             Path path = localManifestPath(options, location);
             Properties properties = new Properties();
@@ -175,6 +217,17 @@ public final class NowsInstaller {
             return properties;
         }
         return downloadProperties(URI.create(location));
+    }
+
+    private static Properties loadEmbeddedProperties(String resource) throws IOException {
+        Properties properties = new Properties();
+        try (InputStream input = NowsInstaller.class.getResourceAsStream(resource)) {
+            if (input == null) {
+                throw new IOException("Embedded installer manifest missing: " + resource);
+            }
+            properties.load(input);
+        }
+        return properties;
     }
 
     private static Properties downloadProperties(URI uri) throws Exception {
@@ -375,6 +428,8 @@ public final class NowsInstaller {
         final String manifest;
         final boolean offline;
         final Path artifactDir;
+        final String embeddedManifestResource;
+        final boolean embeddedArtifacts;
 
         private Options(
                 String nowsVersion,
@@ -382,7 +437,9 @@ public final class NowsInstaller {
                 Path minecraftDir,
                 String manifest,
                 boolean offline,
-                Path artifactDir
+                Path artifactDir,
+                String embeddedManifestResource,
+                boolean embeddedArtifacts
         ) {
             this.nowsVersion = nowsVersion;
             this.minecraftVersion = minecraftVersion;
@@ -390,6 +447,8 @@ public final class NowsInstaller {
             this.manifest = manifest;
             this.offline = offline;
             this.artifactDir = artifactDir;
+            this.embeddedManifestResource = embeddedManifestResource;
+            this.embeddedArtifacts = embeddedArtifacts;
         }
 
         static Options parse(String[] args) {
@@ -424,7 +483,29 @@ public final class NowsInstaller {
             if (offline && manifest == null) {
                 throw new IllegalArgumentException("Offline install requires --manifest pointing to a local file");
             }
-            return new Options(nows, minecraft, minecraftDir, manifest, offline, artifactDir);
+            return new Options(nows, minecraft, minecraftDir, manifest, offline, artifactDir, null, false);
+        }
+
+        Options withEmbeddedOfflinePayload() {
+            return new Options(
+                    nowsVersion,
+                    minecraftVersion,
+                    minecraftDir,
+                    manifest,
+                    false,
+                    artifactDir,
+                    "/META-INF/nows/offline/install.properties",
+                    true
+            );
+        }
+
+        String manifestLocation() {
+            if (embeddedManifestResource != null) {
+                return embeddedManifestResource;
+            }
+            return manifest != null
+                    ? manifest
+                    : "https://nows.space/releases/nows/" + nowsVersion + "/install.properties";
         }
 
         Path artifactDir() {

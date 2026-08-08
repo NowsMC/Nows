@@ -17,6 +17,7 @@ This builds separate installer JARs:
 ```text
 build/libs/NowsInstaller-cli-<version>.jar
 build/libs/NowsInstaller-ui-<version>.jar
+build/libs/NowsInstaller-offline-<version>.jar
 ```
 
 Run the CLI installer with:
@@ -29,6 +30,12 @@ Run the Swing UI installer with:
 
 ```bash
 java -jar build/libs/NowsInstaller-ui-<version>.jar
+```
+
+Run the fully offline installer with:
+
+```bash
+java -jar build/libs/NowsInstaller-offline-<version>.jar
 ```
 
 ## GitHub Packages
@@ -51,7 +58,11 @@ Default URL:
 https://nows.space/releases/nows/<nows-version>/install.properties
 ```
 
-Use `install.properties.template` as the release template. Release automation should fill SHA-256 values before publishing.
+Use `install.properties.template` as the release template. Release automation should fill SHA-256 values before publishing. For `source=internet` artifacts, the normal installer first tries `artifact.<n>.url`; if that download fails or the URL is missing, it falls back to `artifact.<n>.mavenUrl` or `mavenBaseUrl + artifact.<n>.path`.
+
+## Fully offline installer
+
+`NowsInstaller-offline-<version>.jar` embeds the release manifest plus every non-Minecraft artifact listed by the installer manifest. At install time it copies those embedded payloads into `.minecraft/libraries` and writes the same launcher profile as the normal installer.
 
 ## Offline local testing
 
