@@ -34,7 +34,9 @@ Nows/
 ├─ runtime/                      composes the modules; contains main()
 ├─ repos/
 │  ├─ NowsInstaller/             internet installer
-│  └─ NowsGradlePlugin/          mappings/dev tooling/Gradle workarounds
+│  ├─ NowsGradlePlugin/          mappings/dev tooling/Gradle workarounds
+│  ├─ NowsApiMod/                optional API/helper mod submodule
+│  └─ NowsWeb/                   web/download surface submodule
 └─ example-mod/
 ```
 
@@ -93,7 +95,7 @@ A mod that does not care about GEB still compiles against `nows-core` without pu
 `repos/NowsInstaller` is internet-first. It downloads a release manifest from:
 
 ```text
-https://nows.space/releases/nows/<nows-version>/install.properties
+https://files.nows.space/releases/nows/<nows-version>/<minecraft-version>/install.properties
 ```
 
 and installs all listed Nows modules/libraries into the normal `.minecraft/libraries` tree before generating an inherited Official Launcher version and merging a Nows installation entry into `launcher_profiles.json`. Existing launcher profiles are preserved and `launcher_profiles.json` is backed up before modification.
@@ -161,6 +163,26 @@ Build the CLI and Swing UI installers (requires GitHub Packages credentials for 
 
 ```bash
 ./gradlew :repos:NowsInstaller:assemble
+```
+
+Build the local upload layout for `files.nows.space`:
+
+```bash
+./gradlew publishLayout
+```
+
+The generated files are written under `.publishing/releases/nows/<nows-version>/<minecraft-version>/`.
+
+Build the same upload layout inside Docker:
+
+```bash
+docker compose run --rm nows-build
+```
+
+The CLI/UI installers are generic Java 8 installer entrypoints that choose the Minecraft target from `--minecraft` or `minecraft_version`. The published offline installer is version-specific because it embeds `install.properties`, Nows modules and `nows-mc-<minecraft-version>` for one Minecraft version:
+
+```text
+.publishing/releases/nows/<nows-version>/<minecraft-version>/installers/NowsInstaller-offline-<nows-version>-mc-<minecraft-version>.jar
 ```
 
 Outputs:

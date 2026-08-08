@@ -1,0 +1,19 @@
+services:
+  nows-build:
+    build:
+      context: .
+    image: nows/build:local
+    working_dir: /workspace
+    volumes:
+      - .:/workspace
+      - nows-gradle-cache:/workspace/.gradle-docker
+      - nows-minecraft-cache:/workspace/.nows
+    environment:
+      GRADLE_USER_HOME: /workspace/.gradle-docker
+      GITHUB_ACTOR: ${GITHUB_ACTOR:-}
+      GITHUB_TOKEN: ${GITHUB_TOKEN:-}
+    command: ["./gradlew", "publishLayout"]
+
+volumes:
+  nows-gradle-cache:
+  nows-minecraft-cache:

@@ -2,6 +2,8 @@
 build/
 **/build/
 .nows/
+.publishing/*
+!.publishing/.gitignore
 .gradle-bootstrap/
 .idea/
 *.iml

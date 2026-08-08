@@ -842,7 +842,7 @@ public final class NowsInstaller {
             }
             return manifest != null
                     ? manifest
-                    : "https://nows.space/releases/nows/" + nowsVersion + "/install.properties";
+                    : "https://files.nows.space/releases/nows/" + nowsVersion + "/" + minecraftVersion + "/install.properties";
         }
 
         Path artifactDir() {

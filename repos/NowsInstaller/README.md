@@ -2,7 +2,7 @@
 
 Internet-first Official Launcher installer for Nows, with a local offline mode for development testing.
 
-The installer itself contains no loader architecture. It reads `install.properties` from `nows.space`, installs each declared artifact under `.minecraft/libraries`, writes an inherited Launcher version whose `mainClass` is `space.nows.mcnows.runtime.NowsLauncher`, then merges a Nows installation entry into `launcher_profiles.json`.
+The installer itself contains no loader architecture. It reads `install.properties` from `files.nows.space`, installs each declared artifact under `.minecraft/libraries`, writes an inherited Launcher version whose `mainClass` is `space.nows.mcnows.runtime.NowsLauncher`, then merges a Nows installation entry into `launcher_profiles.json`.
 
 The installer is compiled with Java 8 bytecode so it can run on Java 8 and newer.
 
@@ -72,14 +72,26 @@ End users therefore need no GitHub credentials. The release build does.
 Default URL:
 
 ```text
-https://nows.space/releases/nows/<nows-version>/install.properties
+https://files.nows.space/releases/nows/<nows-version>/<minecraft-version>/install.properties
 ```
 
 Use `install.properties.template` as the release template. Release automation should fill SHA-256 values before publishing. For `source=internet` artifacts, the normal installer first tries `artifact.<n>.url`; if that download fails or the URL is missing, it falls back to `artifact.<n>.mavenUrl` or `mavenBaseUrl + artifact.<n>.path`.
 
 ## Fully offline installer
 
-`NowsInstaller-offline-<version>.jar` embeds the release manifest plus every non-Minecraft artifact listed by the installer manifest. Its Nows module payloads are taken from this workspace's Gradle project JAR tasks (`:core:jar`, `:runtime:jar`, integrations, and Minecraft support), so a local build installs the local project output. At install time it copies those embedded payloads into `.minecraft/libraries` and writes the same launcher profile as the normal installer without contacting `nows.space` or Maven.
+`NowsInstaller-offline-<version>.jar` embeds the release manifest plus every non-Minecraft artifact listed by the installer manifest. Its Nows module payloads are taken from this workspace's Gradle project JAR tasks (`:core:jar`, `:runtime:jar`, integrations, and Minecraft support), so a local build installs the local project output. At install time it copies those embedded payloads into `.minecraft/libraries` and writes the same launcher profile as the normal installer without contacting `files.nows.space` or Maven.
+
+The CLI/UI installers are generic entrypoints. The fully offline installer is Minecraft-version-specific because it embeds one processed manifest and one `nows-mc-<minecraft-version>` adapter. `./gradlew publishLayout` copies it into the upload layout with the Minecraft version in the filename:
+
+```text
+.publishing/releases/nows/<nows-version>/<minecraft-version>/installers/NowsInstaller-offline-<nows-version>-mc-<minecraft-version>.jar
+```
+
+Build another offline installer by selecting a different supported version:
+
+```bash
+./gradlew -Pminecraft_version=1.20.1 publishLayout
+```
 
 ## Offline local testing
 

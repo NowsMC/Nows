@@ -91,11 +91,19 @@ The default install is modular. Minecraft Launcher libraries contain separate No
 Normal installer artifact resolution is:
 
 1. Use embedded artifacts when `artifact.<n>.source=embedded`.
-2. For `source=internet`, try `artifact.<n>.url` first, normally on `nows.space`.
+2. For `source=internet`, try `artifact.<n>.url` first, normally on `files.nows.space`.
 3. If that URL is missing or fails, fall back to `artifact.<n>.mavenUrl` or `mavenBaseUrl + artifact.<n>.path`.
 4. For local/offline development, copy from local paths when `--offline`, `--artifactDir` or `source=local` is used.
 
-`NowsInstaller-offline` is a separate Java 8-compatible installer JAR that embeds the install manifest and all manifest artifacts needed by Nows, then copies those embedded payloads into the Minecraft libraries directory without network access. Its Nows module payloads come from the workspace's Gradle project JAR tasks when built locally, so the same offline installer covers local-development installation.
+`NowsInstaller-offline` is a separate Java 8-compatible installer JAR that embeds the install manifest and all manifest artifacts needed by Nows, then copies those embedded payloads into the Minecraft libraries directory without network access. Its Nows module payloads come from the workspace's Gradle project JAR tasks when built locally, so the same offline installer covers local-development installation for the selected `minecraft_version`.
+
+The normal CLI/UI installers are generic installer entrypoints. They choose the target release manifest from `--minecraft`, `--nows` or their Gradle defaults and download from:
+
+```text
+https://files.nows.space/releases/nows/<nows-version>/<minecraft-version>/install.properties
+```
+
+The published offline installer is intentionally per Minecraft version because it embeds the version-specific `nows-mc-<minecraft-version>` adapter and a processed manifest for exactly one game version. Publish it with a versioned filename such as `NowsInstaller-offline-0.3.0-mc-26.2.jar`.
 
 GitHub Packages-only dependencies, currently KDL4J, may be embedded into installer artifacts and copied into the Minecraft libraries directory when necessary. Normal Nows users must not need GitHub credentials just to install or run Nows.
 
@@ -104,6 +112,12 @@ The optional `:runtime:allJar` task is the assembly point for a later monolithic
 Launcher version profiles should inherit from the target vanilla Minecraft profile. When the vanilla client JAR already exists locally, the installer may copy it to the Nows version directory as a profile-local version JAR. That copy is an alias of Mojang's vanilla client JAR, not a bundled Nows library and not a redistributed loader dependency. If the vanilla JAR is missing, the version JSON may use the inherited `jar` field so the launcher can resolve the parent version.
 
 `repos/NowsApiMod/` is not installed by default. It builds a normal optional mod JAR that users can place in `mods/` when they want the extra APIs or when developers need an end-to-end fixture for Gradle, KDL, Mixin and `mc/<version>` adapters.
+
+Release files are staged locally under `.publishing/` by `publishLayout`. That directory is intentionally ignored by Git because it is an upload staging area for `files.nows.space` backed by CDN/object storage.
+
+The expected upload backing is `files.nows.space` in front of object storage/CDN infrastructure such as Backblaze B2 plus Gcore. Release generation does not upload anything; it only produces the local tree, manifest and checksum file for manual publishing.
+
+Docker is allowed as a reproducible build shell for this multi-project workspace. The Docker path should build the same `.publishing/` layout as local Gradle and should not introduce a separate release protocol.
 
 ## Gradle and mappings policy
 

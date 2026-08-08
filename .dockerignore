@@ -1,0 +1,13 @@
+.git/
+.gradle/
+.gradle-docker/
+.nows/
+.publishing/
+**/build/
+repos/NowsWeb/node_modules/
+repos/NowsWeb/dist/
+repos/NowsWeb/.git/
+repos/NowsApiMod/.git/
+local.properties
+*.iml
+.idea/

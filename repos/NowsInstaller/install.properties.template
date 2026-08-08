@@ -4,30 +4,30 @@ minecraft.version=26.2
 mainClass=space.nows.mcnows.runtime.NowsLauncher
 mavenBaseUrl=https://repo1.maven.org/maven2
 
-# Nows modular jars are downloaded from nows.space. Keep these independently replaceable.
-# If nows.space is unavailable, NowsInstaller falls back to mavenBaseUrl + artifact path.
+# Nows modular jars are downloaded from files.nows.space. Keep these independently replaceable.
+# If files.nows.space is unavailable, NowsInstaller falls back to mavenBaseUrl + artifact path.
 artifact.count=19
 artifact.0.coordinate=space.nows.mcnows:nows-core:0.3.0
 artifact.0.path=space/nows/mcnows/nows-core/0.3.0/nows-core-0.3.0.jar
-artifact.0.url=https://nows.space/releases/nows/0.3.0/nows-core-0.3.0.jar
+artifact.0.url=https://files.nows.space/releases/nows/0.3.0/26.2/libraries/space/nows/mcnows/nows-core/0.3.0/nows-core-0.3.0.jar
 artifact.1.coordinate=space.nows.mcnows:nows-minecraft:0.3.0
 artifact.1.path=space/nows/mcnows/nows-minecraft/0.3.0/nows-minecraft-0.3.0.jar
-artifact.1.url=https://nows.space/releases/nows/0.3.0/nows-minecraft-0.3.0.jar
+artifact.1.url=https://files.nows.space/releases/nows/0.3.0/26.2/libraries/space/nows/mcnows/nows-minecraft/0.3.0/nows-minecraft-0.3.0.jar
 artifact.2.coordinate=space.nows.mcnows:nows-integration-kdl:0.3.0
 artifact.2.path=space/nows/mcnows/nows-integration-kdl/0.3.0/nows-integration-kdl-0.3.0.jar
-artifact.2.url=https://nows.space/releases/nows/0.3.0/nows-integration-kdl-0.3.0.jar
+artifact.2.url=https://files.nows.space/releases/nows/0.3.0/26.2/libraries/space/nows/mcnows/nows-integration-kdl/0.3.0/nows-integration-kdl-0.3.0.jar
 artifact.3.coordinate=space.nows.mcnows:nows-integration-geb:0.3.0
 artifact.3.path=space/nows/mcnows/nows-integration-geb/0.3.0/nows-integration-geb-0.3.0.jar
-artifact.3.url=https://nows.space/releases/nows/0.3.0/nows-integration-geb-0.3.0.jar
+artifact.3.url=https://files.nows.space/releases/nows/0.3.0/26.2/libraries/space/nows/mcnows/nows-integration-geb/0.3.0/nows-integration-geb-0.3.0.jar
 artifact.4.coordinate=space.nows.mcnows:nows-integration-logging:0.3.0
 artifact.4.path=space/nows/mcnows/nows-integration-logging/0.3.0/nows-integration-logging-0.3.0.jar
-artifact.4.url=https://nows.space/releases/nows/0.3.0/nows-integration-logging-0.3.0.jar
+artifact.4.url=https://files.nows.space/releases/nows/0.3.0/26.2/libraries/space/nows/mcnows/nows-integration-logging/0.3.0/nows-integration-logging-0.3.0.jar
 artifact.5.coordinate=space.nows.mcnows:nows-integration-mixin:0.3.0
 artifact.5.path=space/nows/mcnows/nows-integration-mixin/0.3.0/nows-integration-mixin-0.3.0.jar
-artifact.5.url=https://nows.space/releases/nows/0.3.0/nows-integration-mixin-0.3.0.jar
+artifact.5.url=https://files.nows.space/releases/nows/0.3.0/26.2/libraries/space/nows/mcnows/nows-integration-mixin/0.3.0/nows-integration-mixin-0.3.0.jar
 artifact.6.coordinate=space.nows.mcnows:nows-runtime:0.3.0
 artifact.6.path=space/nows/mcnows/nows-runtime/0.3.0/nows-runtime-0.3.0.jar
-artifact.6.url=https://nows.space/releases/nows/0.3.0/nows-runtime-0.3.0.jar
+artifact.6.url=https://files.nows.space/releases/nows/0.3.0/26.2/libraries/space/nows/mcnows/nows-runtime/0.3.0/nows-runtime-0.3.0.jar
 
 # GitHub Package: bundled inside NowsInstaller and copied out; user needs no GitHub token.
 artifact.7.coordinate=dev.kdl:kdl4j:1.0.1
@@ -72,4 +72,4 @@ artifact.17.url=https://repo1.maven.org/maven2/org/ow2/asm/asm-util/9.8/asm-util
 # Version-specific Minecraft API adapter for the default installer target.
 artifact.18.coordinate=space.nows.mcnows:nows-mc-26.2:0.3.0
 artifact.18.path=space/nows/mcnows/nows-mc-26.2/0.3.0/nows-mc-26.2-0.3.0.jar
-artifact.18.url=https://nows.space/releases/nows/0.3.0/nows-mc-26.2-0.3.0.jar
+artifact.18.url=https://files.nows.space/releases/nows/0.3.0/26.2/libraries/space/nows/mcnows/nows-mc-26.2/0.3.0/nows-mc-26.2-0.3.0.jar
