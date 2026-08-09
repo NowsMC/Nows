@@ -18,24 +18,45 @@ class KdlModMetadataReaderTest {
     void keepsFutureDeclarationsAsGenericMetadata() throws Exception {
         String metadata = """
                 mod id="nows_api_mod" name="Nows API Mod" version="1.0.0" minecraft="26.2" side="client" {
-                    description "Optional public helper APIs for Nows mods."
-                    author "TamKungZ_"
-                    contributor "HollZaterQ"
-                    license "Apache-2.0"
-                    icon "assets/nows/icon.png"
-                    contact homepage="https://nows.space" sources="https://github.com/NowsMC/Nows"
-                    requires "minecraft" version=">=26.2"
-                    depends "nows_example" version=">=1.0.0" reason="Used by this fixture"
-                    recommends "modmenu" version="*"
-                    incompatible-with "bad_mod" reason="Known broken integration"
-                    load-after "cloth-config"
-                    load-before "late_mod"
-                    property "channel" "dev"
-                    entrypoint "space.nows.mod.api.NowsApiMod"
-                    mixin "nows_api_mod.mixins.json"
-                    api-feature "client-ui"
-                    api-feature "modmenu"
-                    modmenu "space.nows.mod.api.client.NowsApiModMenu"
+                    info {
+                        description "Optional public helper APIs for Nows mods."
+                        author "TamKungZ_"
+                        contributor "HollZaterQ"
+                        license "Apache-2.0"
+                        icon "assets/nows/icon.png"
+                    }
+
+                    links {
+                        homepage "https://nows.space"
+                        sources "https://github.com/NowsMC/Nows"
+                    }
+
+                    compatibility {
+                        requires "minecraft" version=">=26.2"
+                        depends "nows_example" version=">=1.0.0" reason="Used by this fixture"
+                        recommends "modmenu" version="*"
+                        incompatible-with "bad_mod" reason="Known broken integration"
+                    }
+
+                    load-order {
+                        after "cloth-config"
+                        before "late_mod"
+                    }
+
+                    properties {
+                        channel "dev"
+                    }
+
+                    runtime {
+                        entrypoint "space.nows.mod.api.NowsApiMod"
+                        mixin "nows_api_mod.mixins.json"
+                    }
+
+                    features {
+                        api-feature "client-ui"
+                        api-feature "modmenu"
+                        modmenu "space.nows.mod.api.client.NowsApiModMenu"
+                    }
                 }
                 """;
 
@@ -62,9 +83,9 @@ class KdlModMetadataReaderTest {
         assertEquals("recommends", descriptor.dependencies().get(2).kind());
         assertTrue(descriptor.dependencies().get(2).optional());
         assertEquals("incompatible-with", descriptor.dependencies().get(3).kind());
-        assertEquals("load-after", descriptor.dependencies().get(4).kind());
+        assertEquals("after", descriptor.dependencies().get(4).kind());
         assertEquals("cloth-config", descriptor.dependencies().get(4).id());
-        assertEquals("load-before", descriptor.dependencies().get(5).kind());
+        assertEquals("before", descriptor.dependencies().get(5).kind());
         assertEquals(List.of("client-ui", "modmenu"), descriptor.declarations("api-feature"));
         assertEquals("client-ui", descriptor.declaration("api-feature").orElseThrow());
         assertEquals(List.of("space.nows.mod.api.client.NowsApiModMenu"), descriptor.declarations("modmenu"));

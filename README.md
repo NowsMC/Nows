@@ -71,23 +71,41 @@ The core never imports KDL4J. `integrations/kdl` implements the `ModMetadataRead
 
 ```kdl
 mod id="my_mod" name="My Mod" version="1.0.0" minecraft="26.2" side="client" {
-    description "Short description shown to tools and companion UI."
-    author "YourName"
-    license "Apache-2.0"
-    icon "assets/my_mod/icon.png"
-    contact homepage="https://example.com" sources="https://github.com/example/my-mod"
-    requires "minecraft" version="26.2"
-    depends "cloth-config" version=">=11.0.0"
-    recommends "modmenu" version=">=1.0.0"
-    incompatible-with "bad_mod" reason="Breaks the same screen"
-    load-after "cloth-config"
-    load-before "late_mod"
-    property "channel" "stable"
-    network-channel "my_mod:main"
-    listener "com.example.MyLifecycleListener"
-    entrypoint "com.example.MyMod"
-    transformer "com.example.MyTransformer"
-    mixin "my_mod.mixins.json"
+    info {
+        description "Short description shown to tools and companion UI."
+        author "YourName"
+        license "Apache-2.0"
+        icon "assets/my_mod/icon.png"
+    }
+
+    links {
+        homepage "https://example.com"
+        sources "https://github.com/example/my-mod"
+    }
+
+    compatibility {
+        requires "minecraft" version="26.2"
+        depends "cloth-config" version=">=11.0.0"
+        recommends "modmenu" version=">=1.0.0"
+        incompatible-with "bad_mod" reason="Breaks the same screen"
+    }
+
+    load-order {
+        after "cloth-config"
+        before "late_mod"
+    }
+
+    properties {
+        channel "stable"
+    }
+
+    runtime {
+        network-channel "my_mod:main"
+        listener "com.example.MyLifecycleListener"
+        entrypoint "com.example.MyMod"
+        transformer "com.example.MyTransformer"
+        mixin "my_mod.mixins.json"
+    }
 }
 ```
 
@@ -103,7 +121,7 @@ boolean clientRuntime = context.side() == NowsSide.CLIENT;
 
 `side` is typed metadata and accepts `client`, `server` or `both`/`common`. The current launcher runtime is client-side and rejects server-only mods with a clear compatibility error before loading mod classes. Unknown future declaration names can be retained without changing core because declarations are stored by key rather than by fixed record fields. Extra root properties are exposed through `ModDescriptor.property("key")`.
 
-Dependency metadata is validated before mod classes are loaded. `depends`/`requires` must be present and match the requested version, `recommends`/`suggests` are optional, `conflicts`/`breaks`/`incompatible-with` reject matching loaded/provided ids, and `load-before`/`load-after` influence deterministic entrypoint order when the target mod is present. Runtime provides virtual ids such as `minecraft`, `nows` and `nows-loader` for requirements.
+Grouped KDL is the recommended human-facing style, but flat nodes remain supported for compact files and compatibility with older mods. Dependency metadata is validated before mod classes are loaded. `depends`/`requires` must be present and match the requested version, `recommends`/`suggests` are optional, `conflicts`/`breaks`/`incompatible-with` reject matching loaded/provided ids, and `load-before`/`load-after` or `before`/`after` influence deterministic entrypoint order when the target mod is present. Runtime provides virtual ids such as `minecraft`, `nows` and `nows-loader` for requirements.
 
 ## GEB without coupling core to GEB
 

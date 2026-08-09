@@ -312,22 +312,40 @@ For example:
 
 ```kdl
 mod id="example" name="Example Mod" version="1.0.0" minecraft="26.2" side="client" {
-    description "Small example mod."
-    author "ExampleDev"
-    license "Apache-2.0"
-    contact homepage="https://example.com" sources="https://github.com/example/mod"
-    depends "other_mod" version=">=1.0.0"
-    incompatible-with "bad_mod" reason="Known broken integration"
-    load-after "other_mod"
-    network-channel "example:main"
-    listener "example.ExampleLifecycleListener"
-    entrypoint "example.Mod"
-    mixin "example.mixins.json"
-    future-feature "some.value"
+    info {
+        description "Small example mod."
+        author "ExampleDev"
+        license "Apache-2.0"
+    }
+
+    links {
+        homepage "https://example.com"
+        sources "https://github.com/example/mod"
+    }
+
+    compatibility {
+        depends "other_mod" version=">=1.0.0"
+        incompatible-with "bad_mod" reason="Known broken integration"
+    }
+
+    load-order {
+        after "other_mod"
+    }
+
+    runtime {
+        network-channel "example:main"
+        listener "example.ExampleLifecycleListener"
+        entrypoint "example.Mod"
+        mixin "example.mixins.json"
+    }
+
+    features {
+        future-feature "some.value"
+    }
 }
 ```
 
-Only the integration that understands `future-feature` needs to change. Runtime and integrations may still agree on well-known declaration keys such as `entrypoint`, `transformer`, `mixin`, `network-channel` and `listener`; those are loader/integration policy, not hard-coded fields in `core`.
+Only the integration that understands `future-feature` needs to change. KDL groups such as `info`, `links`, `compatibility`, `load-order`, `properties`, `runtime` and `features` are readability wrappers; equivalent flat nodes remain valid and map to the same descriptor. Runtime and integrations may still agree on well-known declaration keys such as `entrypoint`, `transformer`, `mixin`, `network-channel` and `listener`; those are loader/integration policy, not hard-coded fields in `core`.
 
 `side` is typed as `NowsSide` rather than treated as an arbitrary property. Metadata formats should map `client`, `server` and `both`/`common` onto that enum. The current runtime is a client launcher, so it validates discovered mods against `NowsSide.CLIENT` and rejects server-only mods before loading mod classes. A future dedicated server runtime should set `NowsSide.SERVER` at the composition root and reuse the same compatibility contract.
 

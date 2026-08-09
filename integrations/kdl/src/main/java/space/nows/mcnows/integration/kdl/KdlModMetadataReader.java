@@ -50,40 +50,72 @@ public final class KdlModMetadataReader implements ModMetadataReader {
         } catch (IllegalArgumentException e) {
             throw new IOException(e.getMessage() + " in " + source, e);
         }
-        String description = property(mod, "description", "");
-        String icon = property(mod, "icon", "");
-
-        List<String> authors = new ArrayList<>(propertyValues(mod, "author"));
-        authors.addAll(propertyValues(mod, "authors"));
-        List<String> contributors = new ArrayList<>(propertyValues(mod, "contributor"));
-        contributors.addAll(propertyValues(mod, "contributors"));
-        List<String> licenses = new ArrayList<>(propertyValues(mod, "license"));
-        licenses.addAll(propertyValues(mod, "licenses"));
-        Map<String, String> contacts = new LinkedHashMap<>();
-        Map<String, String> properties = rootProperties(mod);
-        List<ModDependency> dependencies = new ArrayList<>();
-        Map<String, List<String>> declarations = new LinkedHashMap<>();
+        MetadataAccumulator metadata = new MetadataAccumulator();
+        metadata.description = property(mod, "description", "");
+        metadata.icon = property(mod, "icon", "");
+        metadata.authors.addAll(propertyValues(mod, "author"));
+        metadata.authors.addAll(propertyValues(mod, "authors"));
+        metadata.contributors.addAll(propertyValues(mod, "contributor"));
+        metadata.contributors.addAll(propertyValues(mod, "contributors"));
+        metadata.licenses.addAll(propertyValues(mod, "license"));
+        metadata.licenses.addAll(propertyValues(mod, "licenses"));
+        metadata.properties.putAll(rootProperties(mod));
         for (KdlNode child : mod.children()) {
-            switch (child.name()) {
-                case "description" -> description = firstArgument(child, description);
-                case "author", "authors" -> authors.addAll(stringArguments(child));
-                case "contributor", "contributors" -> contributors.addAll(stringArguments(child));
-                case "license", "licenses" -> licenses.addAll(stringArguments(child));
-                case "icon" -> icon = firstArgument(child, icon);
-                case "contact" -> readContactNode(child, contacts);
-                case "homepage", "website", "sources", "source", "issues", "wiki", "discord", "email" ->
-                        contacts.put(contactKey(child.name()), firstArgument(child, ""));
-                case "property" -> readPropertyNode(child, properties);
-                case "depends", "dependency", "requires", "require", "recommends", "suggests",
-                        "breaks", "conflicts", "conflict", "incompatible", "incompatible-with",
-                        "load-before", "load-after", "before", "after" ->
-                        dependencies.add(readDependency(child));
-                default -> readDeclaration(child, declarations, properties);
-            }
+            readMetadataNode(child, metadata);
         }
-        if (declarations.isEmpty()) throw new IOException("Mod " + id + " has no declarations");
-        return new ModDescriptor(id, name, version, minecraft, side, description, authors, contributors, licenses, icon,
-                contacts, properties, dependencies, declarations);
+        if (metadata.declarations.isEmpty()) throw new IOException("Mod " + id + " has no declarations");
+        return new ModDescriptor(id, name, version, minecraft, side, metadata.description,
+                metadata.authors, metadata.contributors, metadata.licenses, metadata.icon,
+                metadata.contacts, metadata.properties, metadata.dependencies, metadata.declarations);
+    }
+
+    private static void readMetadataNode(KdlNode node, MetadataAccumulator metadata) {
+        switch (node.name()) {
+            case "info", "metadata" -> readMetadataChildren(node, metadata);
+            case "compatibility", "dependencies", "requirements", "load-order", "ordering",
+                    "runtime", "entrypoints", "mixins", "listeners", "events", "features", "declarations" ->
+                    readMetadataChildren(node, metadata);
+            case "network" -> {
+                if (hasChildren(node)) {
+                    readMetadataChildren(node, metadata);
+                } else {
+                    readDeclaration(node, metadata.declarations, metadata.properties);
+                }
+            }
+            case "description" -> metadata.description = firstArgument(node, metadata.description);
+            case "author", "authors" -> metadata.authors.addAll(stringArguments(node));
+            case "contributor", "contributors" -> metadata.contributors.addAll(stringArguments(node));
+            case "license", "licenses" -> metadata.licenses.addAll(stringArguments(node));
+            case "icon" -> metadata.icon = firstArgument(node, metadata.icon);
+            case "contact", "contacts", "links" -> {
+                if (hasChildren(node)) {
+                    readContactChildren(node, metadata.contacts);
+                } else {
+                    readContactNode(node, metadata.contacts);
+                }
+            }
+            case "homepage", "website", "sources", "source", "issues", "wiki", "discord", "email" ->
+                    metadata.contacts.put(contactKey(node.name()), firstArgument(node, ""));
+            case "property" -> readPropertyNode(node, metadata.properties);
+            case "properties", "custom" -> {
+                if (hasChildren(node)) {
+                    readPropertiesGroup(node, metadata.properties);
+                } else {
+                    readPropertyNode(node, metadata.properties);
+                }
+            }
+            case "depends", "dependency", "requires", "require", "recommends", "suggests",
+                    "breaks", "conflicts", "conflict", "incompatible", "incompatible-with",
+                    "load-before", "load-after", "before", "after" ->
+                    metadata.dependencies.add(readDependency(node));
+            default -> readDeclaration(node, metadata.declarations, metadata.properties);
+        }
+    }
+
+    private static void readMetadataChildren(KdlNode group, MetadataAccumulator metadata) {
+        for (KdlNode child : group.children()) {
+            readMetadataNode(child, metadata);
+        }
     }
 
     private static String requiredProperty(KdlNode node, String key, Path source) throws IOException {
@@ -138,6 +170,16 @@ public final class KdlModMetadataReader implements ModMetadataReader {
         }
     }
 
+    private static void readContactChildren(KdlNode group, Map<String, String> contacts) {
+        for (KdlNode child : group.children()) {
+            if (child.name().equals("contact")) {
+                readContactNode(child, contacts);
+            } else {
+                contacts.put(contactKey(child.name()), firstArgument(child, ""));
+            }
+        }
+    }
+
     private static String contactKey(String key) {
         return key.equals("source") ? "sources" : key;
     }
@@ -151,6 +193,25 @@ public final class KdlModMetadataReader implements ModMetadataReader {
             List<KdlValue<?>> values = entry.getValue();
             if (!values.isEmpty()) {
                 properties.put(entry.getKey(), valueToString(values.get(values.size() - 1)));
+            }
+        }
+    }
+
+    private static void readPropertiesGroup(KdlNode group, Map<String, String> properties) {
+        for (KdlNode child : group.children()) {
+            if (child.name().equals("property")) {
+                readPropertyNode(child, properties);
+                continue;
+            }
+            String value = firstArgument(child, "");
+            if (!value.isBlank()) {
+                properties.put(child.name(), value);
+            }
+            for (var entry : child.properties()) {
+                List<KdlValue<?>> values = entry.getValue();
+                if (!values.isEmpty()) {
+                    properties.put(child.name() + "." + entry.getKey(), valueToString(values.get(values.size() - 1)));
+                }
             }
         }
     }
@@ -193,6 +254,10 @@ public final class KdlModMetadataReader implements ModMetadataReader {
         return stringArguments(node).stream().findFirst().orElse(fallback);
     }
 
+    private static boolean hasChildren(KdlNode node) {
+        return !node.children().isEmpty();
+    }
+
     private static List<String> stringArguments(KdlNode node) {
         return node.arguments().stream()
                 .map(KdlModMetadataReader::valueToString)
@@ -203,5 +268,17 @@ public final class KdlModMetadataReader implements ModMetadataReader {
     private static String valueToString(KdlValue<?> value) {
         Object raw = value.value();
         return raw == null ? "" : String.valueOf(raw);
+    }
+
+    private static final class MetadataAccumulator {
+        private String description = "";
+        private String icon = "";
+        private final List<String> authors = new ArrayList<>();
+        private final List<String> contributors = new ArrayList<>();
+        private final List<String> licenses = new ArrayList<>();
+        private final Map<String, String> contacts = new LinkedHashMap<>();
+        private final Map<String, String> properties = new LinkedHashMap<>();
+        private final List<ModDependency> dependencies = new ArrayList<>();
+        private final Map<String, List<String>> declarations = new LinkedHashMap<>();
     }
 }
