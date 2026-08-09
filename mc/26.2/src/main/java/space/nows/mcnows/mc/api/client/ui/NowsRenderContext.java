@@ -1,49 +1,28 @@
 package space.nows.mcnows.mc.api.client.ui;
 
-import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.Font;
-import net.minecraft.client.gui.GuiGraphicsExtractor;
-import net.minecraft.client.gui.screens.Screen;
-import net.minecraft.network.chat.Component;
-import net.minecraft.resources.Identifier;
-
 public final class NowsRenderContext {
-    private final Screen screen;
-    private final GuiGraphicsExtractor graphics;
+    private final int width;
+    private final int height;
     private final int mouseX;
     private final int mouseY;
     private final float delta;
+    private final NowsRenderSink renderer;
 
-    public NowsRenderContext(Screen screen, GuiGraphicsExtractor graphics, int mouseX, int mouseY, float delta) {
-        this.screen = screen;
-        this.graphics = graphics;
+    public NowsRenderContext(int width, int height, int mouseX, int mouseY, float delta, NowsRenderSink renderer) {
+        this.width = width;
+        this.height = height;
         this.mouseX = mouseX;
         this.mouseY = mouseY;
         this.delta = delta;
-    }
-
-    public Screen screen() {
-        return screen;
-    }
-
-    public GuiGraphicsExtractor graphics() {
-        return graphics;
-    }
-
-    public Minecraft minecraft() {
-        return Minecraft.getInstance();
-    }
-
-    public Font font() {
-        return minecraft().font;
+        this.renderer = renderer;
     }
 
     public int width() {
-        return graphics.guiWidth();
+        return width;
     }
 
     public int height() {
-        return graphics.guiHeight();
+        return height;
     }
 
     public int mouseX() {
@@ -59,22 +38,18 @@ public final class NowsRenderContext {
     }
 
     public void fill(int x1, int y1, int x2, int y2, int color) {
-        graphics.fill(x1, y1, x2, y2, color);
+        renderer.fill(x1, y1, x2, y2, color);
     }
 
     public void text(String text, int x, int y, int color) {
-        graphics.text(font(), text, x, y, color, true);
+        renderer.text(text, x, y, color);
     }
 
-    public void text(Component text, int x, int y, int color) {
-        graphics.text(font(), text, x, y, color, true);
-    }
-
-    public void centeredText(Component text, int x, int y, int color) {
-        graphics.centeredText(font(), text, x, y, color);
+    public void centeredText(String text, int x, int y, int color) {
+        renderer.centeredText(text, x, y, color);
     }
 
     public void icon(String id, int x, int y, int width, int height) {
-        graphics.blit(Identifier.parse(id), x, y, width, height, 0, 0, width, height);
+        renderer.icon(id, x, y, width, height);
     }
 }

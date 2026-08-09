@@ -2,12 +2,14 @@ package space.nows.mcnows.mc.internal.mixin;
 
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
-import net.minecraft.client.gui.components.AbstractWidget;
+import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.components.events.GuiEventListener;
 import net.minecraft.client.gui.components.Renderable;
 import net.minecraft.client.gui.narration.NarratableEntry;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.gui.screens.TitleScreen;
+import net.minecraft.network.chat.Component;
+import net.minecraft.resources.Identifier;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.injection.At;
@@ -27,7 +29,17 @@ public abstract class TitleScreenMixin {
     private void nows$initTitleUi(CallbackInfo ci) {
         Screen screen = (Screen) (Object) this;
         NowsUiImpl.INSTANCE.titleScreenImpl().addButtons(
-                new NowsScreenContext(screen, widget -> addRenderableWidget((AbstractWidget) widget)));
+                new NowsScreenContext(
+                        screen.width,
+                        screen.height,
+                        (x, y, width, height, message, onPress) -> addRenderableWidget(
+                                Button.builder(Component.literal(message), button -> onPress.run())
+                                        .bounds(x, y, width, height)
+                                        .build()),
+                        (title, initializer, renderer) -> Minecraft.getInstance().setScreenAndShow(
+                                new space.nows.mcnows.mc.internal.client.NowsSimpleScreen(
+                                        Component.literal(title), initializer, renderer)),
+                        () -> Minecraft.getInstance().setScreenAndShow(null)));
     }
 
     @Inject(
@@ -46,6 +58,35 @@ public abstract class TitleScreenMixin {
         graphics.text(minecraft.font, NowsMinecraftClientHooks.loaderLine(), x, y, 0xFFFFFFFF, true);
         graphics.text(minecraft.font, NowsMinecraftClientHooks.modLine(), x, y + 10, 0xFFB8B8B8, true);
         NowsUiImpl.INSTANCE.titleScreenImpl().renderAll(
-                new NowsRenderContext((Screen) (Object) this, graphics, mouseX, mouseY, delta));
+                new NowsRenderContext(
+                        graphics.guiWidth(),
+                        graphics.guiHeight(),
+                        mouseX,
+                        mouseY,
+                        delta,
+                        new NowsTitleRenderSink(graphics)));
+    }
+
+    private record NowsTitleRenderSink(GuiGraphicsExtractor graphics)
+            implements space.nows.mcnows.mc.api.client.ui.NowsRenderSink {
+        @Override
+        public void fill(int x1, int y1, int x2, int y2, int color) {
+            graphics.fill(x1, y1, x2, y2, color);
+        }
+
+        @Override
+        public void text(String text, int x, int y, int color) {
+            graphics.text(Minecraft.getInstance().font, text, x, y, color, true);
+        }
+
+        @Override
+        public void centeredText(String text, int x, int y, int color) {
+            graphics.centeredText(Minecraft.getInstance().font, Component.literal(text), x, y, color);
+        }
+
+        @Override
+        public void icon(String id, int x, int y, int width, int height) {
+            graphics.blit(Identifier.parse(id), x, y, width, height, 0, 0, width, height);
+        }
     }
 }
