@@ -1,6 +1,6 @@
 # Nows release layout
 
-Nows 0.3.x installs modularly. Upload the module JARs and `install.properties` to:
+Nows 0.4.x installs modularly. Upload the module JARs and `install.properties` to:
 
 `https://files.nows.space/releases/nows/<nows-version>/<minecraft-version>/`
 

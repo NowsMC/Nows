@@ -19,10 +19,13 @@ import space.nows.mcnows.mixin.NowsMixinBootstrap;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.io.IOException;
+import java.io.InputStream;
 import java.net.URL;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Properties;
 
 public final class NowsLauncher {
     private static final Logger LOG = NowsLog.get(NowsLauncher.class);
@@ -124,7 +127,19 @@ public final class NowsLauncher {
         if (implementationVersion != null && !implementationVersion.isBlank()) {
             return implementationVersion;
         }
-        return System.getProperty("nows.version", "0.3.0");
+        String systemVersion = System.getProperty("nows.version");
+        if (systemVersion != null && !systemVersion.isBlank()) {
+            return systemVersion;
+        }
+        Properties version = new Properties();
+        try (InputStream input = NowsLauncher.class.getResourceAsStream("/META-INF/nows/runtime/version.properties")) {
+            if (input != null) {
+                version.load(input);
+            }
+        } catch (IOException ignored) {
+            return "development";
+        }
+        return version.getProperty("nows.version", "development").trim();
     }
 
     private static void loadTransformers(NowsClassLoader loader, List<ModContainer> mods) throws Exception {

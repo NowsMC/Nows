@@ -1,6 +1,7 @@
 plugins { java }
 
 val minecraftVersion = providers.gradleProperty("minecraft_version")
+val nowsVersion = providers.gradleProperty("nows_version")
 val officialMinecraftJar = rootProject.layout.projectDirectory.file(".nows/minecraft/${minecraftVersion.get()}/client-dev.jar")
 
 dependencies {
@@ -20,6 +21,17 @@ dependencies {
 
 tasks.compileJava {
     dependsOn(":minecraft:prepareMinecraft")
+}
+
+tasks.processResources {
+    inputs.property("nowsVersion", nowsVersion)
+    inputs.property("minecraftVersion", minecraftVersion)
+    filesMatching("nows.mod.kdl") {
+        expand(
+            "nowsVersion" to nowsVersion.get(),
+            "minecraftVersion" to minecraftVersion.get()
+        )
+    }
 }
 
 tasks.jar { archiveBaseName.set("nows-example-mod") }

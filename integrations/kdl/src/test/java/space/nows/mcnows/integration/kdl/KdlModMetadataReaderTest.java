@@ -15,7 +15,7 @@ class KdlModMetadataReaderTest {
     @Test
     void keepsFutureDeclarationsAsGenericMetadata() throws Exception {
         String metadata = """
-                mod id="nows_api_mod" name="Nows API Mod" version="0.3.0" minecraft="26.2" {
+                mod id="nows_api_mod" name="Nows API Mod" version="1.0.0" minecraft="26.2" {
                     entrypoint "space.nows.mcnows.apimod.NowsApiMod"
                     mixin "nows_api_mod.mixins.json"
                     api-feature "client-ui"

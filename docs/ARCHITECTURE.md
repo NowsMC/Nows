@@ -103,7 +103,7 @@ The normal CLI/UI installers are generic installer entrypoints. They choose the 
 https://files.nows.space/releases/nows/<nows-version>/<minecraft-version>/install.properties
 ```
 
-The published offline installer is intentionally per Minecraft version because it embeds the version-specific `nows-mc-<minecraft-version>` adapter and a processed manifest for exactly one game version. Publish it with a versioned filename such as `NowsInstaller-offline-0.3.0-mc-26.2.jar`.
+The published offline installer is intentionally per Minecraft version because it embeds the version-specific `nows-mc-<minecraft-version>` adapter and a processed manifest for exactly one game version. Publish it with a versioned filename such as `NowsInstaller-offline-0.4.0-mc-26.2.jar`.
 
 GitHub Packages-only dependencies, currently KDL4J, may be embedded into installer artifacts and copied into the Minecraft libraries directory when necessary. Normal Nows users must not need GitHub credentials just to install or run Nows.
 
@@ -115,7 +115,7 @@ Nows launcher profiles should use a profile-local game directory under `.minecra
 
 The title-screen Nows badge and mod-count display are required loader proof-of-life, so they belong to `mc/<minecraft version>` rather than `repos/NowsApiMod/`. Each supported `mc/<version>` adapter can declare built-in Mixin configs through `runtime.builtinMixinConfigs` in `nows-minecraft.properties`; runtime registers those configs before mod-declared configs and passes the Nows version, Minecraft version and discovered mod count into the version adapter's client hook.
 
-`repos/NowsApiMod/` builds a normal optional companion mod JAR. It is published as an optional artifact, but the 0.3.0 installer does not install it by default and the loader runtime must not require it.
+`repos/NowsApiMod/` builds a normal optional companion mod JAR. It is published as an optional artifact, but the 0.4.0 installer does not install it by default and the loader runtime must not require it.
 
 Release files are staged locally under `.publishing/` by `publishLayout`. That directory is intentionally ignored by Git because it is an upload staging area for `files.nows.space` backed by CDN/object storage.
 
@@ -144,6 +144,24 @@ The Gradle plugin must be usable both from a published plugin artifact and as an
 The plugin may reuse `.nows/minecraft/<version>/client-dev.jar` as a local cache, but each project task should write its own build output. Two Gradle tasks must not claim the same output file.
 
 The repository policy is intentionally not Fabric-based. Use Maven Central and SpongePowered Maven for SpongePowered Mixin. Do not add `https://maven.fabricmc.net/` just to obtain Mixin.
+
+## Version management
+
+`gradle.properties` is the source of truth for the monorepo's `nows_version`.
+Build logic generates installer defaults, runtime version resources, Gradle
+plugin defaults and release manifests from that value. `install.properties.template`
+is only a template; `publishLayout` rewrites Nows module coordinates, paths,
+URLs and checksums before staging a release.
+
+`repos/NowsApiMod` is also usable as a standalone repository, so it keeps its own
+`gradle.properties`. Use the root helper when bumping releases:
+
+```bash
+./gradlew setNowsVersion -Pnew_nows_version=0.5.0
+```
+
+That updates both the monorepo and standalone `NowsApiMod` property files. Use
+`./gradlew versionReport` to print the current coordinated version.
 
 ## Technical rules
 

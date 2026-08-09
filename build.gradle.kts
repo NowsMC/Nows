@@ -95,6 +95,30 @@ fun publishedModuleArtifactsFor(minecraft: String): Map<String, String> = mapOf(
     ":runtime" to "space/nows/mcnows/nows-runtime/${project.version}/nows-runtime-${project.version}.jar"
 )
 
+fun publishedModuleArtifactIndex(projectPath: String, minecraft: String): Int? = when (projectPath) {
+    ":core" -> 0
+    ":minecraft" -> 1
+    ":integrations:kdl" -> 2
+    ":integrations:geb" -> 3
+    ":integrations:logging" -> 4
+    ":integrations:mixin" -> 5
+    ":runtime" -> 6
+    ":mc:$minecraft" -> 18
+    else -> null
+}
+
+fun publishedModuleArtifactId(projectPath: String, minecraft: String): String = when (projectPath) {
+    ":core" -> "nows-core"
+    ":minecraft" -> "nows-minecraft"
+    ":integrations:kdl" -> "nows-integration-kdl"
+    ":integrations:geb" -> "nows-integration-geb"
+    ":integrations:logging" -> "nows-integration-logging"
+    ":integrations:mixin" -> "nows-integration-mixin"
+    ":runtime" -> "nows-runtime"
+    ":mc:$minecraft" -> "nows-mc-$minecraft"
+    else -> throw GradleException("No artifact id registered for $projectPath")
+}
+
 val publishedMavenArtifactPaths = mapOf(
     "core-${providers.gradleProperty("geb_core_version").get()}.jar" to "foo/zaaarf/geb/core/${providers.gradleProperty("geb_core_version").get()}/core-${providers.gradleProperty("geb_core_version").get()}.jar",
     "reactor-core-${providers.gradleProperty("reactor_version").get()}.jar" to "io/projectreactor/reactor-core/${providers.gradleProperty("reactor_version").get()}/reactor-core-${providers.gradleProperty("reactor_version").get()}.jar",
@@ -183,8 +207,12 @@ val publishLayout by tasks.registering {
         template["minecraft.version"] = minecraft
         val releaseBaseUrl = "${nowsReleaseBaseUrl.get()}/$nows/$minecraft"
         template["releaseBaseUrl"] = releaseBaseUrl
-        template["artifact.18.coordinate"] = "space.nows.mcnows:nows-mc-$minecraft:$nows"
-        template["artifact.18.path"] = "space/nows/mcnows/nows-mc-$minecraft/$nows/nows-mc-$minecraft-$nows.jar"
+        moduleArtifacts.forEach { (projectPath, relativePath) ->
+            val index = publishedModuleArtifactIndex(projectPath, minecraft) ?: return@forEach
+            val artifactId = publishedModuleArtifactId(projectPath, minecraft)
+            template["artifact.$index.coordinate"] = "space.nows.mcnows:$artifactId:$nows"
+            template["artifact.$index.path"] = relativePath
+        }
         val count = template.getProperty("artifact.count").toInt()
         for (index in 0 until count) {
             val prefix = "artifact.$index."
@@ -222,6 +250,57 @@ val publishLayout by tasks.registering {
                         .appendLine()
                 }
         }
+    }
+}
+
+fun updateGradleProperty(file: File, key: String, value: String) {
+    val lines = file.readLines()
+    var replaced = false
+    val updated = lines.map { line ->
+        if (line.startsWith("$key=")) {
+            replaced = true
+            "$key=$value"
+        } else {
+            line
+        }
+    }.toMutableList()
+    if (!replaced) {
+        updated.add("$key=$value")
+    }
+    file.writeText(updated.joinToString(System.lineSeparator()) + System.lineSeparator())
+}
+
+tasks.register("versionReport") {
+    group = "nows"
+    description = "Prints the current Nows release version and default Minecraft target."
+    doLast {
+        println("Nows version: ${nowsVersion.get()}")
+        println("Default Minecraft version: ${minecraftVersion.get()}")
+        println("Release base URL: ${nowsReleaseBaseUrl.get()}/${nowsVersion.get()}/${minecraftVersion.get()}")
+        println("Standalone NowsApiMod version: "
+                + providers.fileContents(layout.projectDirectory.file("repos/NowsApiMod/gradle.properties"))
+                    .asText.get().lineSequence()
+                    .firstOrNull { it.startsWith("nows_version=") }
+                    ?.substringAfter("=")
+                    .orEmpty())
+    }
+}
+
+tasks.register("setNowsVersion") {
+    group = "nows"
+    description = "Updates Nows version properties. Usage: ./gradlew setNowsVersion -Pnew_nows_version=0.5.0"
+    doLast {
+        val requested = providers.gradleProperty("new_nows_version").orNull
+            ?: throw GradleException("Missing -Pnew_nows_version=<version>")
+        require(Regex("""\d+\.\d+\.\d+(-[A-Za-z0-9_.-]+)?""").matches(requested)) {
+            "Invalid Nows version: $requested"
+        }
+        updateGradleProperty(file("gradle.properties"), "nows_version", requested)
+        val apiModProperties = file("repos/NowsApiMod/gradle.properties")
+        if (apiModProperties.isFile) {
+            updateGradleProperty(apiModProperties, "nows_version", requested)
+        }
+        println("Updated Nows version to $requested")
     }
 }
 

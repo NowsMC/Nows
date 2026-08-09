@@ -25,8 +25,8 @@ import javax.swing.UIManager;
 
 public final class NowsInstallerGui {
     private final JFrame frame = new JFrame("Nows Installer");
-    private final JTextField nowsVersion = new JTextField("0.3.0");
-    private final JTextField minecraftVersion = new JTextField("26.2");
+    private final JTextField nowsVersion = new JTextField(NowsInstaller.defaultNowsVersion());
+    private final JTextField minecraftVersion = new JTextField(NowsInstaller.defaultMinecraftVersion());
     private final JTextField minecraftDir = new JTextField(defaultMinecraftDir());
     private final JTextField manifest = new JTextField();
     private final JTextField artifactDir = new JTextField();

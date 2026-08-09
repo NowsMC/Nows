@@ -53,6 +53,24 @@ val prepareEmbeddedLibraries by tasks.registering(Copy::class) {
     into(embeddedDir)
 }
 
+val installerDefaultsDir = layout.buildDirectory.dir("generated/installer-defaults")
+val prepareInstallerDefaults by tasks.registering {
+    inputs.property("nowsVersion", project.version.toString())
+    inputs.property("minecraftVersion", minecraftVersion)
+    outputs.dir(installerDefaultsDir)
+
+    doLast {
+        val output = installerDefaultsDir.get().file("defaults.properties").asFile
+        output.parentFile.mkdirs()
+        output.writeText(
+            """
+            nows.version=${project.version}
+            minecraft.version=${minecraftVersion.get()}
+            """.trimIndent() + "\n"
+        )
+    }
+}
+
 val offlinePayloadDir = layout.buildDirectory.dir("generated/offline-installer")
 fun offlineModuleArtifactsFor(minecraft: String): Map<String, String> = mapOf(
     ":core" to "space/nows/mcnows/nows-core/${project.version}/nows-core-${project.version}.jar",
@@ -95,6 +113,12 @@ val prepareOfflineManifest by tasks.registering {
         manifest["nows.version"] = nows
         manifest["minecraft.version"] = minecraft
         manifest["releaseBaseUrl"] = releaseBaseUrl
+        offlineModuleArtifactsFor(minecraft).forEach { (projectPath, relativePath) ->
+            val index = offlineModuleArtifactIndex(projectPath, minecraft) ?: return@forEach
+            val artifactId = offlineModuleArtifactId(projectPath, minecraft)
+            manifest["artifact.$index.coordinate"] = "space.nows.mcnows:$artifactId:$nows"
+            manifest["artifact.$index.path"] = relativePath
+        }
         manifest["artifact.18.coordinate"] = "space.nows.mcnows:nows-mc-$minecraft:$nows"
         manifest["artifact.18.path"] = "space/nows/mcnows/nows-mc-$minecraft/$nows/nows-mc-$minecraft-$nows.jar"
         val count = manifest.getProperty("artifact.count").toInt()
@@ -123,6 +147,30 @@ val prepareOfflineManifest by tasks.registering {
 
 val offlineMinecraftVersion = minecraftVersion.get()
 val offlineModuleArtifacts = offlineModuleArtifactsFor(offlineMinecraftVersion)
+fun offlineModuleArtifactIndex(projectPath: String, minecraft: String): Int? = when (projectPath) {
+    ":core" -> 0
+    ":minecraft" -> 1
+    ":integrations:kdl" -> 2
+    ":integrations:geb" -> 3
+    ":integrations:logging" -> 4
+    ":integrations:mixin" -> 5
+    ":runtime" -> 6
+    ":mc:$minecraft" -> 18
+    else -> null
+}
+
+fun offlineModuleArtifactId(projectPath: String, minecraft: String): String = when (projectPath) {
+    ":core" -> "nows-core"
+    ":minecraft" -> "nows-minecraft"
+    ":integrations:kdl" -> "nows-integration-kdl"
+    ":integrations:geb" -> "nows-integration-geb"
+    ":integrations:logging" -> "nows-integration-logging"
+    ":integrations:mixin" -> "nows-integration-mixin"
+    ":runtime" -> "nows-runtime"
+    ":mc:$minecraft" -> "nows-mc-$minecraft"
+    else -> throw GradleException("No artifact id registered for $projectPath")
+}
+
 val prepareOfflinePayload by tasks.registering(Copy::class) {
     dependsOn(prepareOfflineManifest)
     dependsOn(offlineModuleArtifacts.keys.map { project(it).tasks.named("jar") })
@@ -154,8 +202,9 @@ val prepareOfflinePayload by tasks.registering(Copy::class) {
 }
 
 tasks.processResources {
-    dependsOn(prepareEmbeddedLibraries)
+    dependsOn(prepareEmbeddedLibraries, prepareInstallerDefaults)
     from(embeddedDir) { into("META-INF/nows/embedded-libs") }
+    from(installerDefaultsDir) { into("META-INF/nows/installer") }
 }
 
 application { mainClass.set("space.nows.mcnows.installer.NowsInstaller") }

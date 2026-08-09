@@ -27,6 +27,8 @@ import java.util.Properties;
  * of nows-core.</p>
  */
 public final class NowsInstaller {
+    private static final String DEFAULTS_RESOURCE = "/META-INF/nows/installer/defaults.properties";
+
     private NowsInstaller() {}
 
     public static void main(String[] args) throws Exception {
@@ -522,6 +524,27 @@ public final class NowsInstaller {
         return value.trim();
     }
 
+    static String defaultNowsVersion() {
+        return defaultProperty("nows.version", "0.0.0");
+    }
+
+    static String defaultMinecraftVersion() {
+        return defaultProperty("minecraft.version", "26.2");
+    }
+
+    private static String defaultProperty(String key, String fallback) {
+        Properties defaults = new Properties();
+        try (InputStream input = NowsInstaller.class.getResourceAsStream(DEFAULTS_RESOURCE)) {
+            if (input != null) {
+                defaults.load(input);
+            }
+        } catch (IOException ignored) {
+            return fallback;
+        }
+        String value = defaults.getProperty(key);
+        return value == null || value.trim().isEmpty() ? fallback : value.trim();
+    }
+
     private static String digest(Path path, String algorithm) throws IOException {
         try {
             MessageDigest digest = MessageDigest.getInstance(algorithm);
@@ -883,8 +906,8 @@ public final class NowsInstaller {
         }
 
         static Options parse(String[] args) {
-            String nows = "0.3.0";
-            String minecraft = "26.2";
+            String nows = defaultNowsVersion();
+            String minecraft = defaultMinecraftVersion();
             String manifest = null;
             boolean offline = false;
             Path artifactDir = null;

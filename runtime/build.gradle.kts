@@ -5,6 +5,7 @@ val gebCoreVersion = providers.gradleProperty("geb_core_version")
 val reactorVersion = providers.gradleProperty("reactor_version")
 val disruptorVersion = providers.gradleProperty("disruptor_version")
 val mixinVersion = providers.gradleProperty("mixin_version")
+val nowsVersion = providers.gradleProperty("nows_version")
 
 // This configuration is only for the optional future single-JAR distribution.
 // It intentionally omits Minecraft-owned Log4j2/SLF4J/Gson/Guava/JSpecify.
@@ -32,6 +33,23 @@ dependencies {
     allJarLibraries("org.ow2.asm:asm-commons:9.8") { isTransitive = false }
     allJarLibraries("org.ow2.asm:asm-analysis:9.8") { isTransitive = false }
     allJarLibraries("org.ow2.asm:asm-util:9.8") { isTransitive = false }
+}
+
+val runtimeVersionDir = layout.buildDirectory.dir("generated/runtime-version")
+val prepareRuntimeVersion by tasks.registering {
+    inputs.property("nowsVersion", nowsVersion)
+    outputs.dir(runtimeVersionDir)
+
+    doLast {
+        val output = runtimeVersionDir.get().file("version.properties").asFile
+        output.parentFile.mkdirs()
+        output.writeText("nows.version=${nowsVersion.get()}\n")
+    }
+}
+
+tasks.processResources {
+    dependsOn(prepareRuntimeVersion)
+    from(runtimeVersionDir) { into("META-INF/nows/runtime") }
 }
 
 tasks.jar {

@@ -4,7 +4,7 @@ Nows is an experimental Minecraft Java mod loader built around a small stable ke
 
 - Website/domain: **https://nows.space**
 - Java/Maven namespace: **`space.nows.mcnows`**
-- Current source version: **0.3.0**
+- Current source version: **0.4.0**
 - Current target: **Minecraft Java 26.2**
 - No Java agent, `premain`, or `java.lang.instrument`
 - Development names: **official Mojang mappings**
@@ -131,13 +131,13 @@ Plugin id:
 
 ```kotlin
 plugins {
-    id("space.nows.mcnows") version "0.3.0"
+    id("space.nows.mcnows") version "0.4.0"
 }
 
 nows {
     minecraftVersion.set("26.2")
     officialMappings.set(true)
-    nowsVersion.set("0.3.0")
+    nowsVersion.set("0.4.0")
     addGeb.set(true)
     addMixin.set(true)
 }
@@ -169,6 +169,12 @@ Build the local upload layout for `files.nows.space`:
 
 ```bash
 ./gradlew publishLayout
+```
+
+Update the coordinated project version:
+
+```bash
+./gradlew setNowsVersion -Pnew_nows_version=0.5.0
 ```
 
 The generated files are written under `.publishing/releases/nows/<nows-version>/<minecraft-version>/`.

@@ -1,7 +1,7 @@
 package space.nows.mcnows.mc.internal;
 
 public final class NowsMinecraftClientHooks {
-    private static volatile String nowsVersion = "0.3.0";
+    private static volatile String nowsVersion = "development";
     private static volatile String minecraftVersion = "26.2";
     private static volatile int modCount;
 

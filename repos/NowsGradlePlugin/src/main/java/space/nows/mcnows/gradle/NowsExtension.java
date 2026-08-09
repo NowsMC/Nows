@@ -18,7 +18,7 @@ public abstract class NowsExtension {
     @Inject
     public NowsExtension(ObjectFactory objects) {
         minecraftVersion = objects.property(String.class).convention("26.2");
-        nowsVersion = objects.property(String.class).convention("0.3.0");
+        nowsVersion = objects.property(String.class).convention(NowsGradlePluginDefaults.nowsVersion());
         officialMappings = objects.property(Boolean.class).convention(true);
         addGeb = objects.property(Boolean.class).convention(true);
         addMixin = objects.property(Boolean.class).convention(true);

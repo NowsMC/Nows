@@ -80,7 +80,7 @@ https://files.nows.space/releases/nows/<nows-version>/<minecraft-version>/instal
 
 Use `install.properties.template` as the release template. Release automation should fill SHA-256 values before publishing. For `source=internet` artifacts, the normal installer first tries `artifact.<n>.url`; if that download fails or the URL is missing, it falls back to `artifact.<n>.mavenUrl` or `mavenBaseUrl + artifact.<n>.path`.
 
-The manifest may also include `mod.<n>` companion mod entries. These are copied to the Nows profile-local `mods/` directory. The 0.3.0 default manifest does not use this for `NowsApiMod`; the title-screen badge is provided by the required `mc/<minecraft-version>` adapter instead.
+The manifest may also include `mod.<n>` companion mod entries. These are copied to the Nows profile-local `mods/` directory. The 0.4.0 default manifest does not use this for `NowsApiMod`; the title-screen badge is provided by the required `mc/<minecraft-version>` adapter instead.
 
 ## Fully offline installer
 
@@ -113,7 +113,7 @@ java -jar build/libs/NowsInstaller-cli-<version>.jar \
 The local `install.properties` still uses the normal `artifact.*.path` values. For artifacts whose source is `internet`, place each JAR under `--artifactDir` using that same relative path, for example:
 
 ```text
-/path/to/offline-libraries/space/nows/mcnows/nows-core/0.3.0/nows-core-0.3.0.jar
+/path/to/offline-libraries/space/nows/mcnows/nows-core/0.4.0/nows-core-0.4.0.jar
 ```
 
 Artifacts marked `source=embedded` are still copied from inside the installer JAR. A manifest may also set `artifact.<n>.source=local` and `artifact.<n>.file=relative/or/absolute.jar` for one-off local test jars.
