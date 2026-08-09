@@ -17,7 +17,7 @@ In short:
 
 The current Nows loader version and default Minecraft target live in `gradle.properties` as `nows_version` and `minecraft_version`. Supported Minecraft adapters are the directories under `mc/`. Runtime code is built for the target Minecraft Java level, while `repos/NowsInstaller` produces Java 8-compatible installer entrypoints.
 
-The loader's expected smoke-test path is: runtime startup, policy loading, profile-local version JAR lookup, Mixin bootstrap, built-in title-screen mixin registration, GEB installation and Minecraft main invocation. When the game is launched manually from a terminal with dummy auth values such as `--accessToken 0`, Mojang account and Realms `401`/JWT errors are expected and do not indicate a loader failure.
+The loader's expected smoke-test path is: runtime startup, policy loading, profile-local version JAR lookup, Mixin bootstrap, built-in title-screen mixin registration, GEB installation, metadata-declared listener registration, loader lifecycle event dispatch, mod entrypoint execution and Minecraft main invocation. When the game is launched manually from a terminal with dummy auth values such as `--accessToken 0`, Mojang account and Realms `401`/JWT errors are expected and do not indicate a loader failure.
 
 The normal installed profile id is:
 
@@ -67,9 +67,9 @@ Core currently owns:
 
 - `ModInitializer` - lifecycle entry contract.
 - `ClassTransformer` - raw pre-definition bytecode transformation contract.
-- `NowsContext` - stable runtime context plus typed service lookup.
+- `NowsContext` - stable runtime context, loaded-mod lookup helpers and typed service lookup.
 - `NowsServices` - implementation-neutral service registry.
-- `ModDescriptor`, `ModContainer`, `ModMetadataReader`, `ModDiscovery` - format-neutral mod model and discovery SPI.
+- `ModDescriptor`, `ModDependency`, `ModContainer`, `ModMetadataReader`, `ModDiscovery` - format-neutral mod model and discovery SPI.
 - `NowsClassLoader` - child-first game/mod classloader, transformer chain and synthetic-class hook.
 
 Core deliberately does not know about:
@@ -100,8 +100,8 @@ core
  |
  +-- runtime (composition root, depends on core, minecraft and integrations)
 
-repos/NowsApiMod is a consumer/fixture of the public loader surface:
-core + mc/<minecraft version> + Gradle plugin + KDL + Mixin
+repos/NowsApiMod and example-mod are consumers/fixtures of the public loader surface:
+core + mc/<minecraft version> + Gradle plugin + KDL + GEB + Mixin
 ```
 
 `core` must never depend on Minecraft, Mixin, KDL, GEB, Reactor, Gradle, installer code, web code or other integrations. Integrations may depend on `core`; `runtime/` wires the pieces together and should avoid reusable subsystem logic.
@@ -253,11 +253,21 @@ That updates both the monorepo and standalone `NowsApiMod` property files. Use
   - use `implementation` when a dependency is internal;
   - use `compileOnly` when Minecraft/runtime is expected to provide the dependency.
 
+## GEB event policy
+
+`integrations/geb/` owns the Nows-facing event surface. Runtime installs one GEB bus, loads GEB-generated dispatchers from the game/mod classloader, registers Nows-owned lifecycle dispatchers and exposes both raw `GEB` and the small `NowsEvents` facade through `NowsServices`.
+
+Mods may declare listener classes in metadata with `listener` or `geb-listener`. Runtime instantiates those no-argument listener classes with the game classloader and registers them before mod entrypoints run. Listener registration is metadata policy and belongs in the GEB integration/runtime composition, not in `core`.
+
+Nows-owned loader lifecycle events live in `integrations/geb/event/`. Mods should observe those events by implementing `NowsLifecycleListener`; Nows provides built-in dispatchers for them. This avoids relying on every mod's GEB annotation processor to generate a dispatcher with the same event-class-derived name, which can collide when multiple mods listen to the same loader event. Regular GEB `@Listen` methods remain appropriate for mod-owned custom events and dispatchers generated inside a mod.
+
+GEB remains optional from the perspective of `core`. A mod or optional companion surface that does not use GEB should be able to compile against `nows-core` without depending on GEB types.
+
 ## Logging policy
 
 `integrations/logging/` owns Nows logging policy. Runtime and integrations should get loggers through `NowsLog` instead of configuring third-party logging directly.
 
-Loader startup should be observable from INFO logs. Nows should log phase start/end, selected runtime/policy facts, mod discovery, classloader setup, built-in Mixin config registration, transformer loading, service installation and entrypoint execution without printing access tokens or other launcher secrets.
+Loader startup should be observable from INFO logs. Nows should log phase start/end, selected runtime/policy facts, mod discovery, classloader setup, built-in Mixin config registration, transformer loading, service installation, metadata-declared listener registration, lifecycle dispatch points and entrypoint execution without printing access tokens or other launcher secrets.
 
 The default backend is `slf4j`, which flows into Minecraft's existing SLF4J -> Log4j2 backend. For local diagnostics, set:
 
@@ -285,19 +295,27 @@ KDL4J may come from GitHub Packages. Release/build tooling may need credentials 
 
 ## Why the metadata model is generic
 
-Core stores child declarations as `Map<String, List<String>>` instead of fields like `mixins` or `entrypoints`. The KDL integration can therefore introduce a new declaration without forcing a core record/API revision.
+Core stores common mod facts such as id, name, version, target Minecraft version, description, authors, contributors, licenses, icon, contact links, arbitrary properties and dependency declarations because those concepts are useful across metadata formats. It also stores feature declarations as `Map<String, List<String>>` instead of fields like `mixins`, `entrypoints` or `listeners`. The KDL integration can therefore introduce a new declaration without forcing a core record/API revision.
 
 For example:
 
 ```kdl
-mod id="example" version="1.0.0" minecraft="26.2" {
+mod id="example" name="Example Mod" version="1.0.0" minecraft="26.2" side="client" {
+    description "Small example mod."
+    author "ExampleDev"
+    license "Apache-2.0"
+    contact homepage="https://example.com" sources="https://github.com/example/mod"
+    depends "other_mod" version=">=1.0.0"
+    listener "example.ExampleLifecycleListener"
     entrypoint "example.Mod"
     mixin "example.mixins.json"
     future-feature "some.value"
 }
 ```
 
-Only the integration that understands `future-feature` needs to change.
+Only the integration that understands `future-feature` needs to change. Runtime and integrations may still agree on well-known declaration keys such as `entrypoint`, `transformer`, `mixin` and `listener`; those are loader/integration policy, not hard-coded fields in `core`.
+
+`NowsContext` should provide ergonomic loaded-mod lookup over this model, such as checking whether a mod id is present or retrieving a `ModDescriptor` by id. That lookup belongs in core because it is about the stable loaded-mod graph, not about KDL, Minecraft, GEB or Mixin.
 
 ## Compatibility philosophy
 
