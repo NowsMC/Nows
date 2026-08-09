@@ -26,11 +26,11 @@ class KdlModMetadataReaderTest {
                     depends "nows_example" version=">=1.0.0" reason="Used by this fixture"
                     recommends "modmenu" version="*"
                     property "channel" "dev"
-                    entrypoint "space.nows.mcnows.apimod.NowsApiMod"
+                    entrypoint "space.nows.api.NowsApiMod"
                     mixin "nows_api_mod.mixins.json"
                     api-feature "client-ui"
                     api-feature "modmenu"
-                    modmenu "space.nows.mcnows.apimod.client.NowsApiModMenu"
+                    modmenu "space.nows.api.client.NowsApiModMenu"
                 }
                 """;
 
@@ -56,6 +56,6 @@ class KdlModMetadataReaderTest {
         assertTrue(descriptor.dependencies().get(1).optional());
         assertEquals(List.of("client-ui", "modmenu"), descriptor.declarations("api-feature"));
         assertEquals("client-ui", descriptor.declaration("api-feature").orElseThrow());
-        assertEquals(List.of("space.nows.mcnows.apimod.client.NowsApiModMenu"), descriptor.declarations("modmenu"));
+        assertEquals(List.of("space.nows.api.client.NowsApiModMenu"), descriptor.declarations("modmenu"));
     }
 }
