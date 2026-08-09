@@ -1,10 +1,11 @@
 package space.nows.mcnows.mc.internal;
 
-import net.minecraft.server.packs.repository.PackRepository;
+import net.minecraft.server.packs.repository.RepositorySource;
 import space.nows.mcnows.core.mod.ModContainer;
 import space.nows.mcnows.mc.internal.resources.NowsModPackSource;
 
 import java.util.List;
+import java.util.Set;
 
 public final class NowsMinecraftClientHooks {
     private static volatile String nowsVersion = "development";
@@ -26,8 +27,8 @@ public final class NowsMinecraftClientHooks {
         mods = List.copyOf(modContainers);
     }
 
-    public static boolean installResourcePacks(PackRepository repository) {
-        return NowsModPackSource.install(repository, mods);
+    public static Set<RepositorySource> withModResourcePackSource(Set<RepositorySource> sources, RepositorySource[] originalSources) {
+        return NowsModPackSource.appendClientSource(sources, originalSources, mods);
     }
 
     public static String loaderLine() {

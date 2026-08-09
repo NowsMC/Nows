@@ -6,14 +6,12 @@ import net.minecraft.server.packs.PackResources;
 import net.minecraft.server.packs.PackSelectionConfig;
 import net.minecraft.server.packs.repository.Pack;
 import net.minecraft.server.packs.repository.PackCompatibility;
-import net.minecraft.server.packs.repository.PackRepository;
 import net.minecraft.server.packs.repository.PackSource;
 import net.minecraft.server.packs.repository.RepositorySource;
 import net.minecraft.world.flag.FeatureFlagSet;
 import space.nows.mcnows.core.mod.ModContainer;
 
 import java.io.IOException;
-import java.lang.reflect.Field;
 import java.nio.file.Path;
 import java.util.Collections;
 import java.util.LinkedHashSet;
@@ -36,29 +34,21 @@ public final class NowsModPackSource implements RepositorySource {
         this.mods = mods;
     }
 
-    public static boolean install(PackRepository repository, List<ModContainer> mods) {
-        if (mods.isEmpty()) {
-            System.out.println("[Nows] No mod resource packs to install");
-            return false;
+    public static Set<RepositorySource> appendClientSource(
+            Set<RepositorySource> sources,
+            RepositorySource[] originalSources,
+            List<ModContainer> mods) {
+        int resourceMods = countResourceMods(mods);
+        if (resourceMods == 0 || !isClientResourceRepository(originalSources)) {
+            return sources;
         }
-        try {
-            Field sourcesField = PackRepository.class.getDeclaredField("sources");
-            sourcesField.setAccessible(true);
-            @SuppressWarnings("unchecked")
-            Set<RepositorySource> sources = (Set<RepositorySource>) sourcesField.get(repository);
-            if (sources.stream().anyMatch(NowsModPackSource.class::isInstance)) {
-                System.out.println("[Nows] Mod resource pack source already installed");
-                return false;
-            }
-            LinkedHashSet<RepositorySource> updated = new LinkedHashSet<>(sources);
-            updated.add(new NowsModPackSource(List.copyOf(mods)));
-            sourcesField.set(repository, Collections.unmodifiableSet(updated));
-            repository.reload();
-            System.out.println("[Nows] Installed mod resource pack source for " + countResourceMods(mods) + " mod(s)");
-            return true;
-        } catch (ReflectiveOperationException | RuntimeException e) {
-            throw new IllegalStateException("Failed to install Nows mod resource packs", e);
+        if (sources.stream().anyMatch(NowsModPackSource.class::isInstance)) {
+            return sources;
         }
+        LinkedHashSet<RepositorySource> updated = new LinkedHashSet<>(sources);
+        updated.add(new NowsModPackSource(List.copyOf(mods)));
+        System.out.println("[Nows] Added mod resource pack source for " + resourceMods + " mod(s)");
+        return Collections.unmodifiableSet(updated);
     }
 
     @Override
@@ -96,6 +86,15 @@ public final class NowsModPackSource implements RepositorySource {
             }
         }
         return count;
+    }
+
+    private static boolean isClientResourceRepository(RepositorySource[] sources) {
+        for (RepositorySource source : sources) {
+            if (source.getClass().getName().equals("net.minecraft.client.resources.ClientPackSource")) {
+                return true;
+            }
+        }
+        return false;
     }
 
     private static PackResources open(PackLocationInfo location, Path jar) {

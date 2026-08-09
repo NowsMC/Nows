@@ -5,7 +5,7 @@
   "compatibilityLevel": "JAVA_21",
   "mixins": [],
   "client": [
-    "MinecraftMixin",
+    "PackRepositoryMixin",
     "TitleScreenMixin"
   ],
   "injectors": {
