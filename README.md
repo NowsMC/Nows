@@ -170,6 +170,7 @@ Mods can use the same Nows API class names across supported versions while each 
 ```java
 NowsRegistryApi registries = NowsMinecraft.registries(context);
 
+Item raw = registries.register(BuiltInRegistries.ITEM, "my_mod:raw_widget", new Item(new Item.Properties()));
 Item item = registries.registerItem("my_mod:widget", props -> props.stacksTo(16));
 Item food = registries.registerFood("my_mod:berry", new FoodProperties.Builder()
         .nutrition(4)
@@ -194,6 +195,8 @@ registries.registerCreativeTab(
             output.accept(block.item());
         });
 ```
+
+`NowsServices.register(...)` is only the loader's service registry. `NowsRegistryApi.register(...)` is the raw Minecraft registry helper, similar in spirit to the basic registry calls a Forge/Fabric mod reaches for when no higher-level helper is needed.
 
 Existing registry entries can be queried with Optional-returning methods or fail-fast getters:
 

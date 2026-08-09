@@ -28,6 +28,11 @@ public final class NowsRegistryApiImpl implements NowsRegistryApi {
     private int nextTabColumn;
 
     @Override
+    public <V, T extends V> T register(Registry<V> registry, String id, T value) {
+        return Registry.register(registry, location(id), value);
+    }
+
+    @Override
     public Item registerItem(String id) {
         return registerItem(id, Function.identity());
     }
@@ -49,7 +54,7 @@ public final class NowsRegistryApiImpl implements NowsRegistryApi {
 
     @Override
     public Item registerCustomItem(String id, Function<Item.Properties, ? extends Item> factory) {
-        return Registry.register(BuiltInRegistries.ITEM, location(id), factory.apply(new Item.Properties()));
+        return register(BuiltInRegistries.ITEM, id, factory.apply(new Item.Properties()));
     }
 
     @Override
@@ -120,8 +125,7 @@ public final class NowsRegistryApiImpl implements NowsRegistryApi {
 
     @Override
     public Block registerCustomBlock(String id, Function<BlockBehaviour.Properties, ? extends Block> factory) {
-        return Registry.register(BuiltInRegistries.BLOCK, location(id),
-                factory.apply(BlockBehaviour.Properties.of()));
+        return register(BuiltInRegistries.BLOCK, id, factory.apply(BlockBehaviour.Properties.of()));
     }
 
     @Override
@@ -131,8 +135,7 @@ public final class NowsRegistryApiImpl implements NowsRegistryApi {
 
     @Override
     public BlockItem registerBlockItem(String id, Block block, Function<Item.Properties, Item.Properties> configure) {
-        return Registry.register(BuiltInRegistries.ITEM, location(id),
-                new BlockItem(block, apply(configure, new Item.Properties())));
+        return register(BuiltInRegistries.ITEM, id, new BlockItem(block, apply(configure, new Item.Properties())));
     }
 
     @Override
@@ -162,7 +165,7 @@ public final class NowsRegistryApiImpl implements NowsRegistryApi {
                 .icon(icon)
                 .displayItems(displayItems)
                 .build();
-        return Registry.register(BuiltInRegistries.CREATIVE_MODE_TAB, location(id), tab);
+        return register(BuiltInRegistries.CREATIVE_MODE_TAB, id, tab);
     }
 
     @Override

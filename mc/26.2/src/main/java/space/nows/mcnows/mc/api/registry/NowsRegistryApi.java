@@ -1,6 +1,7 @@
 package space.nows.mcnows.mc.api.registry;
 
 import net.minecraft.network.chat.Component;
+import net.minecraft.core.Registry;
 import net.minecraft.world.food.FoodProperties;
 import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.CreativeModeTab;
@@ -18,6 +19,8 @@ import java.util.function.Supplier;
 
 /** Version-backed helpers for common Minecraft registries. */
 public interface NowsRegistryApi {
+    <V, T extends V> T register(Registry<V> registry, String id, T value);
+
     Item registerItem(String id);
 
     Item registerItem(String id, NowsItemLogic logic);
