@@ -14,7 +14,9 @@ public abstract class TitleScreenMixin {
     @Inject(method = "render(Lnet/minecraft/client/gui/GuiGraphics;IIF)V", at = @At("TAIL"), remap = false)
     private void nows$renderTitleBadge(GuiGraphics graphics, int mouseX, int mouseY, float delta, CallbackInfo ci) {
         Minecraft minecraft = Minecraft.getInstance();
-        graphics.drawString(minecraft.font, NowsMinecraftClientHooks.brandLine(), 2, 2, 0xFFFFFFFF, true);
-        graphics.drawString(minecraft.font, NowsMinecraftClientHooks.modLine(), 2, 12, 0xFFB8B8B8, true);
+        int x = 2;
+        int y = graphics.guiHeight() - 30;
+        graphics.drawString(minecraft.font, NowsMinecraftClientHooks.loaderLine(), x, y, 0xFFFFFFFF, true);
+        graphics.drawString(minecraft.font, NowsMinecraftClientHooks.modLine(), x, y + 10, 0xFFB8B8B8, true);
     }
 }

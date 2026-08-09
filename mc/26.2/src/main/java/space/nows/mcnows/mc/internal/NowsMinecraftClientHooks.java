@@ -14,8 +14,8 @@ public final class NowsMinecraftClientHooks {
         modCount = mods;
     }
 
-    public static String brandLine() {
-        return "Nows " + nowsVersion + " | Minecraft " + minecraftVersion;
+    public static String loaderLine() {
+        return "Nows Loader " + nowsVersion;
     }
 
     public static String modLine() {
