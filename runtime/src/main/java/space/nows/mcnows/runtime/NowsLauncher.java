@@ -6,6 +6,7 @@ import space.nows.mcnows.api.ModInitializer;
 import space.nows.mcnows.api.NowsContext;
 import space.nows.mcnows.api.NowsSide;
 import space.nows.mcnows.api.NowsServices;
+import space.nows.mcnows.api.config.NowsConfigFiles;
 import space.nows.mcnows.core.classloading.NowsClassLoader;
 import space.nows.mcnows.core.mod.ModContainer;
 import space.nows.mcnows.core.mod.ModDependencyResolver;
@@ -18,6 +19,7 @@ import space.nows.mcnows.integration.geb.event.NowsEntrypointsStartingEvent;
 import space.nows.mcnows.integration.geb.event.NowsMinecraftStartingEvent;
 import space.nows.mcnows.integration.geb.event.NowsModEntrypointCompletedEvent;
 import space.nows.mcnows.integration.geb.event.NowsModEntrypointStartingEvent;
+import space.nows.mcnows.integration.geb.event.NowsRegisterEvent;
 import space.nows.mcnows.integration.kdl.KdlModMetadataReader;
 import space.nows.mcnows.integration.logging.NowsLog;
 import space.nows.mcnows.integration.network.NowsNetworking;
@@ -116,6 +118,8 @@ public final class NowsLauncher {
                 phase("Load class transformers", () -> loadTransformers(gameLoader, mods));
 
                 NowsServices services = new NowsServices();
+                services.register(NowsConfigFiles.class,
+                        new NowsConfigFiles(launch.gameDirectory().resolve("config").resolve("nows")));
                 phase("Install Minecraft API adapter", () ->
                         installMinecraftApiAdapter(services, launch.gameDirectory(), launch.minecraftVersion()));
                 phase("Install network integration", () -> NowsNetworking.install(services, RUNTIME_SIDE));
@@ -135,6 +139,7 @@ public final class NowsLauncher {
                         GebIntegration.registerDeclaredListeners(context));
                 LOG.info("Registered {} declared GEB listener(s)", listenerCount);
                 events.post(new NowsBootstrapReadyEvent(context));
+                events.post(new NowsRegisterEvent(context));
 
                 phase("Run mod entrypoints", () -> runEntrypoints(gameLoader, mods, context, events));
 

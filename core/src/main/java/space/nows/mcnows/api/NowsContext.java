@@ -2,6 +2,7 @@ package space.nows.mcnows.api;
 
 import space.nows.mcnows.core.mod.ModContainer;
 import space.nows.mcnows.core.mod.ModDescriptor;
+import space.nows.mcnows.api.config.NowsConfigFiles;
 
 import java.nio.file.Path;
 import java.util.LinkedHashMap;
@@ -26,6 +27,18 @@ public record NowsContext(
 
     public <T> T service(Class<T> type) {
         return services.require(type);
+    }
+
+    public NowsConfigFiles configs() {
+        return service(NowsConfigFiles.class);
+    }
+
+    public boolean isClient() {
+        return side == NowsSide.CLIENT;
+    }
+
+    public boolean isServer() {
+        return side == NowsSide.SERVER;
     }
 
     public boolean isModLoaded(String id) {

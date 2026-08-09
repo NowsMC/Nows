@@ -7,10 +7,14 @@ import space.nows.mcnows.integration.geb.event.NowsEntrypointsStartingEvent;
 import space.nows.mcnows.integration.geb.event.NowsMinecraftStartingEvent;
 import space.nows.mcnows.integration.geb.event.NowsModEntrypointCompletedEvent;
 import space.nows.mcnows.integration.geb.event.NowsModEntrypointStartingEvent;
+import space.nows.mcnows.integration.geb.event.NowsRegisterEvent;
 
 /** Listener interface for Nows-owned lifecycle events. */
 public interface NowsLifecycleListener extends IListener {
     default void onNowsBootstrapReady(NowsBootstrapReadyEvent event) {
+    }
+
+    default void onNowsRegister(NowsRegisterEvent event) {
     }
 
     default void onNowsEntrypointsStarting(NowsEntrypointsStartingEvent event) {

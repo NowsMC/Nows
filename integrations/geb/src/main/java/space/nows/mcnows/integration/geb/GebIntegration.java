@@ -11,6 +11,7 @@ import space.nows.mcnows.integration.geb.event.NowsEntrypointsStartingEvent;
 import space.nows.mcnows.integration.geb.event.NowsMinecraftStartingEvent;
 import space.nows.mcnows.integration.geb.event.NowsModEntrypointCompletedEvent;
 import space.nows.mcnows.integration.geb.event.NowsModEntrypointStartingEvent;
+import space.nows.mcnows.integration.geb.event.NowsRegisterEvent;
 
 import java.util.List;
 
@@ -64,6 +65,8 @@ public final class GebIntegration {
     private static void registerNowsLifecycleDispatchers(GEB bus) {
         bus.registerDispatcher(new NowsLifecycleDispatcher<>(
                 NowsBootstrapReadyEvent.class, NowsLifecycleListener::onNowsBootstrapReady));
+        bus.registerDispatcher(new NowsLifecycleDispatcher<>(
+                NowsRegisterEvent.class, NowsLifecycleListener::onNowsRegister));
         bus.registerDispatcher(new NowsLifecycleDispatcher<>(
                 NowsEntrypointsStartingEvent.class, NowsLifecycleListener::onNowsEntrypointsStarting));
         bus.registerDispatcher(new NowsLifecycleDispatcher<>(
