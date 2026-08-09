@@ -119,6 +119,8 @@ The title-screen Nows badge and mod-count display are required loader proof-of-l
 
 Release files are staged locally under `.publishing/` by `publishLayout`. That directory is intentionally ignored by Git because it is an upload staging area for `files.nows.space` backed by CDN/object storage.
 
+`prepareWorkspace` is the canonical fresh-clone preparation task. It syncs required git submodules, validates local tools, builds Java outputs, the web surface, installers, offline payloads, release layout and signed Maven layout. It is intended for local developer testing before running narrower tasks.
+
 `.publishing/releases/nows/<nows-version>/<minecraft-version>/` is the player/install surface. It contains the installer manifest, checksums, installers and release artifacts used by NowsInstaller.
 
 `.publishing/maven/` is the developer surface. It is a complete local Maven repository intended to be uploaded to `https://files.nows.space/maven/` so mod developers can depend on Nows APIs and tooling. It publishes public Nows modules, version-specific `nows-mc-<minecraft-version>` adapters, integrations, runtime artifacts and the Gradle plugin marker under the `space.nows.mcnows` group.

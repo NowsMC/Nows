@@ -122,8 +122,10 @@ Build credentials remain the usual:
 
 ```properties
 gpr.user=YOUR_GITHUB_USER
-gpr.key=TOKEN_WITH_READ_PACKAGES
+gpr.token=TOKEN_WITH_READ_PACKAGES
 ```
+
+`gpr.key` is still accepted as a compatibility alias.
 
 ## NowsGradlePlugin
 
@@ -148,6 +150,14 @@ The plugin owns Minecraft development setup rather than the loader core. `nowsPr
 It also wires the prepared development client JAR into `compileOnly`, makes Java compilation depend on preparation, adds the matching `nows-core` API, and can add GEB and Mixin compile/annotation-processor tooling to mod projects.
 
 ## Build
+
+Fresh clone setup command:
+
+```bash
+./gradlew prepareWorkspace
+```
+
+`prepareWorkspace` syncs git submodules, checks GitHub Package credentials, GPG signing, npm and submodule paths, then builds the Java artifacts, NowsWeb, installers, offline payload, release layout and signed developer Maven layout.
 
 ```bash
 ./gradlew dist

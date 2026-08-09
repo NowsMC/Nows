@@ -9,6 +9,14 @@ Before publishing, fill SHA-256 fields for every artifact. `dev.kdl:kdl4j` is in
 
 Use `./gradlew publishLayout` to build `.publishing/releases/nows/<nows-version>/<minecraft-version>/` and `.publishing/maven/`.
 
+For a fresh clone intended for local testing, use the broader setup task:
+
+```bash
+./gradlew prepareWorkspace
+```
+
+That task syncs submodules before checking tools and building artifacts.
+
 To build a different Minecraft target, pass the Gradle property:
 
 ```bash

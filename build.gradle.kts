@@ -1,4 +1,5 @@
 import java.security.MessageDigest
+import java.lang.ProcessBuilder.Redirect
 import org.gradle.api.publish.PublishingExtension
 import org.gradle.api.publish.maven.MavenPublication
 import org.gradle.api.publish.maven.tasks.PublishToMavenRepository
@@ -9,8 +10,14 @@ plugins { base }
 val nowsVersion = providers.gradleProperty("nows_version")
 val minecraftVersion = providers.gradleProperty("minecraft_version")
 val nowsReleaseBaseUrl = providers.gradleProperty("nows_release_base_url")
+val githubPackageUser = providers.gradleProperty("gpr.user")
+    .orElse(providers.environmentVariable("GITHUB_ACTOR"))
+val githubPackageToken = providers.gradleProperty("gpr.token")
+    .orElse(providers.gradleProperty("gpr.key"))
+    .orElse(providers.environmentVariable("GITHUB_TOKEN"))
 val publishLayoutDir = layout.projectDirectory.dir(".publishing")
 val publishingMavenDir = publishLayoutDir.dir("maven")
+val nowsWebDir = layout.projectDirectory.dir("repos/NowsWeb")
 
 val cleanPublishingMavenLayout by tasks.registering(Delete::class) {
     delete(publishingMavenDir)
@@ -89,12 +96,8 @@ allprojects {
             name = "KDL4JGitHubPackages"
             url = uri("https://maven.pkg.github.com/kdl-org/kdl4j")
             credentials {
-                username = providers.gradleProperty("gpr.user")
-                    .orElse(providers.environmentVariable("GITHUB_ACTOR"))
-                    .orNull ?: "x-access-token"
-                password = providers.gradleProperty("gpr.token")
-                    .orElse(providers.environmentVariable("GITHUB_TOKEN"))
-                    .orNull ?: ""
+                username = githubPackageUser.orNull ?: "x-access-token"
+                password = githubPackageToken.orNull ?: ""
             }
             content { includeGroup("dev.kdl") }
         }
@@ -203,6 +206,109 @@ tasks.register("dist") {
         ":repos:NowsApiMod:jar",
         ":example-mod:jar"
     )
+}
+
+fun commandSucceeds(vararg command: String): Boolean {
+    return try {
+        ProcessBuilder(*command)
+            .redirectOutput(Redirect.DISCARD)
+            .redirectError(Redirect.DISCARD)
+            .start()
+            .waitFor() == 0
+    } catch (_: Exception) {
+        false
+    }
+}
+
+fun commandOutput(vararg command: String): String? {
+    return try {
+        val process = ProcessBuilder(*command)
+            .redirectError(Redirect.DISCARD)
+            .start()
+        val output = process.inputStream.bufferedReader().readText()
+        if (process.waitFor() == 0) output else null
+    } catch (_: Exception) {
+        null
+    }
+}
+
+val checkWorkspacePrerequisites by tasks.registering {
+    group = "nows"
+    description = "Checks tools and submodules needed by a fresh Nows workspace."
+
+    doLast {
+        val requiredPaths = listOf(
+            "repos/NowsInstaller/build.gradle.kts",
+            "repos/NowsGradlePlugin/build.gradle.kts",
+            "repos/NowsApiMod/build.gradle.kts",
+            "repos/NowsWeb/package.json"
+        )
+        val missing = requiredPaths.filterNot { layout.projectDirectory.file(it).asFile.exists() }
+        if (missing.isNotEmpty()) {
+            throw GradleException(
+                "Missing workspace paths: ${missing.joinToString()}. "
+                    + "Run: git submodule update --init --recursive"
+            )
+        }
+        if (githubPackageToken.orNull.isNullOrBlank()) {
+            throw GradleException(
+                "Missing GitHub Packages token for dev.kdl:kdl4j. "
+                    + "Set GITHUB_TOKEN or gradle property gpr.token."
+            )
+        }
+        if (!commandSucceeds("gpg", "--version")) {
+            throw GradleException("Missing gpg. Maven publishing signs every artifact, including local .publishing/maven.")
+        }
+        val gpgSecretKeys = commandOutput("gpg", "--list-secret-keys", "--with-colons").orEmpty()
+        val hasSecretKey = gpgSecretKeys.lineSequence().any { it.startsWith("sec:") || it.startsWith("sec#") }
+        if (!hasSecretKey) {
+            throw GradleException("No usable GPG secret key found. Create/import a signing key before publishing Maven artifacts.")
+        }
+        if (!commandSucceeds("npm", "--version")) {
+            throw GradleException("Missing npm. It is required to build repos/NowsWeb from a fresh workspace.")
+        }
+    }
+}
+
+val prepareNowsWebDependencies by tasks.registering(Exec::class) {
+    group = "nows"
+    description = "Installs NowsWeb dependencies from package-lock.json."
+    dependsOn(checkWorkspacePrerequisites)
+    workingDir = nowsWebDir.asFile
+    commandLine("npm", "ci")
+    inputs.files(
+        nowsWebDir.file("package.json"),
+        nowsWebDir.file("package-lock.json")
+    )
+    outputs.dir(nowsWebDir.dir("node_modules"))
+}
+
+val buildNowsWeb by tasks.registering(Exec::class) {
+    group = "nows"
+    description = "Builds the NowsWeb static site."
+    dependsOn(prepareNowsWebDependencies)
+    workingDir = nowsWebDir.asFile
+    commandLine("npm", "run", "build")
+    inputs.files(
+        nowsWebDir.file("package.json"),
+        nowsWebDir.file("package-lock.json"),
+        nowsWebDir.file("tsconfig.json"),
+        nowsWebDir.file("vite.config.ts"),
+        nowsWebDir.file("index.html")
+    )
+    inputs.dir(nowsWebDir.dir("src"))
+    outputs.dir(nowsWebDir.dir("dist"))
+}
+
+val syncSubmodules by tasks.registering(Exec::class) {
+    group = "nows"
+    description = "Initializes and updates git submodules needed by the workspace."
+    commandLine("git", "submodule", "update", "--init", "--recursive")
+    inputs.file(layout.projectDirectory.file(".gitmodules"))
+}
+
+checkWorkspacePrerequisites.configure {
+    dependsOn(syncSubmodules)
 }
 
 fun sha256(file: File): String {
@@ -392,6 +498,39 @@ tasks.register("publishMavenLayout") {
     description = "Publishes developer-facing Maven artifacts into .publishing/maven."
     dependsOn(mavenPublishedProjectPaths.map { "$it:publishAllPublicationsToPublishingMavenRepository" })
     dependsOn(":repos:NowsGradlePlugin:publishAllPublicationsToPublishingMavenRepository")
+}
+
+tasks.register("prepareWorkspace") {
+    group = "nows"
+    description = "Fresh-clone setup: checks prerequisites, builds code/web artifacts and prepares release + Maven layouts."
+    dependsOn(
+        checkWorkspacePrerequisites,
+        "versionReport",
+        "dist",
+        buildNowsWeb,
+        publishLayout
+    )
+
+    doLast {
+        println("Nows workspace is prepared.")
+        println("Release layout: ${publishLayoutDir.dir("releases").asFile}")
+        println("Developer Maven layout: ${publishingMavenDir.asFile}")
+        println("NowsWeb dist: ${nowsWebDir.dir("dist").asFile}")
+    }
+}
+
+tasks.named("dist").configure { mustRunAfter(checkWorkspacePrerequisites) }
+buildNowsWeb.configure { mustRunAfter(checkWorkspacePrerequisites) }
+publishLayout.configure { mustRunAfter(checkWorkspacePrerequisites) }
+
+gradle.projectsEvaluated {
+    allprojects {
+        tasks.configureEach {
+            if (path != checkWorkspacePrerequisites.get().path && path != syncSubmodules.get().path) {
+                mustRunAfter(checkWorkspacePrerequisites)
+            }
+        }
+    }
 }
 
 fun updateGradleProperty(file: File, key: String, value: String) {
