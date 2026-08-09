@@ -9,7 +9,7 @@ dependencies {
     compileOnly(files(minecraftDevJar))
     compileOnly("com.mojang:datafixerupper:${providers.gradleProperty("datafixerupper_version").get()}")
     compileOnly("com.mojang:brigadier:${providers.gradleProperty("brigadier_version").get()}")
-    compileOnly("com.squareup.moshi:moshi:${providers.gradleProperty("moshi_version").get()}")
+    api("com.squareup.moshi:moshi:${providers.gradleProperty("moshi_version").get()}")
     compileOnly("org.spongepowered:mixin:${providers.gradleProperty("mixin_version").get()}")
 }
 
