@@ -1,0 +1,19 @@
+package space.nows.mcnows.mc.internal;
+
+import space.nows.mcnows.api.NowsServices;
+import space.nows.mcnows.mc.api.datapack.NowsDataPacks;
+import space.nows.mcnows.mc.api.registry.NowsRegistryApi;
+import space.nows.mcnows.mc.internal.datapack.NowsDataPacksImpl;
+import space.nows.mcnows.mc.internal.registry.NowsRegistryApiImpl;
+
+import java.nio.file.Path;
+
+/** Installs Minecraft-version-backed services into the loader context. */
+public final class NowsMinecraftIntegration {
+    private NowsMinecraftIntegration() {}
+
+    public static void install(NowsServices services, Path gameDirectory) {
+        services.register(NowsRegistryApi.class, new NowsRegistryApiImpl());
+        services.register(NowsDataPacks.class, new NowsDataPacksImpl(gameDirectory));
+    }
+}

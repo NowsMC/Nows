@@ -161,6 +161,41 @@ networking.registerHandler("my_mod:main", NetworkDirection.CLIENTBOUND, (packet,
 
 The current runtime registers declared channels and handlers immediately. Payloads are backed by Netty `ByteBuf`; Nows depends on Netty only for compilation and expects the Minecraft launcher/runtime libraries to provide it. Sending goes through a `NetworkTransport`, which is intentionally installed by version-specific Minecraft/network code later; until then `send(...)` returns `false` instead of pretending a real connection exists.
 
+## Minecraft API adapter
+
+`mc/<version>` exposes the Minecraft-facing API layer for the selected game version. Mods can use the same Nows API class names across supported versions while each adapter hides version details such as `ResourceLocation` versus `Identifier` and newer registry `ResourceKey` setup:
+
+```java
+NowsRegistryApi registries = NowsMinecraft.registries(context);
+
+Item item = registries.registerItem("my_mod:widget", props -> props.stacksTo(16));
+NowsBlockEntry block = registries.registerBlockWithItem(
+        "my_mod:machine",
+        props -> props.strength(2.0F, 6.0F),
+        props -> props);
+
+registries.registerCreativeTab(
+        "my_mod:main",
+        Component.translatable("itemGroup.my_mod.main"),
+        () -> new ItemStack(item),
+        (parameters, output) -> {
+            output.accept(item);
+            output.accept(block.item());
+        });
+```
+
+Datapack and resource-pack sources are exposed through the same version adapter:
+
+```java
+NowsDataPacks packs = NowsMinecraft.dataPacks(context);
+Path modPackDir = packs.modPackDirectory("my_mod");
+packs.registerSource(PackType.SERVER_DATA, repositoryConsumer -> {
+    // Create or forward Minecraft RepositorySource packs for this version.
+});
+```
+
+Runtime installs these APIs through `NowsServices` when a matching `nows-mc-<version>` adapter is present. `core` stays free of `net.minecraft.*` types.
+
 ## Mixin without Java agent
 
 `integrations/mixin` provides Nows' own `IMixinService` and `IGlobalPropertyService`. The Mixin transformer is inserted directly into `NowsClassLoader` before class definition, including synthetic class generation. Fabric Loader is not required.

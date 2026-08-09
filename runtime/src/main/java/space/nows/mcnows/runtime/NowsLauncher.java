@@ -116,6 +116,8 @@ public final class NowsLauncher {
                 phase("Load class transformers", () -> loadTransformers(gameLoader, mods));
 
                 NowsServices services = new NowsServices();
+                phase("Install Minecraft API adapter", () ->
+                        installMinecraftApiAdapter(services, launch.gameDirectory(), launch.minecraftVersion()));
                 phase("Install network integration", () -> NowsNetworking.install(services, RUNTIME_SIDE));
                 LOG.info("Service registered: {} -> {}", "NowsNetworking",
                         services.require(NowsNetworking.class).getClass().getName());
@@ -175,6 +177,22 @@ public final class NowsLauncher {
             LOG.info("Minecraft client hooks configured from {} for {} mod(s)", hookClassName, modCount);
         } catch (ClassNotFoundException ignored) {
             LOG.info("No Minecraft client hooks available for {}", minecraftVersion);
+        }
+    }
+
+    private static void installMinecraftApiAdapter(
+            NowsServices services,
+            Path gameDirectory,
+            String minecraftVersion
+    ) throws Exception {
+        String integrationClassName = "space.nows.mcnows.mc.internal.NowsMinecraftIntegration";
+        try {
+            Class<?> integrationClass = Class.forName(integrationClassName, true, NowsLauncher.class.getClassLoader());
+            Method install = integrationClass.getMethod("install", NowsServices.class, Path.class);
+            install.invoke(null, services, gameDirectory);
+            LOG.info("Minecraft API adapter installed from {}", integrationClassName);
+        } catch (ClassNotFoundException ignored) {
+            LOG.info("No Minecraft API adapter available for {}", minecraftVersion);
         }
     }
 

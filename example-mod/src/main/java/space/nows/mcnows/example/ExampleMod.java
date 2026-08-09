@@ -8,6 +8,7 @@ import space.nows.mcnows.api.NowsContext;
 import space.nows.mcnows.integration.logging.NowsLog;
 import space.nows.mcnows.integration.network.NetworkDirection;
 import space.nows.mcnows.integration.network.NowsNetworking;
+import space.nows.mcnows.mc.api.NowsMinecraft;
 
 public final class ExampleMod implements ModInitializer {
     private static final Logger LOG = NowsLog.get(ExampleMod.class);
@@ -20,6 +21,10 @@ public final class ExampleMod implements ModInitializer {
         LOG.info("Nows Example: Mods = {}", context.mods().size());
         LOG.info("Nows Example: Runtime side = {}", context.side().metadataName());
         LOG.info("Nows Example: GEB = {}", context.service(GEB.class).getClass().getName());
+        LOG.info("Nows Example: Minecraft registries API = {}",
+                NowsMinecraft.registries(context).getClass().getName());
+        LOG.info("Nows Example: Nows pack directory = {}",
+                NowsMinecraft.dataPacks(context).nowsPackDirectory());
         NowsNetworking networking = NowsNetworking.service(context);
         networking.registerHandler("nows_example:main", NetworkDirection.CLIENTBOUND, (packetContext, payload) ->
                 LOG.info("Nows Example: network packet {} bytes on {}",
