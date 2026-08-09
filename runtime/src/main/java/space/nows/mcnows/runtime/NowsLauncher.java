@@ -33,13 +33,17 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.JarURLConnection;
 import java.net.URL;
+import java.net.URLConnection;
+import java.net.URISyntaxException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Properties;
 
 public final class NowsLauncher {
@@ -101,8 +105,14 @@ public final class NowsLauncher {
 
         List<URL> urls = new ArrayList<>();
         urls.add(gameJar.toUri().toURL());
+        Optional<URL> adapterUrl = minecraftAdapterUrl(policy);
+        adapterUrl.ifPresent(urls::add);
         for (ModContainer mod : mods) urls.add(mod.path().toUri().toURL());
-        LOG.info("Game classloader URLs: {} total (1 Minecraft client + {} mod jar(s))", urls.size(), mods.size());
+        adapterUrl.ifPresentOrElse(
+                url -> LOG.info("Minecraft API adapter classpath: {}", url),
+                () -> LOG.info("No Minecraft API adapter classpath found for {}", launch.minecraftVersion()));
+        LOG.info("Game classloader URLs: {} total (1 Minecraft client + {} adapter + {} mod jar(s))",
+                urls.size(), adapterUrl.isPresent() ? 1 : 0, mods.size());
 
         try (NowsClassLoader gameLoader = new NowsClassLoader(urls.toArray(URL[]::new), NowsLauncher.class.getClassLoader())) {
             try {
@@ -112,7 +122,7 @@ public final class NowsLauncher {
                 LOG.info("Thread context classloader switched to {}", gameLoader.getName());
 
                 phase("Configure Minecraft client hooks", () ->
-                        configureMinecraftClientHooks(launch.minecraftVersion(), mods.size()));
+                        configureMinecraftClientHooks(gameLoader, launch.minecraftVersion(), mods.size()));
                 phase("Install Mixin integration", () ->
                         NowsMixinBootstrap.install(gameLoader, policy.builtInMixinConfigs(), mods));
                 phase("Load class transformers", () -> loadTransformers(gameLoader, mods));
@@ -121,7 +131,7 @@ public final class NowsLauncher {
                 services.register(NowsConfigFiles.class,
                         new NowsConfigFiles(launch.gameDirectory().resolve("config").resolve("nows")));
                 phase("Install Minecraft API adapter", () ->
-                        installMinecraftApiAdapter(services, launch.gameDirectory(), launch.minecraftVersion()));
+                        installMinecraftApiAdapter(gameLoader, services, launch.gameDirectory(), launch.minecraftVersion()));
                 phase("Install network integration", () -> NowsNetworking.install(services, RUNTIME_SIDE));
                 LOG.info("Service registered: {} -> {}", "NowsNetworking",
                         services.require(NowsNetworking.class).getClass().getName());
@@ -158,9 +168,15 @@ public final class NowsLauncher {
     }
 
     private static void configureSharedPackages(NowsClassLoader loader) {
-        // Parent owns the loader/integration APIs and Minecraft-owned common libraries.
+        // Parent owns stable loader/integration APIs and Minecraft-owned common libraries.
+        // Version-specific Minecraft adapters stay child-first with the game classes they reference.
+        List<String> childFirstPrefixes = List.of("space.nows.mcnows.mc.");
         List<String> prefixes = List.of(
-                "space.nows.mcnows.",
+                "space.nows.mcnows.api.",
+                "space.nows.mcnows.core.",
+                "space.nows.mcnows.integration.",
+                "space.nows.mcnows.minecraft.",
+                "space.nows.mcnows.mixin.",
                 "foo.zaaarf.geb.", "dev.kdl.", "reactor.", "org.reactivestreams.",
                 "io.netty.",
                 "com.squareup.moshi.", "okio.", "kotlin.", "org.jetbrains.",
@@ -168,16 +184,20 @@ public final class NowsLauncher {
                 "org.spongepowered.asm.", "org.objectweb.asm.",
                 "com.google.gson.", "com.google.common.", "org.jspecify.",
                 "com.lmax.disruptor.");
+        for (String prefix : childFirstPrefixes) {
+            loader.addChildFirstPrefix(prefix);
+        }
         for (String prefix : prefixes) {
             loader.addParentFirstPrefix(prefix);
         }
+        LOG.info("Child-first package prefixes ({}): {}", childFirstPrefixes.size(), String.join(", ", childFirstPrefixes));
         LOG.info("Parent-first package prefixes ({}): {}", prefixes.size(), String.join(", ", prefixes));
     }
 
-    private static void configureMinecraftClientHooks(String minecraftVersion, int modCount) throws Exception {
+    private static void configureMinecraftClientHooks(ClassLoader loader, String minecraftVersion, int modCount) throws Exception {
         String hookClassName = "space.nows.mcnows.mc.internal.NowsMinecraftClientHooks";
         try {
-            Class<?> hookClass = Class.forName(hookClassName, true, NowsLauncher.class.getClassLoader());
+            Class<?> hookClass = Class.forName(hookClassName, true, loader);
             Method configure = hookClass.getMethod("configure", String.class, String.class, int.class);
             configure.invoke(null, nowsVersion(), minecraftVersion, modCount);
             LOG.info("Minecraft client hooks configured from {} for {} mod(s)", hookClassName, modCount);
@@ -187,19 +207,50 @@ public final class NowsLauncher {
     }
 
     private static void installMinecraftApiAdapter(
+            ClassLoader loader,
             NowsServices services,
             Path gameDirectory,
             String minecraftVersion
     ) throws Exception {
         String integrationClassName = "space.nows.mcnows.mc.internal.NowsMinecraftIntegration";
         try {
-            Class<?> integrationClass = Class.forName(integrationClassName, true, NowsLauncher.class.getClassLoader());
+            Class<?> integrationClass = Class.forName(integrationClassName, true, loader);
             Method install = integrationClass.getMethod("install", NowsServices.class, Path.class);
             install.invoke(null, services, gameDirectory);
             LOG.info("Minecraft API adapter installed from {}", integrationClassName);
         } catch (ClassNotFoundException ignored) {
             LOG.info("No Minecraft API adapter available for {}", minecraftVersion);
         }
+    }
+
+    private static Optional<URL> minecraftAdapterUrl(MinecraftVersionPolicy policy) throws IOException {
+        if (!policy.bundled()) {
+            return Optional.empty();
+        }
+        URL resource = NowsLauncher.class.getClassLoader().getResource(policy.resourcePath());
+        if (resource == null) {
+            return Optional.empty();
+        }
+
+        URLConnection connection = resource.openConnection();
+        if (connection instanceof JarURLConnection jarConnection) {
+            return Optional.of(jarConnection.getJarFileURL());
+        }
+        if ("file".equals(resource.getProtocol())) {
+            try {
+                Path path = Path.of(resource.toURI());
+                for (int i = 0; i < policy.resourcePath().split("/").length; i++) {
+                    path = path.getParent();
+                    if (path == null) {
+                        return Optional.empty();
+                    }
+                }
+                return Optional.of(path.toUri().toURL());
+            } catch (URISyntaxException e) {
+                throw new IOException("Invalid Minecraft adapter resource URL: " + resource, e);
+            }
+        }
+        return Optional.empty();
     }
 
     private static String nowsVersion() {

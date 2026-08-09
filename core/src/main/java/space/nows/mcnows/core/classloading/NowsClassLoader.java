@@ -25,6 +25,7 @@ public final class NowsClassLoader extends URLClassLoader {
 
     private final CopyOnWriteArrayList<ClassTransformer> transformers = new CopyOnWriteArrayList<>();
     private final Set<String> parentFirstPrefixes = ConcurrentHashMap.newKeySet();
+    private final Set<String> childFirstPrefixes = ConcurrentHashMap.newKeySet();
     private volatile ClassGenerator classGenerator;
 
     public NowsClassLoader(URL[] urls, ClassLoader parent) {
@@ -33,6 +34,7 @@ public final class NowsClassLoader extends URLClassLoader {
     }
 
     public void addParentFirstPrefix(String prefix) { parentFirstPrefixes.add(prefix); }
+    public void addChildFirstPrefix(String prefix) { childFirstPrefixes.add(prefix); }
     public void addTransformer(ClassTransformer transformer) { transformers.add(transformer); }
     public void addTransformerFirst(ClassTransformer transformer) { transformers.add(0, transformer); }
     public void setClassGenerator(ClassGenerator generator) { classGenerator = generator; }
@@ -88,6 +90,7 @@ public final class NowsClassLoader extends URLClassLoader {
     }
 
     private boolean isParentFirst(String name) {
+        for (String prefix : childFirstPrefixes) if (name.startsWith(prefix)) return false;
         for (String prefix : parentFirstPrefixes) if (name.startsWith(prefix)) return true;
         return false;
     }
