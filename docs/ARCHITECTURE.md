@@ -13,6 +13,32 @@ In short:
 - `runtime/` wires the selected pieces together for a launcher profile.
 - `repos/*` contains distribution, developer tooling, web and optional companion projects that can evolve independently.
 
+## Implementation snapshot
+
+The current Nows loader version and default Minecraft target live in `gradle.properties` as `nows_version` and `minecraft_version`. Supported Minecraft adapters are the directories under `mc/`. Runtime code is built for the target Minecraft Java level, while `repos/NowsInstaller` produces Java 8-compatible installer entrypoints.
+
+The loader's expected smoke-test path is: runtime startup, policy loading, profile-local version JAR lookup, Mixin bootstrap, built-in title-screen mixin registration, GEB installation and Minecraft main invocation. When the game is launched manually from a terminal with dummy auth values such as `--accessToken 0`, Mojang account and Realms `401`/JWT errors are expected and do not indicate a loader failure.
+
+The normal installed profile id is:
+
+```text
+nows-<nows-version>-<minecraft-version>
+```
+
+The profile's `gameDir` is profile-local, but the main mod folder is the normal Minecraft-wide folder:
+
+```text
+.minecraft/mods
+```
+
+Nows also scans this optional overlay:
+
+```text
+.minecraft/nows/profiles/nows-<nows-version>-<minecraft-version>/mods
+```
+
+The installer should create and log both directories. Runtime logs should show `Minecraft mods directory` and `Optional Nows profile mods directory` during mod discovery.
+
 ## Ownership boundaries
 
 | Module | Owns | Expected change rate |
@@ -103,7 +129,7 @@ The normal CLI/UI installers are generic installer entrypoints. They choose the 
 https://files.nows.space/releases/nows/<nows-version>/<minecraft-version>/install.properties
 ```
 
-The published offline installer is intentionally per Minecraft version because it embeds the version-specific `nows-mc-<minecraft-version>` adapter and a processed manifest for exactly one game version. Publish it with a versioned filename such as `NowsInstaller-offline-0.4.0-mc-26.2.jar`.
+The published offline installer is intentionally per Minecraft version because it embeds the version-specific `nows-mc-<minecraft-version>` adapter and a processed manifest for exactly one game version. Publish it with a versioned filename such as `NowsInstaller-offline-<nows-version>-mc-<minecraft-version>.jar`.
 
 GitHub Packages-only dependencies, currently KDL4J, may be embedded into installer artifacts and copied into the Minecraft libraries directory when necessary. Normal Nows users must not need GitHub credentials just to install or run Nows.
 
@@ -115,7 +141,7 @@ Nows launcher profiles should use a profile-local game directory under `.minecra
 
 The title-screen Nows badge and mod-count display are required loader proof-of-life, so they belong to `mc/<minecraft version>` rather than `repos/NowsApiMod/`. Each supported `mc/<version>` adapter can declare built-in Mixin configs through `runtime.builtinMixinConfigs` in `nows-minecraft.properties`; runtime registers those configs before mod-declared configs and passes the Nows version, Minecraft version and discovered mod count into the version adapter's client hook.
 
-`repos/NowsApiMod/` builds a normal optional companion mod JAR. It is published as an optional artifact, but the 0.4.0 installer does not install it by default and the loader runtime must not require it.
+`repos/NowsApiMod/` builds a normal optional companion mod JAR. It is published as an optional artifact, but the default installer manifest does not install it by default and the loader runtime must not require it.
 
 Release files are staged locally under `.publishing/` by `publishLayout`. That directory is intentionally ignored by Git because it is an upload staging area for `files.nows.space` backed by CDN/object storage.
 
@@ -132,6 +158,44 @@ Maven POM metadata should be kept truthful and release-ready: Apache License 2.0
 The expected upload backing is `files.nows.space` in front of object storage/CDN infrastructure such as Backblaze B2 plus Gcore. Release generation does not upload anything; it only produces the local tree, manifest and checksum file for manual publishing.
 
 Docker is allowed as a reproducible build shell for this multi-project workspace. The Docker path should build the same `.publishing/` layout as local Gradle and should not introduce a separate release protocol.
+
+## Common build commands
+
+Use this from a fresh clone intended for local testing:
+
+```bash
+./gradlew prepareWorkspace
+```
+
+Use this to stage release files for the default Minecraft target from `gradle.properties`:
+
+```bash
+./gradlew publishLayout
+```
+
+Use this to stage a different supported Minecraft target:
+
+```bash
+./gradlew -Pminecraft_version=<minecraft-version> publishLayout
+```
+
+Use this to bump the coordinated Nows version:
+
+```bash
+./gradlew setNowsVersion -Pnew_nows_version=<version>
+```
+
+Use this to inspect the coordinated version state:
+
+```bash
+./gradlew versionReport
+```
+
+After `publishLayout`, the offline installer for the selected release is expected at:
+
+```text
+.publishing/releases/nows/<nows-version>/<minecraft-version>/installers/NowsInstaller-offline-<nows-version>-mc-<minecraft-version>.jar
+```
 
 ## Gradle and mappings policy
 
@@ -167,7 +231,7 @@ URLs and checksums before staging a release.
 `gradle.properties`. Use the root helper when bumping releases:
 
 ```bash
-./gradlew setNowsVersion -Pnew_nows_version=0.5.0
+./gradlew setNowsVersion -Pnew_nows_version=<version>
 ```
 
 That updates both the monorepo and standalone `NowsApiMod` property files. Use
@@ -208,11 +272,11 @@ If the requested backend is unavailable, Nows falls back to JDK logging.
 
 ## Dependency preferences
 
-Important libraries currently intended for Nows include:
+Important libraries currently intended for Nows include the following. Their exact versions belong in `gradle.properties`, not in this architecture document:
 
-- `foo.zaaarf.geb:processor:0.4.9`
-- `foo.zaaarf.geb:core:0.5.4`
-- `dev.kdl:kdl4j:1.0.1`
+- `foo.zaaarf.geb:processor`
+- `foo.zaaarf.geb:core`
+- `dev.kdl:kdl4j`
 - Reactor logging through `io.projectreactor:reactor-core`
 - Log4j2 Async Logger support through Disruptor
 - SpongePowered Mixin through `org.spongepowered:mixin`
