@@ -3,6 +3,7 @@ package space.nows.mcnows.mixin;
 import org.spongepowered.asm.launch.MixinBootstrap;
 import org.spongepowered.asm.mixin.MixinEnvironment;
 import org.spongepowered.asm.mixin.Mixins;
+import org.spongepowered.asm.mixin.extensibility.IMixinConfigSource;
 import org.spongepowered.asm.mixin.transformer.IMixinTransformer;
 import reactor.util.Logger;
 import space.nows.mcnows.core.classloading.NowsClassLoader;
@@ -37,7 +38,7 @@ public final class NowsMixinBootstrap {
                 LOG.warn("Duplicate built-in Mixin config declaration ignored after first registration: {}", config);
                 continue;
             }
-            Mixins.addConfiguration(config);
+            addConfiguration(config);
             LOG.info("Built-in Mixin config: {}", config);
         }
         for (ModContainer mod : mods) {
@@ -47,7 +48,7 @@ public final class NowsMixinBootstrap {
                     LOG.warn("Duplicate Mixin config declaration ignored after first registration: {}", config);
                     continue;
                 }
-                Mixins.addConfiguration(config);
+                addConfiguration(config);
                 LOG.info("Mixin config: {} -> {}", mod.descriptor().id(), config);
             }
         }
@@ -63,6 +64,10 @@ public final class NowsMixinBootstrap {
         loader.setClassGenerator(className ->
                 transformer.generateClass(MixinEnvironment.getCurrentEnvironment(), className));
         LOG.debug("Mixin transformer installed into NowsClassLoader");
+    }
+
+    private static void addConfiguration(String config) {
+        Mixins.addConfiguration(config, (IMixinConfigSource) null);
     }
 
     public static void detach(NowsClassLoader loader) {

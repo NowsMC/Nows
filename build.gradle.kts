@@ -388,6 +388,24 @@ val publishLayout by tasks.registering {
     inputs.property("nowsVersion", nowsVersion)
     inputs.property("minecraftVersion", minecraftVersion)
     inputs.property("nowsReleaseBaseUrl", nowsReleaseBaseUrl)
+    inputs.files(provider {
+        publishedModuleArtifactsFor(minecraftVersion.get()).keys.map { projectPath ->
+            project(projectPath).tasks.named<Jar>("jar").get().archiveFile.get().asFile
+        }
+    })
+    inputs.files(provider {
+        val installerProject = project(":repos:NowsInstaller")
+        listOf(
+            installerProject.tasks.named<Jar>("jar").get().archiveFile.get().asFile,
+            installerProject.tasks.named<Jar>("guiJar").get().archiveFile.get().asFile,
+            installerProject.tasks.named<Jar>("offlineJar").get().archiveFile.get().asFile,
+            project(":repos:NowsApiMod").tasks.named<Jar>("jar").get().archiveFile.get().asFile,
+            project(":repos:NowsGradlePlugin").tasks.named<Jar>("jar").get().archiveFile.get().asFile
+        )
+    })
+    inputs.files(provider {
+        project(":repos:NowsInstaller").configurations.getByName("offlineMavenArtifacts").resolve()
+    })
     outputs.dir(publishLayoutDir)
 
     doLast {
