@@ -1,28 +1,38 @@
 package space.nows.mcnows.integration.network;
 
+import io.netty.buffer.ByteBuf;
+import io.netty.buffer.Unpooled;
+
 import java.nio.ByteBuffer;
 import java.util.Arrays;
 
-/** Immutable binary packet payload. */
+/** Binary packet payload backed by Minecraft's Netty ByteBuf stack. */
 public final class NetworkPayload {
-    private static final NetworkPayload EMPTY = new NetworkPayload(new byte[0]);
+    private static final NetworkPayload EMPTY = new NetworkPayload(Unpooled.EMPTY_BUFFER.asReadOnly());
 
-    private final byte[] bytes;
+    private final ByteBuf buffer;
 
-    private NetworkPayload(byte[] bytes) {
-        this.bytes = bytes;
+    private NetworkPayload(ByteBuf buffer) {
+        this.buffer = buffer.asReadOnly();
     }
 
     public int size() {
-        return bytes.length;
+        return buffer.readableBytes();
+    }
+
+    public ByteBuf buffer() {
+        return buffer.asReadOnly().slice(buffer.readerIndex(), buffer.readableBytes());
     }
 
     public byte[] bytes() {
-        return Arrays.copyOf(bytes, bytes.length);
+        ByteBuf copy = buffer();
+        byte[] bytes = new byte[copy.readableBytes()];
+        copy.readBytes(bytes);
+        return bytes;
     }
 
-    public ByteBuffer buffer() {
-        return ByteBuffer.wrap(bytes()).asReadOnlyBuffer();
+    public ByteBuffer byteBuffer() {
+        return buffer().nioBuffer().asReadOnlyBuffer();
     }
 
     public static NetworkPayload empty() {
@@ -33,16 +43,27 @@ public final class NetworkPayload {
         if (bytes == null || bytes.length == 0) {
             return EMPTY;
         }
-        return new NetworkPayload(Arrays.copyOf(bytes, bytes.length));
+        return new NetworkPayload(Unpooled.wrappedBuffer(Arrays.copyOf(bytes, bytes.length)));
     }
 
     public static NetworkPayload of(ByteBuffer buffer) {
         if (buffer == null || !buffer.hasRemaining()) {
             return EMPTY;
         }
-        ByteBuffer copy = buffer.slice();
-        byte[] bytes = new byte[copy.remaining()];
-        copy.get(bytes);
-        return of(bytes);
+        return new NetworkPayload(Unpooled.copiedBuffer(buffer.slice()));
+    }
+
+    public static NetworkPayload of(ByteBuf buffer) {
+        if (buffer == null || !buffer.isReadable()) {
+            return EMPTY;
+        }
+        return new NetworkPayload(Unpooled.copiedBuffer(buffer.slice()));
+    }
+
+    public static NetworkPayload wrap(ByteBuf buffer) {
+        if (buffer == null || !buffer.isReadable()) {
+            return EMPTY;
+        }
+        return new NetworkPayload(buffer.slice());
     }
 }

@@ -124,16 +124,17 @@ A mod that does not care about GEB still compiles against `nows-core` without pu
 
 ## Network channels without version lock-in
 
-`integrations/network` exposes a small Nows networking surface without importing version-specific Minecraft packet classes. Mods declare channels in metadata and use `NowsNetworking` from the runtime context:
+`integrations/network` exposes a small Nows networking surface over Minecraft's existing Netty stack without importing version-specific Minecraft packet classes. Mods declare channels in metadata and use `NowsNetworking` from the runtime context:
 
 ```java
 NowsNetworking networking = NowsNetworking.service(context);
 networking.registerHandler("my_mod:main", NetworkDirection.CLIENTBOUND, (packet, payload) -> {
     int bytes = payload.size();
+    ByteBuf buffer = payload.buffer();
 });
 ```
 
-The current runtime registers declared channels and handlers immediately. Sending goes through a `NetworkTransport`, which is intentionally installed by version-specific Minecraft/network code later; until then `send(...)` returns `false` instead of pretending a real connection exists.
+The current runtime registers declared channels and handlers immediately. Payloads are backed by Netty `ByteBuf`; Nows depends on Netty only for compilation and expects the Minecraft launcher/runtime libraries to provide it. Sending goes through a `NetworkTransport`, which is intentionally installed by version-specific Minecraft/network code later; until then `send(...)` returns `false` instead of pretending a real connection exists.
 
 ## Mixin without Java agent
 

@@ -1,5 +1,6 @@
 package space.nows.mcnows.integration.network;
 
+import io.netty.buffer.Unpooled;
 import org.junit.jupiter.api.Test;
 import space.nows.mcnows.api.NowsSide;
 
@@ -17,7 +18,8 @@ class NowsNetworkingTest {
 
         networking.registerHandler("example:main", NetworkDirection.CLIENTBOUND,
                 (context, payload) -> bytes.set(payload.size()));
-        int handlers = networking.receive("example:main", NetworkDirection.CLIENTBOUND, new byte[] {1, 2, 3});
+        int handlers = networking.receive("example:main", NetworkDirection.CLIENTBOUND,
+                Unpooled.wrappedBuffer(new byte[] {1, 2, 3}));
 
         assertEquals(1, handlers);
         assertEquals(3, bytes.get());
@@ -30,10 +32,12 @@ class NowsNetworkingTest {
         networking.installTransport(transport);
         networking.registerChannel("example:main", NetworkDirection.SERVERBOUND);
 
-        assertTrue(networking.send("example:main", NetworkDirection.SERVERBOUND, new byte[] {7}));
+        assertTrue(networking.send("example:main", NetworkDirection.SERVERBOUND,
+                Unpooled.wrappedBuffer(new byte[] {7})));
 
         assertEquals(NetworkChannelId.of("example:main"), transport.channel);
         assertEquals(1, transport.payload.size());
+        assertEquals(7, transport.payload.buffer().readByte());
     }
 
     @Test

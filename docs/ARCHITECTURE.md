@@ -268,11 +268,11 @@ GEB remains optional from the perspective of `core`. A mod or optional companion
 
 ## Network policy
 
-`integrations/network/` owns the mod-facing network channel registry, packet handler API and `NetworkTransport` abstraction. It deliberately does not import `net.minecraft.*` or version-specific packet classes. Version adapters or later Minecraft integration code should install the concrete transport that knows how to send packets through the actual game connection.
+`integrations/network/` owns the mod-facing network channel registry, packet handler API and `NetworkTransport` abstraction. It deliberately does not import `net.minecraft.*` or version-specific packet classes. Payloads are backed by Netty `ByteBuf` because Minecraft already ships and uses Netty for networking; Nows should use Netty as a compile-time API only and must not bundle a second Netty copy into the loader distribution. Version adapters or later Minecraft integration code should install the concrete transport that knows how to send packets through the actual game connection.
 
 Mods may declare channels in metadata with `network-channel`, `network`, `clientbound-channel` or `serverbound-channel`. Runtime registers those channels before entrypoints run and exposes `NowsNetworking` through `NowsServices`. Mod entrypoints may then register handlers for declared or dynamically-created channels.
 
-Until a concrete Minecraft transport is installed, `NowsNetworking.send(...)` returns `false` rather than pretending a packet was sent. Receiving and handler dispatch are still fully testable at the integration layer. This keeps the public channel/handler contract stable while allowing each `mc/<version>` adapter to handle the details of custom payload registration, connection state and byte-buffer conversion later.
+Until a concrete Minecraft transport is installed, `NowsNetworking.send(...)` returns `false` rather than pretending a packet was sent. Receiving and handler dispatch are still fully testable at the integration layer. This keeps the public channel/handler contract stable while allowing each `mc/<version>` adapter to handle the details of custom payload registration and connection state later.
 
 ## Logging policy
 

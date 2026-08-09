@@ -1,5 +1,6 @@
 package space.nows.mcnows.integration.network;
 
+import io.netty.buffer.ByteBuf;
 import space.nows.mcnows.api.NowsContext;
 import space.nows.mcnows.api.NowsServices;
 import space.nows.mcnows.api.NowsSide;
@@ -112,6 +113,10 @@ public final class NowsNetworking {
         return send(NetworkChannelId.of(id), direction, NetworkPayload.of(payload));
     }
 
+    public boolean send(String id, NetworkDirection direction, ByteBuf payload) throws Exception {
+        return send(NetworkChannelId.of(id), direction, NetworkPayload.of(payload));
+    }
+
     public boolean send(NetworkChannelId id, NetworkDirection direction, NetworkPayload payload) throws Exception {
         if (!canSend(id, direction)) {
             return false;
@@ -122,6 +127,10 @@ public final class NowsNetworking {
 
     public int receive(String id, NetworkDirection direction, byte[] payload) throws Exception {
         return receive(NetworkChannelId.of(id), direction, NetworkPayload.of(payload));
+    }
+
+    public int receive(String id, NetworkDirection direction, ByteBuf payload) throws Exception {
+        return receive(NetworkChannelId.of(id), direction, NetworkPayload.wrap(payload));
     }
 
     public int receive(NetworkChannelId id, NetworkDirection direction, NetworkPayload payload) throws Exception {

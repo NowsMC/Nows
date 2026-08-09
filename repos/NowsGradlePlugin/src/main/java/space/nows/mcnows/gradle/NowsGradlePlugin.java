@@ -16,6 +16,7 @@ import org.gradle.api.tasks.compile.JavaCompile;
 public final class NowsGradlePlugin implements Plugin<Project> {
     private static final String GEB_CORE = "foo.zaaarf.geb:core:0.5.4";
     private static final String GEB_PROCESSOR = "foo.zaaarf.geb:processor:0.4.9";
+    private static final String NETTY_BUFFER = "io.netty:netty-buffer:4.2.15.Final";
     private static final String MIXIN = "org.spongepowered:mixin:0.8.7";
     private static final String GSON = "com.google.code.gson:gson:2.14.0";
     private static final String GUAVA = "com.google.guava:guava:33.4.8-jre";
@@ -63,6 +64,7 @@ public final class NowsGradlePlugin implements Plugin<Project> {
                     p.getDependencies().add("compileOnly", network != null
                             ? network
                             : "space.nows.mcnows:nows-integration-network:" + extension.getNowsVersion().get());
+                    p.getDependencies().add("compileOnly", NETTY_BUFFER);
                 }
                 if (extension.getAddMixin().get()) {
                     p.getDependencies().add("compileOnly", MIXIN);

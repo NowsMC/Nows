@@ -148,6 +148,7 @@ public final class NowsLauncher {
         List<String> prefixes = List.of(
                 "space.nows.mcnows.",
                 "foo.zaaarf.geb.", "dev.kdl.", "reactor.", "org.reactivestreams.",
+                "io.netty.",
                 "org.slf4j.", "org.apache.logging.log4j.",
                 "org.spongepowered.asm.", "org.objectweb.asm.",
                 "com.google.gson.", "com.google.common.", "org.jspecify.",
