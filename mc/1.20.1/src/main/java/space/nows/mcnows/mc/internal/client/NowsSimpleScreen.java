@@ -1,9 +1,11 @@
 package space.nows.mcnows.mc.internal.client;
 
 import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
+import space.nows.mcnows.mc.api.client.ui.NowsButtonSink;
 import space.nows.mcnows.mc.api.client.ui.NowsRenderContext;
 import space.nows.mcnows.mc.api.client.ui.NowsScreenContext;
 import space.nows.mcnows.mc.api.client.ui.NowsScreenInitializer;
@@ -24,12 +26,27 @@ public final class NowsSimpleScreen extends Screen {
         initializer.init(new NowsScreenContext(
                 width,
                 height,
-                (x, y, buttonWidth, buttonHeight, message, onPress) -> addRenderableWidget(
-                        net.minecraft.client.gui.components.Button.builder(
-                                        Component.literal(message),
-                                        button -> onPress.run())
+                new NowsButtonSink() {
+                    @Override
+                    public void addButton(int x, int y, int buttonWidth, int buttonHeight, String message, Runnable onPress) {
+                        addRenderableWidget(Button.builder(Component.literal(message), button -> onPress.run())
                                 .bounds(x, y, buttonWidth, buttonHeight)
-                                .build()),
+                                .build());
+                    }
+
+                    @Override
+                    public void addIconButton(
+                            int x, int y, int buttonWidth, int buttonHeight, String icon, String message, Runnable onPress) {
+                        addRenderableWidget(new NowsIconButton(
+                                x,
+                                y,
+                                buttonWidth,
+                                buttonHeight,
+                                ResourceLocation.tryParse(icon),
+                                Component.literal(message),
+                                onPress));
+                    }
+                },
                 (title, nextInitializer, nextRenderer) -> minecraft.setScreen(
                         new NowsSimpleScreen(Component.literal(title), nextInitializer, nextRenderer)),
                 () -> minecraft.setScreen(null)));

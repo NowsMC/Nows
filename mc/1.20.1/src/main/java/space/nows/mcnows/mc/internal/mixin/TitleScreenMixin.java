@@ -12,8 +12,10 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import space.nows.mcnows.mc.api.client.ui.NowsRenderContext;
+import space.nows.mcnows.mc.api.client.ui.NowsButtonSink;
 import space.nows.mcnows.mc.api.client.ui.NowsScreenContext;
 import space.nows.mcnows.mc.internal.NowsMinecraftClientHooks;
+import space.nows.mcnows.mc.internal.client.NowsIconButton;
 import space.nows.mcnows.mc.internal.client.NowsUiImpl;
 
 @Mixin(value = TitleScreen.class, remap = false)
@@ -29,10 +31,27 @@ public abstract class TitleScreenMixin extends Screen {
                 new NowsScreenContext(
                         screen.width,
                         screen.height,
-                        (x, y, width, height, message, onPress) -> addRenderableWidget(
-                                Button.builder(Component.literal(message), button -> onPress.run())
+                        new NowsButtonSink() {
+                            @Override
+                            public void addButton(int x, int y, int width, int height, String message, Runnable onPress) {
+                                addRenderableWidget(Button.builder(Component.literal(message), button -> onPress.run())
                                         .bounds(x, y, width, height)
-                                        .build()),
+                                        .build());
+                            }
+
+                            @Override
+                            public void addIconButton(
+                                    int x, int y, int width, int height, String icon, String message, Runnable onPress) {
+                                addRenderableWidget(new NowsIconButton(
+                                        x,
+                                        y,
+                                        width,
+                                        height,
+                                        ResourceLocation.tryParse(icon),
+                                        Component.literal(message),
+                                        onPress));
+                            }
+                        },
                         (title, initializer, renderer) -> Minecraft.getInstance().setScreen(
                                 new space.nows.mcnows.mc.internal.client.NowsSimpleScreen(
                                         Component.literal(title), initializer, renderer)),
