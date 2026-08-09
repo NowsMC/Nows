@@ -163,12 +163,20 @@ The current runtime registers declared channels and handlers immediately. Payloa
 
 ## Minecraft API adapter
 
-`mc/<version>` exposes the Minecraft-facing API layer for the selected game version. Mods can use the same Nows API class names across supported versions while each adapter hides version details such as `ResourceLocation` versus `Identifier` and newer registry `ResourceKey` setup:
+`mc/<version>` exposes a basic Minecraft-facing API layer for the selected game version. It is intentionally small: Nows helps with common registry work so simple mods are easier to port between Minecraft versions, but it does not try to replace Minecraft's own API.
+
+Mods can use the same Nows API class names across supported versions while each adapter hides common version details such as `ResourceLocation` versus `Identifier` and newer registry `ResourceKey` setup:
 
 ```java
 NowsRegistryApi registries = NowsMinecraft.registries(context);
 
 Item item = registries.registerItem("my_mod:widget", props -> props.stacksTo(16));
+Item food = registries.registerFood("my_mod:berry", new FoodProperties.Builder()
+        .nutrition(4)
+        .saturationModifier(0.3F)
+        .build());
+Item sword = registries.registerSword("my_mod:blade", ToolMaterial.IRON, 3.0F, -2.4F);
+Item helmet = registries.registerArmor("my_mod:helmet", ArmorMaterials.IRON, ArmorType.HELMET);
 NowsBlockEntry block = registries.registerBlockWithItem(
         "my_mod:machine",
         props -> props.strength(2.0F, 6.0F),
@@ -180,8 +188,19 @@ registries.registerCreativeTab(
         () -> new ItemStack(item),
         (parameters, output) -> {
             output.accept(item);
+            output.accept(food);
+            output.accept(sword);
+            output.accept(helmet);
             output.accept(block.item());
         });
+```
+
+Existing registry entries can be queried with Optional-returning methods or fail-fast getters:
+
+```java
+registries.item("minecraft:diamond").ifPresent(stackItem -> {});
+Item diamond = registries.getItem("minecraft:diamond");
+Block stone = registries.getBlock("minecraft:stone");
 ```
 
 For simple behavior, mods can attach small logic hooks without writing a full subclass:
@@ -203,7 +222,9 @@ registries.registerBlock("my_mod:speed_plate", props -> props.strength(1.0F), ne
 });
 ```
 
-For maximum Minecraft detail, use `registerCustomItem` or `registerCustomBlock` and return your own `Item`/`Block` subclass. That keeps every version-specific override available without pushing all Minecraft methods into Nows' stable wrapper API.
+For custom behavior beyond this basic layer, use Minecraft's API directly. `registerCustomItem` and `registerCustomBlock` accept your own `Item`/`Block` subclasses, so every version-specific override remains available without pushing all Minecraft methods into Nows' wrapper API.
+
+Forge and Fabric take a similar shape in practice: they provide loader APIs and registry conveniences, but serious item/block behavior still lives in Minecraft classes, events, mixins or version-specific hooks. Nows follows that smaller approach here so the adapter is useful for porting without becoming a second Minecraft API surface.
 
 Datapack and resource-pack sources are exposed through the same version adapter:
 

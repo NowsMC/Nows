@@ -4,10 +4,15 @@ import net.minecraft.core.Registry;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.world.food.FoodProperties;
+import net.minecraft.world.item.ArmorItem;
+import net.minecraft.world.item.ArmorMaterial;
 import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.CreativeModeTab;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.SwordItem;
+import net.minecraft.world.item.Tier;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.state.BlockBehaviour;
 import space.nows.mcnows.mc.api.registry.NowsBlockLogic;
@@ -45,6 +50,48 @@ public final class NowsRegistryApiImpl implements NowsRegistryApi {
     @Override
     public Item registerCustomItem(String id, Function<Item.Properties, ? extends Item> factory) {
         return Registry.register(BuiltInRegistries.ITEM, location(id), factory.apply(new Item.Properties()));
+    }
+
+    @Override
+    public Item registerFood(String id, FoodProperties food) {
+        return registerFood(id, food, Function.identity());
+    }
+
+    @Override
+    public Item registerFood(String id, FoodProperties food, Function<Item.Properties, Item.Properties> configure) {
+        return registerItem(id, properties -> apply(configure, properties.food(food)));
+    }
+
+    @Override
+    public Item registerSword(String id, Tier tier, int attackDamage, float attackSpeed) {
+        return registerSword(id, tier, attackDamage, attackSpeed, Function.identity());
+    }
+
+    @Override
+    public Item registerSword(
+            String id,
+            Tier tier,
+            int attackDamage,
+            float attackSpeed,
+            Function<Item.Properties, Item.Properties> configure
+    ) {
+        return registerCustomItem(id, properties ->
+                new SwordItem(tier, attackDamage, attackSpeed, apply(configure, properties)));
+    }
+
+    @Override
+    public Item registerArmor(String id, ArmorMaterial material, ArmorItem.Type type) {
+        return registerArmor(id, material, type, Function.identity());
+    }
+
+    @Override
+    public Item registerArmor(
+            String id,
+            ArmorMaterial material,
+            ArmorItem.Type type,
+            Function<Item.Properties, Item.Properties> configure
+    ) {
+        return registerCustomItem(id, properties -> new ArmorItem(material, type, apply(configure, properties)));
     }
 
     @Override

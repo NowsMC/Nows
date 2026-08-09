@@ -276,7 +276,7 @@ Until a concrete Minecraft transport is installed, `NowsNetworking.send(...)` re
 
 ## Minecraft API adapter policy
 
-`mc/<minecraft version>/` owns the developer-facing API layer that must directly reference Minecraft classes. Common mod tasks such as registering `Item`, `Block`, `BlockItem`, creative tabs and datapack/resource-pack repository sources belong there, not in `core`, `minecraft`, `runtime` or generic integrations.
+`mc/<minecraft version>/` owns the basic developer-facing API layer that must directly reference Minecraft classes. Common mod tasks such as registering `Item`, `Block`, `BlockItem`, food, simple weapons, armor, creative tabs and datapack/resource-pack repository sources belong there, not in `core`, `minecraft`, `runtime` or generic integrations.
 
 Each supported adapter should expose the same Nows package/class names, for example `space.nows.mcnows.mc.api.NowsMinecraft`, `NowsRegistryApi` and `NowsDataPacks`, while using that Minecraft version's real classes internally. This lets 26.2 use `Identifier` and `ResourceKey` setup while 1.20.1 uses `ResourceLocation`, without forcing mods to rewrite their Nows-facing calls.
 
@@ -284,7 +284,7 @@ Runtime installs the version adapter by reflecting `space.nows.mcnows.mc.interna
 
 Datapack management is intentionally a source registry first. Mods can declare or collect `RepositorySource` instances and inspect/create `PackRepository` views through `NowsDataPacks`; later game hooks may feed those sources into Minecraft's live pack repositories at the correct lifecycle point for each version.
 
-The registry API should expose two escape levels. Common convenience helpers may wrap simple behavior through small logic interfaces such as `NowsItemLogic` and `NowsBlockLogic`. Full-detail Minecraft behavior must remain possible through custom `Item`/`Block` factories so mod authors can override version-specific methods directly when the stable helper layer is too small.
+The registry API is a portability convenience, not a full replacement for Minecraft APIs. Common convenience helpers may wrap simple behavior through small logic interfaces such as `NowsItemLogic` and `NowsBlockLogic`. Full-detail Minecraft behavior must remain possible through custom `Item`/`Block` factories so mod authors can override version-specific methods directly when the basic helper layer is too small.
 
 ## Logging policy
 
