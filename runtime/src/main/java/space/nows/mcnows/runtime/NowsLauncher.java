@@ -22,8 +22,10 @@ import java.lang.reflect.Method;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Properties;
 
@@ -33,6 +35,12 @@ public final class NowsLauncher {
 
     public static void main(String[] args) throws Exception {
         LOG.info("Nows loader starting");
+        LOG.info("Nows runtime version: {}", nowsVersion());
+        LOG.info("Java runtime: {} {} ({})",
+                System.getProperty("java.vendor"),
+                System.getProperty("java.version"),
+                System.getProperty("java.vm.name"));
+        LOG.info("Process working directory: {}", Path.of("").toAbsolutePath().normalize());
         try {
             launch(args);
         } catch (Exception | Error failure) {
@@ -44,18 +52,24 @@ public final class NowsLauncher {
     private static void launch(String[] args) throws Exception {
         LaunchArguments launch = phase("Parse launch arguments", () -> LaunchArguments.parse(args));
         LOG.info("Launch target: Minecraft {}, game directory {}", launch.minecraftVersion(), launch.gameDirectory());
+        LOG.info("Minecraft argument summary: {} forwarded argument(s), access token hidden",
+                launch.minecraftArguments().size());
 
         MinecraftVersionPolicy policy = phase("Load Minecraft version policy", () ->
                 MinecraftVersionPolicy.load(launch.minecraftVersion()));
         LOG.info("Minecraft policy: {} main class {} ({})",
                 policy.minecraftVersion(), policy.clientMainClass(),
                 policy.bundled() ? policy.resourcePath() : "default policy");
+        LOG.info("Built-in Mixin configs from policy: {}",
+                policy.builtInMixinConfigs().isEmpty() ? "<none>" : String.join(", ", policy.builtInMixinConfigs()));
 
         Path gameJar = phase("Locate Minecraft client JAR", GameJarLocator::locateClientJar);
         LOG.info("Minecraft client JAR: {}", gameJar);
 
+        Path modsDirectory = launch.gameDirectory().resolve("mods");
+        phase("Inspect Nows mods directory", () -> logModDirectory(modsDirectory));
         List<ModContainer> mods = phase("Discover Nows mods", () ->
-                ModDiscovery.scan(launch.gameDirectory().resolve("mods"), new KdlModMetadataReader()));
+                ModDiscovery.scan(modsDirectory, new KdlModMetadataReader()));
         logDiscoveredMods(mods);
 
         phase("Validate Minecraft compatibility", () ->
@@ -64,11 +78,14 @@ public final class NowsLauncher {
         List<URL> urls = new ArrayList<>();
         urls.add(gameJar.toUri().toURL());
         for (ModContainer mod : mods) urls.add(mod.path().toUri().toURL());
+        LOG.info("Game classloader URLs: {} total (1 Minecraft client + {} mod jar(s))", urls.size(), mods.size());
 
         try (NowsClassLoader gameLoader = new NowsClassLoader(urls.toArray(URL[]::new), NowsLauncher.class.getClassLoader())) {
             try {
+                LOG.info("Game classloader: {} with parent {}", gameLoader.getName(), gameLoader.getParent());
                 phase("Configure shared packages", () -> configureSharedPackages(gameLoader));
                 Thread.currentThread().setContextClassLoader(gameLoader);
+                LOG.info("Thread context classloader switched to {}", gameLoader.getName());
 
                 phase("Configure Minecraft client hooks", () ->
                         configureMinecraftClientHooks(launch.minecraftVersion(), mods.size()));
@@ -78,6 +95,7 @@ public final class NowsLauncher {
 
                 NowsServices services = new NowsServices();
                 phase("Install GEB integration", () -> GebIntegration.install(services, gameLoader));
+                LOG.info("Service registered: {} -> {}", "GEB", services.require(foo.zaaarf.geb.GEB.class).getClass().getName());
 
                 NowsContext context = new NowsContext(
                         launch.minecraftVersion(), launch.gameDirectory(), mods, gameLoader, services);
@@ -88,6 +106,7 @@ public final class NowsLauncher {
                         invokeMinecraftMain(gameLoader, policy.clientMainClass(),
                                 launch.minecraftArguments().toArray(String[]::new)));
             } finally {
+                LOG.info("Detaching Nows integrations and restoring launcher classloader");
                 NowsMixinBootstrap.detach(gameLoader);
                 Thread.currentThread().setContextClassLoader(NowsLauncher.class.getClassLoader());
             }
@@ -106,7 +125,7 @@ public final class NowsLauncher {
         for (String prefix : prefixes) {
             loader.addParentFirstPrefix(prefix);
         }
-        LOG.debug("Configured {} parent-first package prefix(es)", prefixes.size());
+        LOG.info("Parent-first package prefixes ({}): {}", prefixes.size(), String.join(", ", prefixes));
     }
 
     private static void configureMinecraftClientHooks(String minecraftVersion, int modCount) throws Exception {
@@ -115,9 +134,9 @@ public final class NowsLauncher {
             Class<?> hookClass = Class.forName(hookClassName, true, NowsLauncher.class.getClassLoader());
             Method configure = hookClass.getMethod("configure", String.class, String.class, int.class);
             configure.invoke(null, nowsVersion(), minecraftVersion, modCount);
-            LOG.debug("Configured Minecraft client hooks from {}", hookClassName);
+            LOG.info("Minecraft client hooks configured from {} for {} mod(s)", hookClassName, modCount);
         } catch (ClassNotFoundException ignored) {
-            LOG.debug("No Minecraft client hooks available for {}", minecraftVersion);
+            LOG.info("No Minecraft client hooks available for {}", minecraftVersion);
         }
     }
 
@@ -143,6 +162,7 @@ public final class NowsLauncher {
     }
 
     private static void loadTransformers(NowsClassLoader loader, List<ModContainer> mods) throws Exception {
+        int count = 0;
         for (ModContainer mod : mods) {
             for (String className : mod.descriptor().declarations("transformer")) {
                 Object instance = Class.forName(className, true, loader).getDeclaredConstructor().newInstance();
@@ -150,26 +170,41 @@ public final class NowsLauncher {
                     throw new IllegalStateException(className + " does not implement " + ClassTransformer.class.getName());
                 }
                 loader.addTransformer(transformer);
+                count++;
                 LOG.info("Transformer: {} -> {}", mod.descriptor().id(), className);
             }
+        }
+        if (count == 0) {
+            LOG.info("No mod class transformers declared");
+        } else {
+            LOG.info("Loaded {} mod class transformer(s)", count);
         }
     }
 
     private static void runEntrypoints(ClassLoader loader, List<ModContainer> mods, NowsContext context) throws Exception {
+        int count = 0;
         for (ModContainer mod : mods) {
             for (String className : mod.descriptor().declarations("entrypoint")) {
+                LOG.info("Running entrypoint: {} -> {}", mod.descriptor().id(), className);
                 Object instance = Class.forName(className, true, loader).getDeclaredConstructor().newInstance();
                 if (!(instance instanceof ModInitializer initializer)) {
                     throw new IllegalStateException(className + " does not implement " + ModInitializer.class.getName());
                 }
                 initializer.onInitialize(context);
+                count++;
                 LOG.info("Loaded {} {}", mod.descriptor().id(), mod.descriptor().version());
             }
+        }
+        if (count == 0) {
+            LOG.info("No mod entrypoints declared");
+        } else {
+            LOG.info("Ran {} mod entrypoint(s)", count);
         }
     }
 
     private static void invokeMinecraftMain(ClassLoader loader, String mainClassName, String[] args) throws Exception {
         try {
+            LOG.info("Invoking Minecraft main class {} with {} argument(s)", mainClassName, args.length);
             Class<?> main = Class.forName(mainClassName, true, loader);
             main.getMethod("main", String[].class).invoke(null, (Object) args);
         } catch (InvocationTargetException e) {
@@ -188,6 +223,26 @@ public final class NowsLauncher {
         LOG.info("Discovered {} Nows mod(s)", mods.size());
         for (ModContainer mod : mods) {
             LOG.info("Mod: {} {} ({})", mod.descriptor().id(), mod.descriptor().version(), mod.path());
+        }
+    }
+
+    private static void logModDirectory(Path modsDirectory) throws IOException {
+        Files.createDirectories(modsDirectory);
+        LOG.info("Nows mods directory: {}", modsDirectory);
+        try (var paths = Files.list(modsDirectory)) {
+            List<Path> jars = paths
+                    .filter(Files::isRegularFile)
+                    .filter(path -> path.getFileName().toString().endsWith(".jar"))
+                    .sorted(Comparator.comparing(path -> path.getFileName().toString()))
+                    .toList();
+            if (jars.isEmpty()) {
+                LOG.info("Nows mods directory contains no jar candidates");
+                return;
+            }
+            LOG.info("Nows mod jar candidates: {}", jars.size());
+            for (Path jar : jars) {
+                LOG.info("Nows mod candidate: {}", jar.toAbsolutePath().normalize());
+            }
         }
     }
 

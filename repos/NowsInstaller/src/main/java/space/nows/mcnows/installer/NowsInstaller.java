@@ -19,6 +19,12 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Properties;
+import java.util.logging.ConsoleHandler;
+import java.util.logging.Formatter;
+import java.util.logging.Handler;
+import java.util.logging.Level;
+import java.util.logging.LogRecord;
+import java.util.logging.Logger;
 
 /**
  * Internet-first Nows installer.
@@ -29,6 +35,7 @@ import java.util.Properties;
  */
 public final class NowsInstaller {
     private static final String DEFAULTS_RESOURCE = "/META-INF/nows/installer/defaults.properties";
+    private static final Logger LOG = logger(NowsInstaller.class);
 
     private NowsInstaller() {}
 
@@ -37,9 +44,31 @@ public final class NowsInstaller {
         install(options, new InstallerListener() {
             @Override
             public void log(String message) {
-                System.out.println(message);
+                LOG.info(message);
             }
         });
+    }
+
+    static Logger logger(Class<?> type) {
+        Logger logger = Logger.getLogger(type.getName());
+        logger.setUseParentHandlers(false);
+        logger.setLevel(Level.INFO);
+        if (!hasNowsHandler(logger)) {
+            ConsoleHandler handler = new ConsoleHandler();
+            handler.setLevel(Level.INFO);
+            handler.setFormatter(new CompactInstallerFormatter());
+            logger.addHandler(handler);
+        }
+        return logger;
+    }
+
+    private static boolean hasNowsHandler(Logger logger) {
+        for (Handler handler : logger.getHandlers()) {
+            if (handler.getFormatter() instanceof CompactInstallerFormatter) {
+                return true;
+            }
+        }
+        return false;
     }
 
     static void install(Options options, InstallerListener listener) throws Exception {
@@ -60,7 +89,12 @@ public final class NowsInstaller {
         installMods(options, manifest, listener);
 
         String profile = installVersionJson(options, manifest, launcherLibraries);
+        listener.log("[NowsInstaller] version json: "
+                + options.minecraftDir.resolve("versions").resolve(profile).resolve(profile + ".json"));
         installLauncherProfile(options, profile);
+        listener.log("[NowsInstaller] launcher profiles: " + options.minecraftDir.resolve("launcher_profiles.json"));
+        listener.log("[NowsInstaller] profile game dir: " + profileGameDirectory(options));
+        listener.log("[NowsInstaller] profile mods dir: " + profileModsDirectory(options));
         listener.log("[NowsInstaller] Installed " + profile);
     }
 
@@ -873,6 +907,19 @@ public final class NowsInstaller {
 
     interface InstallerListener {
         void log(String message);
+    }
+
+    private static final class CompactInstallerFormatter extends Formatter {
+        @Override
+        public String format(LogRecord record) {
+            String time = String.format(Locale.ROOT, "%1$tT", record.getMillis());
+            String throwable = "";
+            if (record.getThrown() != null) {
+                throwable = System.lineSeparator() + record.getThrown();
+            }
+            return "[" + time + "] [" + record.getLevel().getName() + "] "
+                    + formatMessage(record) + throwable + System.lineSeparator();
+        }
     }
 
     private static final class InstalledLibrary {

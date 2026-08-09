@@ -193,6 +193,8 @@ That updates both the monorepo and standalone `NowsApiMod` property files. Use
 
 `integrations/logging/` owns Nows logging policy. Runtime and integrations should get loggers through `NowsLog` instead of configuring third-party logging directly.
 
+Loader startup should be observable from INFO logs. Nows should log phase start/end, selected runtime/policy facts, mod discovery, classloader setup, built-in Mixin config registration, transformer loading, service installation and entrypoint execution without printing access tokens or other launcher secrets.
+
 The default backend is `slf4j`, which flows into Minecraft's existing SLF4J -> Log4j2 backend. For local diagnostics, set:
 
 ```text

@@ -4,9 +4,12 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
 import java.util.jar.JarFile;
+import java.util.logging.Logger;
 
 /** Minimal bootstrap used only by this monorepo's build/example. */
 public final class PrepareMinecraftCli {
+    private static final Logger LOG = Logger.getLogger(PrepareMinecraftCli.class.getName());
+
     private PrepareMinecraftCli() {}
 
     public static void main(String[] args) throws Exception {
@@ -28,6 +31,6 @@ public final class PrepareMinecraftCli {
             }
         }
         Files.copy(raw, output, StandardCopyOption.REPLACE_EXISTING);
-        System.out.println("Nows: prepared Mojang-named Minecraft " + version + " at " + output);
+        LOG.info("Nows: prepared Mojang-named Minecraft " + version + " at " + output);
     }
 }

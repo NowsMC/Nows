@@ -62,6 +62,8 @@ Minecraft-owned Log4j2, SLF4J, Gson, Guava and JSpecify are not bundled into the
 -Dlog4j2.contextSelector=org.apache.logging.log4j.core.async.AsyncLoggerContextSelector
 ```
 
+Nows logs loader progress at INFO level: phase start/end, selected Minecraft policy, mod directory scan, classloader setup, built-in Mixin configs, transformers, services and entrypoints. Use `-Dnows.logging.backend=console`, `verbose-console`, `jdk` or `slf4j` to force a backend while debugging.
+
 ## KDL is replaceable metadata
 
 The core never imports KDL4J. `integrations/kdl` implements the `ModMetadataReader` SPI and turns `nows.mod.kdl` into a generic `ModDescriptor`.

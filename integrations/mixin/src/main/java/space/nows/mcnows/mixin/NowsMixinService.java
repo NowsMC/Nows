@@ -53,7 +53,7 @@ public final class NowsMixinService implements IMixinService, IClassProvider, IC
         loader = targetLoader;
         INVALID_CLASSES.clear();
         TRANSFORMER_EXCLUSIONS.clear();
-        LOG.debug("Nows Mixin service attached to {}", targetLoader);
+        LOG.info("Nows Mixin service attached to {} with {} URL(s)", targetLoader.getName(), targetLoader.getURLs().length);
     }
 
     public static void detach(NowsClassLoader targetLoader) {
@@ -68,7 +68,7 @@ public final class NowsMixinService implements IMixinService, IClassProvider, IC
         loader = null;
         INVALID_CLASSES.clear();
         TRANSFORMER_EXCLUSIONS.clear();
-        LOG.debug("Nows Mixin service detached from {}", targetLoader);
+        LOG.info("Nows Mixin service detached from {}", targetLoader.getName());
     }
 
     public static IMixinTransformer transformer() {
@@ -146,6 +146,7 @@ public final class NowsMixinService implements IMixinService, IClassProvider, IC
 
     @Override
     public void prepare() {
+        LOG.info("Nows Mixin service prepare");
     }
 
     @Override
@@ -157,16 +158,18 @@ public final class NowsMixinService implements IMixinService, IClassProvider, IC
     public void offer(IMixinInternal internal) {
         if (internal instanceof IMixinTransformerFactory factory) {
             transformer = factory.createTransformer();
-            LOG.debug("Mixin transformer factory offered {}", internal.getClass().getName());
+            LOG.info("Mixin transformer factory offered {}", internal.getClass().getName());
         }
     }
 
     @Override
     public void init() {
+        LOG.info("Nows Mixin service init");
     }
 
     @Override
     public void beginPhase() {
+        LOG.info("Nows Mixin service begin phase");
     }
 
     @Override

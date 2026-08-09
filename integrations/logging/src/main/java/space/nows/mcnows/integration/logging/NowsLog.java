@@ -57,7 +57,7 @@ public final class NowsLog {
             this.logger = logger;
             this.name = name;
             this.startNanos = System.nanoTime();
-            logger.debug("{}...", name);
+            logger.info("{} started", name);
         }
 
         public void fail(Throwable failure) {

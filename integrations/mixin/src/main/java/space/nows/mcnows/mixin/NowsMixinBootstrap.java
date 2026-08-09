@@ -29,7 +29,10 @@ public final class NowsMixinBootstrap {
     public static void install(NowsClassLoader loader, List<String> builtInConfigs, List<ModContainer> mods) {
         NowsMixinService.attach(loader);
         Thread.currentThread().setContextClassLoader(loader);
+        LOG.info("Bootstrapping Mixin with context classloader {}", loader.getName());
         MixinBootstrap.init();
+        MixinEnvironment defaultEnvironment = MixinEnvironment.getDefaultEnvironment();
+        LOG.info("Mixin default environment: {} side {}", defaultEnvironment, defaultEnvironment.getSide());
 
         Set<String> configs = new LinkedHashSet<>();
         for (String config : builtInConfigs) {
@@ -63,7 +66,7 @@ public final class NowsMixinBootstrap {
                 transformer.transformClassBytes(className, className, classBytes));
         loader.setClassGenerator(className ->
                 transformer.generateClass(MixinEnvironment.getCurrentEnvironment(), className));
-        LOG.debug("Mixin transformer installed into NowsClassLoader");
+        LOG.info("Mixin transformer installed into NowsClassLoader: {}", transformer.getClass().getName());
     }
 
     private static void addConfiguration(String config) {
