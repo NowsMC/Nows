@@ -6,8 +6,8 @@ val officialMinecraftJar = rootProject.layout.projectDirectory.file(".nows/minec
 
 dependencies {
     compileOnly(project(":core"))
+    compileOnly(project(":integrations:geb"))
     compileOnly(project(":integrations:logging"))
-    compileOnly("foo.zaaarf.geb:core:${providers.gradleProperty("geb_core_version").get()}")
     annotationProcessor("foo.zaaarf.geb:processor:${providers.gradleProperty("geb_processor_version").get()}")
     compileOnly(files(officialMinecraftJar))
     compileOnly("org.spongepowered:mixin:${providers.gradleProperty("mixin_version").get()}")

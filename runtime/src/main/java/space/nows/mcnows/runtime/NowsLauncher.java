@@ -9,6 +9,13 @@ import space.nows.mcnows.core.classloading.NowsClassLoader;
 import space.nows.mcnows.core.mod.ModContainer;
 import space.nows.mcnows.core.mod.ModDiscovery;
 import space.nows.mcnows.integration.geb.GebIntegration;
+import space.nows.mcnows.integration.geb.NowsEvents;
+import space.nows.mcnows.integration.geb.event.NowsBootstrapReadyEvent;
+import space.nows.mcnows.integration.geb.event.NowsEntrypointsCompletedEvent;
+import space.nows.mcnows.integration.geb.event.NowsEntrypointsStartingEvent;
+import space.nows.mcnows.integration.geb.event.NowsMinecraftStartingEvent;
+import space.nows.mcnows.integration.geb.event.NowsModEntrypointCompletedEvent;
+import space.nows.mcnows.integration.geb.event.NowsModEntrypointStartingEvent;
 import space.nows.mcnows.integration.kdl.KdlModMetadataReader;
 import space.nows.mcnows.integration.logging.NowsLog;
 import space.nows.mcnows.minecraft.GameJarLocator;
@@ -103,9 +110,17 @@ public final class NowsLauncher {
 
                 NowsContext context = new NowsContext(
                         launch.minecraftVersion(), launch.gameDirectory(), mods, gameLoader, services);
-                phase("Run mod entrypoints", () -> runEntrypoints(gameLoader, mods, context));
+                NowsEvents events = GebIntegration.events(context);
+                int listenerCount = phase("Register GEB listeners", () ->
+                        GebIntegration.registerDeclaredListeners(context));
+                LOG.info("Registered {} declared GEB listener(s)", listenerCount);
+                events.post(new NowsBootstrapReadyEvent(context));
+
+                phase("Run mod entrypoints", () -> runEntrypoints(gameLoader, mods, context, events));
 
                 LOG.info("Starting Minecraft {} with {} Nows mod(s)", launch.minecraftVersion(), mods.size());
+                events.post(new NowsMinecraftStartingEvent(
+                        context, policy.clientMainClass(), launch.minecraftArguments().size()));
                 phase("Invoke Minecraft main", () ->
                         invokeMinecraftMain(gameLoader, policy.clientMainClass(),
                                 launch.minecraftArguments().toArray(String[]::new)));
@@ -185,17 +200,25 @@ public final class NowsLauncher {
         }
     }
 
-    private static void runEntrypoints(ClassLoader loader, List<ModContainer> mods, NowsContext context) throws Exception {
+    private static void runEntrypoints(
+            ClassLoader loader,
+            List<ModContainer> mods,
+            NowsContext context,
+            NowsEvents events
+    ) throws Exception {
         int count = 0;
+        events.post(new NowsEntrypointsStartingEvent(context));
         for (ModContainer mod : mods) {
             for (String className : mod.descriptor().declarations("entrypoint")) {
                 LOG.info("Running entrypoint: {} -> {}", mod.descriptor().id(), className);
+                events.post(new NowsModEntrypointStartingEvent(context, mod, className));
                 Object instance = Class.forName(className, true, loader).getDeclaredConstructor().newInstance();
                 if (!(instance instanceof ModInitializer initializer)) {
                     throw new IllegalStateException(className + " does not implement " + ModInitializer.class.getName());
                 }
                 initializer.onInitialize(context);
                 count++;
+                events.post(new NowsModEntrypointCompletedEvent(context, mod, className));
                 LOG.info("Loaded {} {}", mod.descriptor().id(), mod.descriptor().version());
             }
         }
@@ -204,6 +227,7 @@ public final class NowsLauncher {
         } else {
             LOG.info("Ran {} mod entrypoint(s)", count);
         }
+        events.post(new NowsEntrypointsCompletedEvent(context, count));
     }
 
     private static void invokeMinecraftMain(ClassLoader loader, String mainClassName, String[] args) throws Exception {
