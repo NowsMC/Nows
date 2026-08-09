@@ -1,10 +1,16 @@
 package space.nows.mcnows.mc.api.datagen;
 
+import com.squareup.moshi.JsonAdapter;
+import com.squareup.moshi.Moshi;
+
 import java.io.IOException;
+import java.lang.reflect.Type;
 import java.nio.file.Path;
 
 /** Small generated-data writer for recipes, tags and other JSON assets. */
 public interface NowsDataGen {
+    Moshi moshi();
+
     Path outputDirectory();
 
     Path path(String relativePath);
@@ -12,6 +18,32 @@ public interface NowsDataGen {
     void writeText(String relativePath, String text) throws IOException;
 
     void writeJson(String relativePath, String json) throws IOException;
+
+    @SuppressWarnings({"unchecked", "rawtypes"})
+    default void writeJson(String relativePath, Object value) throws IOException {
+        Class<?> type = value == null ? Object.class : value.getClass();
+        writeJson(relativePath, (JsonAdapter<Object>) moshi().adapter((Class) type), value);
+    }
+
+    default <T> void writeJson(String relativePath, Class<T> type, T value) throws IOException {
+        writeJson(relativePath, jsonAdapter(type), value);
+    }
+
+    default <T> void writeJson(String relativePath, Type type, T value) throws IOException {
+        writeJson(relativePath, jsonAdapter(type), value);
+    }
+
+    default <T> void writeJson(String relativePath, JsonAdapter<T> adapter, T value) throws IOException {
+        writeJson(relativePath, adapter.indent("  ").toJson(value));
+    }
+
+    default <T> JsonAdapter<T> jsonAdapter(Class<T> type) {
+        return moshi().adapter(type);
+    }
+
+    default <T> JsonAdapter<T> jsonAdapter(Type type) {
+        return moshi().adapter(type);
+    }
 
     default String recipePath(String id) {
         return "data/" + namespace(id) + "/recipe/" + pathPart(id) + ".json";

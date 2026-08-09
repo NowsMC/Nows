@@ -7,6 +7,10 @@ val gebCoreVersion = providers.gradleProperty("geb_core_version")
 val reactorVersion = providers.gradleProperty("reactor_version")
 val disruptorVersion = providers.gradleProperty("disruptor_version")
 val mixinVersion = providers.gradleProperty("mixin_version")
+val moshiVersion = providers.gradleProperty("moshi_version")
+val okioVersion = providers.gradleProperty("okio_version")
+val kotlinVersion = providers.gradleProperty("kotlin_version")
+val jetbrainsAnnotationsVersion = providers.gradleProperty("jetbrains_annotations_version")
 val minecraftVersion = providers.gradleProperty("minecraft_version")
 val nowsReleaseBaseUrl = providers.gradleProperty("nows_release_base_url")
 
@@ -31,6 +35,12 @@ dependencies {
     offlineMavenArtifacts("io.projectreactor:reactor-core:${reactorVersion.get()}")
     offlineMavenArtifacts("org.reactivestreams:reactive-streams:1.0.4")
     offlineMavenArtifacts("com.lmax:disruptor:${disruptorVersion.get()}")
+    offlineMavenArtifacts("com.squareup.moshi:moshi:${moshiVersion.get()}")
+    offlineMavenArtifacts("com.squareup.okio:okio-jvm:${okioVersion.get()}")
+    offlineMavenArtifacts("org.jetbrains.kotlin:kotlin-stdlib:${kotlinVersion.get()}")
+    offlineMavenArtifacts("org.jetbrains.kotlin:kotlin-stdlib-jdk7:${kotlinVersion.get()}")
+    offlineMavenArtifacts("org.jetbrains.kotlin:kotlin-stdlib-jdk8:${kotlinVersion.get()}")
+    offlineMavenArtifacts("org.jetbrains:annotations:${jetbrainsAnnotationsVersion.get()}")
     offlineMavenArtifacts("org.spongepowered:mixin:${mixinVersion.get()}")
     offlineMavenArtifacts("org.ow2.asm:asm:9.8")
     offlineMavenArtifacts("org.ow2.asm:asm-tree:9.8")
@@ -88,6 +98,12 @@ val offlineMavenArtifactPaths = mapOf(
     "reactor-core-${reactorVersion.get()}.jar" to "io/projectreactor/reactor-core/${reactorVersion.get()}/reactor-core-${reactorVersion.get()}.jar",
     "reactive-streams-1.0.4.jar" to "org/reactivestreams/reactive-streams/1.0.4/reactive-streams-1.0.4.jar",
     "disruptor-${disruptorVersion.get()}.jar" to "com/lmax/disruptor/${disruptorVersion.get()}/disruptor-${disruptorVersion.get()}.jar",
+    "moshi-${moshiVersion.get()}.jar" to "com/squareup/moshi/moshi/${moshiVersion.get()}/moshi-${moshiVersion.get()}.jar",
+    "okio-jvm-${okioVersion.get()}.jar" to "com/squareup/okio/okio-jvm/${okioVersion.get()}/okio-jvm-${okioVersion.get()}.jar",
+    "kotlin-stdlib-${kotlinVersion.get()}.jar" to "org/jetbrains/kotlin/kotlin-stdlib/${kotlinVersion.get()}/kotlin-stdlib-${kotlinVersion.get()}.jar",
+    "kotlin-stdlib-jdk7-${kotlinVersion.get()}.jar" to "org/jetbrains/kotlin/kotlin-stdlib-jdk7/${kotlinVersion.get()}/kotlin-stdlib-jdk7-${kotlinVersion.get()}.jar",
+    "kotlin-stdlib-jdk8-${kotlinVersion.get()}.jar" to "org/jetbrains/kotlin/kotlin-stdlib-jdk8/${kotlinVersion.get()}/kotlin-stdlib-jdk8-${kotlinVersion.get()}.jar",
+    "annotations-${jetbrainsAnnotationsVersion.get()}.jar" to "org/jetbrains/annotations/${jetbrainsAnnotationsVersion.get()}/annotations-${jetbrainsAnnotationsVersion.get()}.jar",
     "mixin-${mixinVersion.get()}.jar" to "org/spongepowered/mixin/${mixinVersion.get()}/mixin-${mixinVersion.get()}.jar",
     "asm-9.8.jar" to "org/ow2/asm/asm/9.8/asm-9.8.jar",
     "asm-tree-9.8.jar" to "org/ow2/asm/asm-tree/9.8/asm-tree-9.8.jar",

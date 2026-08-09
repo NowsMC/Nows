@@ -241,14 +241,18 @@ packs.registerSource(PackType.SERVER_DATA, repositoryConsumer -> {
 });
 ```
 
-Commands and generated JSON data are collected through the adapter as well. The command registrations are stored until a version-specific Minecraft hook applies them to a live dispatcher:
+Commands and generated JSON data are collected through the adapter as well. The command registrations are stored until a version-specific Minecraft hook applies them to a live dispatcher. JSON generation uses the loader-provided Moshi runtime, so mods can write objects, maps or explicit Moshi adapters instead of hand-built strings:
 
 ```java
 NowsMinecraft.commands(context).register(dispatcher ->
         dispatcher.register(Commands.literal("my_mod").executes(command -> 1)));
 
 NowsDataGen dataGen = NowsMinecraft.dataGen(context);
-dataGen.writeJson(dataGen.recipePath("my_mod:widget"), "{ \"type\": \"minecraft:crafting_shapeless\" }");
+dataGen.writeJson(dataGen.recipePath("my_mod:widget"), Map.class, Map.of(
+        "type", "minecraft:crafting_shapeless",
+        "ingredients", List.of(Map.of("item", "minecraft:stone")),
+        "result", Map.of("id", "my_mod:widget", "count", 1)
+));
 ```
 
 Basic per-mod config files live in core because they are not Minecraft-version-specific:

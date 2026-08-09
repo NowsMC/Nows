@@ -1,5 +1,6 @@
 package space.nows.mcnows.mc.internal.datagen;
 
+import com.squareup.moshi.Moshi;
 import space.nows.mcnows.mc.api.datagen.NowsDataGen;
 
 import java.io.IOException;
@@ -8,10 +9,16 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 
 public final class NowsDataGenImpl implements NowsDataGen {
+    private final Moshi moshi = new Moshi.Builder().build();
     private final Path outputDirectory;
 
     public NowsDataGenImpl(Path outputDirectory) {
         this.outputDirectory = outputDirectory;
+    }
+
+    @Override
+    public Moshi moshi() {
+        return moshi;
     }
 
     @Override

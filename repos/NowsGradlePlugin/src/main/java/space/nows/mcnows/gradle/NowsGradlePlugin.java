@@ -18,6 +18,7 @@ public final class NowsGradlePlugin implements Plugin<Project> {
     private static final String GEB_PROCESSOR = "foo.zaaarf.geb:processor:0.4.9";
     private static final String NETTY_BUFFER = "io.netty:netty-buffer:4.2.15.Final";
     private static final String MIXIN = "org.spongepowered:mixin:0.8.7";
+    private static final String MOSHI = "com.squareup.moshi:moshi:1.15.2";
     private static final String GSON = "com.google.code.gson:gson:2.14.0";
     private static final String GUAVA = "com.google.guava:guava:33.4.8-jre";
     private static final String ASM = "org.ow2.asm:asm:9.8";
@@ -54,6 +55,7 @@ public final class NowsGradlePlugin implements Plugin<Project> {
                 p.getDependencies().add("compileOnly", core != null
                         ? core
                         : "space.nows.mcnows:nows-core:" + extension.getNowsVersion().get());
+                p.getDependencies().add("compileOnly", MOSHI);
 
                 if (extension.getAddGeb().get()) {
                     p.getDependencies().add("compileOnly", GEB_CORE);

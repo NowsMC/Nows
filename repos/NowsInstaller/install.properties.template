@@ -6,7 +6,7 @@ mavenBaseUrl=https://repo1.maven.org/maven2
 
 # Nows modular jars are downloaded from files.nows.space. Keep these independently replaceable.
 # If files.nows.space is unavailable, NowsInstaller falls back to mavenBaseUrl + artifact path.
-artifact.count=20
+artifact.count=26
 artifact.0.coordinate=space.nows.mcnows:nows-core:${nows.version}
 artifact.0.path=space/nows/mcnows/nows-core/${nows.version}/nows-core-${nows.version}.jar
 artifact.0.url=https://files.nows.space/releases/nows/${nows.version}/26.2/libraries/space/nows/mcnows/nows-core/${nows.version}/nows-core-${nows.version}.jar
@@ -76,3 +76,21 @@ artifact.18.url=https://files.nows.space/releases/nows/${nows.version}/26.2/libr
 artifact.19.coordinate=space.nows.mcnows:nows-integration-network:${nows.version}
 artifact.19.path=space/nows/mcnows/nows-integration-network/${nows.version}/nows-integration-network-${nows.version}.jar
 artifact.19.url=https://files.nows.space/releases/nows/${nows.version}/26.2/libraries/space/nows/mcnows/nows-integration-network/${nows.version}/nows-integration-network-${nows.version}.jar
+artifact.20.coordinate=com.squareup.moshi:moshi:1.15.2
+artifact.20.path=com/squareup/moshi/moshi/1.15.2/moshi-1.15.2.jar
+artifact.20.url=https://repo1.maven.org/maven2/com/squareup/moshi/moshi/1.15.2/moshi-1.15.2.jar
+artifact.21.coordinate=com.squareup.okio:okio-jvm:3.7.0
+artifact.21.path=com/squareup/okio/okio-jvm/3.7.0/okio-jvm-3.7.0.jar
+artifact.21.url=https://repo1.maven.org/maven2/com/squareup/okio/okio-jvm/3.7.0/okio-jvm-3.7.0.jar
+artifact.22.coordinate=org.jetbrains.kotlin:kotlin-stdlib:1.8.21
+artifact.22.path=org/jetbrains/kotlin/kotlin-stdlib/1.8.21/kotlin-stdlib-1.8.21.jar
+artifact.22.url=https://repo1.maven.org/maven2/org/jetbrains/kotlin/kotlin-stdlib/1.8.21/kotlin-stdlib-1.8.21.jar
+artifact.23.coordinate=org.jetbrains.kotlin:kotlin-stdlib-jdk7:1.8.21
+artifact.23.path=org/jetbrains/kotlin/kotlin-stdlib-jdk7/1.8.21/kotlin-stdlib-jdk7-1.8.21.jar
+artifact.23.url=https://repo1.maven.org/maven2/org/jetbrains/kotlin/kotlin-stdlib-jdk7/1.8.21/kotlin-stdlib-jdk7-1.8.21.jar
+artifact.24.coordinate=org.jetbrains.kotlin:kotlin-stdlib-jdk8:1.8.21
+artifact.24.path=org/jetbrains/kotlin/kotlin-stdlib-jdk8/1.8.21/kotlin-stdlib-jdk8-1.8.21.jar
+artifact.24.url=https://repo1.maven.org/maven2/org/jetbrains/kotlin/kotlin-stdlib-jdk8/1.8.21/kotlin-stdlib-jdk8-1.8.21.jar
+artifact.25.coordinate=org.jetbrains:annotations:13.0
+artifact.25.path=org/jetbrains/annotations/13.0/annotations-13.0.jar
+artifact.25.url=https://repo1.maven.org/maven2/org/jetbrains/annotations/13.0/annotations-13.0.jar

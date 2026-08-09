@@ -10,6 +10,7 @@ dependencies {
     compileOnly(project(":integrations:logging"))
     compileOnly(project(":integrations:network"))
     compileOnly(project(":mc:${minecraftVersion.get()}"))
+    compileOnly("com.squareup.moshi:moshi:${providers.gradleProperty("moshi_version").get()}")
     annotationProcessor("foo.zaaarf.geb:processor:${providers.gradleProperty("geb_processor_version").get()}")
     compileOnly(files(officialMinecraftJar))
     compileOnly("org.spongepowered:mixin:${providers.gradleProperty("mixin_version").get()}")

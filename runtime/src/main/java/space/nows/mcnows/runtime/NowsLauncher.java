@@ -163,6 +163,7 @@ public final class NowsLauncher {
                 "space.nows.mcnows.",
                 "foo.zaaarf.geb.", "dev.kdl.", "reactor.", "org.reactivestreams.",
                 "io.netty.",
+                "com.squareup.moshi.", "okio.", "kotlin.", "org.jetbrains.",
                 "org.slf4j.", "org.apache.logging.log4j.",
                 "org.spongepowered.asm.", "org.objectweb.asm.",
                 "com.google.gson.", "com.google.common.", "org.jspecify.",

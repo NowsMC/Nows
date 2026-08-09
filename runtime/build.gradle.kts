@@ -5,6 +5,10 @@ val gebCoreVersion = providers.gradleProperty("geb_core_version")
 val reactorVersion = providers.gradleProperty("reactor_version")
 val disruptorVersion = providers.gradleProperty("disruptor_version")
 val mixinVersion = providers.gradleProperty("mixin_version")
+val moshiVersion = providers.gradleProperty("moshi_version")
+val okioVersion = providers.gradleProperty("okio_version")
+val kotlinVersion = providers.gradleProperty("kotlin_version")
+val jetbrainsAnnotationsVersion = providers.gradleProperty("jetbrains_annotations_version")
 val nowsVersion = providers.gradleProperty("nows_version")
 
 // This configuration is only for the optional future single-JAR distribution.
@@ -28,6 +32,12 @@ dependencies {
     allJarLibraries("io.projectreactor:reactor-core:${reactorVersion.get()}") { isTransitive = false }
     allJarLibraries("org.reactivestreams:reactive-streams:1.0.4") { isTransitive = false }
     allJarLibraries("com.lmax:disruptor:${disruptorVersion.get()}") { isTransitive = false }
+    allJarLibraries("com.squareup.moshi:moshi:${moshiVersion.get()}") { isTransitive = false }
+    allJarLibraries("com.squareup.okio:okio-jvm:${okioVersion.get()}") { isTransitive = false }
+    allJarLibraries("org.jetbrains.kotlin:kotlin-stdlib:${kotlinVersion.get()}") { isTransitive = false }
+    allJarLibraries("org.jetbrains.kotlin:kotlin-stdlib-jdk7:${kotlinVersion.get()}") { isTransitive = false }
+    allJarLibraries("org.jetbrains.kotlin:kotlin-stdlib-jdk8:${kotlinVersion.get()}") { isTransitive = false }
+    allJarLibraries("org.jetbrains:annotations:${jetbrainsAnnotationsVersion.get()}") { isTransitive = false }
     allJarLibraries("org.spongepowered:mixin:${mixinVersion.get()}") { isTransitive = false }
     allJarLibraries("org.ow2.asm:asm:9.8") { isTransitive = false }
     allJarLibraries("org.ow2.asm:asm-tree:9.8") { isTransitive = false }
