@@ -7,6 +7,7 @@ dependencies {
     compileOnly(project(":core"))
     compileOnly(files(minecraftDevJar))
     compileOnly("com.mojang:datafixerupper:${providers.gradleProperty("datafixerupper_version").get()}")
+    compileOnly("com.mojang:brigadier:${providers.gradleProperty("brigadier_version").get()}")
     compileOnly("org.spongepowered:mixin:${providers.gradleProperty("mixin_version").get()}")
 }
 
