@@ -275,6 +275,19 @@ ui.titleScreen().render(render ->
         render.text("my_mod loaded", 2, render.height() - 42, 0xFFAAFFAA));
 ```
 
+Client player helpers expose both a nullable current player and a fail-fast player. They are useful for client UI, debug tools and single-player helpers; on multiplayer servers, server-authoritative values may be corrected by the server:
+
+```java
+NowsPlayerApi player = NowsMinecraft.player(context);
+player.current().ifPresent(local -> {
+    NowsPlayerSnapshot snapshot = player.snapshot();
+    player.sendOverlayMessage(Component.literal("Hello " + snapshot.name()));
+    player.setHealth(Math.min(snapshot.maxHealth(), snapshot.health() + 2.0F));
+    player.setFood(20);
+    player.setSelectedHotbarSlot(0);
+});
+```
+
 Basic per-mod config files live in core because they are not Minecraft-version-specific:
 
 ```java
