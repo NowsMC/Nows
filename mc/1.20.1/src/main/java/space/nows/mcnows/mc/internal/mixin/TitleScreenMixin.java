@@ -2,15 +2,34 @@ package space.nows.mcnows.mc.internal.mixin;
 
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.components.AbstractWidget;
+import net.minecraft.client.gui.components.Renderable;
+import net.minecraft.client.gui.components.events.GuiEventListener;
+import net.minecraft.client.gui.narration.NarratableEntry;
+import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.gui.screens.TitleScreen;
 import org.spongepowered.asm.mixin.Mixin;
+import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
+import space.nows.mcnows.mc.api.client.ui.NowsRenderContext;
+import space.nows.mcnows.mc.api.client.ui.NowsScreenContext;
 import space.nows.mcnows.mc.internal.NowsMinecraftClientHooks;
+import space.nows.mcnows.mc.internal.client.NowsUiImpl;
 
 @Mixin(value = TitleScreen.class, remap = false)
 public abstract class TitleScreenMixin {
+    @Shadow
+    protected abstract <T extends GuiEventListener & Renderable & NarratableEntry> T addRenderableWidget(T widget);
+
+    @Inject(method = "init()V", at = @At("TAIL"), remap = false)
+    private void nows$initTitleUi(CallbackInfo ci) {
+        Screen screen = (Screen) (Object) this;
+        NowsUiImpl.INSTANCE.titleScreenImpl().addButtons(
+                new NowsScreenContext(screen, widget -> addRenderableWidget((AbstractWidget) widget)));
+    }
+
     @Inject(
             method = "render(Lnet/minecraft/client/gui/GuiGraphics;IIF)V",
             at = @At(
@@ -26,5 +45,7 @@ public abstract class TitleScreenMixin {
         int y = graphics.guiHeight() - 30;
         graphics.drawString(minecraft.font, NowsMinecraftClientHooks.loaderLine(), x, y, 0xFFFFFFFF, true);
         graphics.drawString(minecraft.font, NowsMinecraftClientHooks.modLine(), x, y + 10, 0xFFB8B8B8, true);
+        NowsUiImpl.INSTANCE.titleScreenImpl().renderAll(
+                new NowsRenderContext((Screen) (Object) this, graphics, mouseX, mouseY, delta));
     }
 }

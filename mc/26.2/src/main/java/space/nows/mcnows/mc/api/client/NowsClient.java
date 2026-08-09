@@ -18,4 +18,8 @@ public final class NowsClient {
     public static void execute(Runnable task) {
         minecraft().execute(task);
     }
+
+    public static void close() {
+        show(null);
+    }
 }

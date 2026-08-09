@@ -282,6 +282,8 @@ Each supported adapter should expose the same Nows package/class names, for exam
 
 Runtime installs the version adapter by reflecting `space.nows.mcnows.mc.internal.NowsMinecraftIntegration` and registering its services into `NowsServices`. That reflection is a composition boundary only; mod code should use the typed API from the selected `nows-mc-<version>` artifact. If no adapter is present, runtime should continue to launch with a clear INFO log and without those optional services.
 
+Client UI helpers also live in `mc/<version>`. `NowsUi` is a small convenience layer for opening screens, creating simple screens, adding title-screen buttons and drawing small overlay text. It should expose raw Minecraft `Screen`, widget and graphics objects where useful instead of trying to wrap the entire Minecraft GUI framework.
+
 Datapack and command management are intentionally source registries first. Mods can declare or collect `RepositorySource` instances and command dispatcher consumers; later game hooks may feed those sources into Minecraft's live pack repositories and command dispatchers at the correct lifecycle point for each version. Generated data helpers write JSON under `.minecraft/nows/generated` and are developer convenience, not a replacement for Minecraft's full data generator.
 
 The registry API is a portability convenience, not a full replacement for Minecraft APIs. Common convenience helpers may wrap simple behavior through small logic interfaces such as `NowsItemLogic` and `NowsBlockLogic`. Full-detail Minecraft behavior must remain possible through custom `Item`/`Block` factories so mod authors can override version-specific methods directly when the basic helper layer is too small.

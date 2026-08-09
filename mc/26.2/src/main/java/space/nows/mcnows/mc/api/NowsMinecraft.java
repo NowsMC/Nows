@@ -1,6 +1,7 @@
 package space.nows.mcnows.mc.api;
 
 import space.nows.mcnows.api.NowsContext;
+import space.nows.mcnows.mc.api.client.ui.NowsUi;
 import space.nows.mcnows.mc.api.command.NowsCommands;
 import space.nows.mcnows.mc.api.datapack.NowsDataPacks;
 import space.nows.mcnows.mc.api.datagen.NowsDataGen;
@@ -24,5 +25,9 @@ public final class NowsMinecraft {
 
     public static NowsDataGen dataGen(NowsContext context) {
         return context.service(NowsDataGen.class);
+    }
+
+    public static NowsUi ui(NowsContext context) {
+        return context.service(NowsUi.class);
     }
 }

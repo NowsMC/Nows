@@ -255,6 +255,26 @@ dataGen.writeJson(dataGen.recipePath("my_mod:widget"), Map.class, Map.of(
 ));
 ```
 
+Client UI helpers are also version-backed. They cover the common cases: opening a screen, making a simple screen, adding title-screen buttons and drawing small overlays. The raw Minecraft `Screen`, `Button` and graphics object are still exposed when a mod needs deeper behavior:
+
+```java
+NowsUi ui = NowsMinecraft.ui(context);
+ui.titleScreen().addButton(title -> title.button(
+        title.centerX(98), title.height() / 4 + 120, 98, 20,
+        Component.literal("My Mod"),
+        button -> ui.show(ui.simpleScreen(
+                Component.literal("My Mod"),
+                screen -> screen.addButton(screen.centerX(120), screen.height() - 40, 120, 20,
+                        Component.literal("Done"), done -> ui.close()),
+                render -> render.centeredText(Component.literal("Hello from Nows UI"),
+                        render.width() / 2, 40, 0xFFFFFFFF)
+        ))
+));
+
+ui.titleScreen().render(render ->
+        render.text("my_mod loaded", 2, render.height() - 42, 0xFFAAFFAA));
+```
+
 Basic per-mod config files live in core because they are not Minecraft-version-specific:
 
 ```java
