@@ -124,7 +124,7 @@ public final class NowsLauncher {
                 LOG.info("Thread context classloader switched to {}", gameLoader.getName());
 
                 phase("Configure Minecraft client hooks", () ->
-                        configureMinecraftClientHooks(gameLoader, launch.minecraftVersion(), mods.size()));
+                        configureMinecraftClientHooks(gameLoader, launch.minecraftVersion(), mods));
                 phase("Install Mixin integration", () ->
                         NowsMixinBootstrap.install(gameLoader, policy.builtInMixinConfigs(), mods));
                 phase("Load class transformers", () -> loadTransformers(gameLoader, mods));
@@ -196,13 +196,22 @@ public final class NowsLauncher {
         LOG.info("Parent-first package prefixes ({}): {}", prefixes.size(), String.join(", ", prefixes));
     }
 
-    private static void configureMinecraftClientHooks(ClassLoader loader, String minecraftVersion, int modCount) throws Exception {
+    private static void configureMinecraftClientHooks(
+            ClassLoader loader,
+            String minecraftVersion,
+            List<ModContainer> mods
+    ) throws Exception {
         String hookClassName = "space.nows.mcnows.mc.internal.NowsMinecraftClientHooks";
         try {
             Class<?> hookClass = Class.forName(hookClassName, true, loader);
-            Method configure = hookClass.getMethod("configure", String.class, String.class, int.class);
-            configure.invoke(null, nowsVersion(), minecraftVersion, modCount);
-            LOG.info("Minecraft client hooks configured from {} for {} mod(s)", hookClassName, modCount);
+            try {
+                Method configure = hookClass.getMethod("configure", String.class, String.class, int.class, List.class);
+                configure.invoke(null, nowsVersion(), minecraftVersion, mods.size(), List.copyOf(mods));
+            } catch (NoSuchMethodException ignored) {
+                Method configure = hookClass.getMethod("configure", String.class, String.class, int.class);
+                configure.invoke(null, nowsVersion(), minecraftVersion, mods.size());
+            }
+            LOG.info("Minecraft client hooks configured from {} for {} mod(s)", hookClassName, mods.size());
         } catch (ClassNotFoundException ignored) {
             LOG.info("No Minecraft client hooks available for {}", minecraftVersion);
         }
