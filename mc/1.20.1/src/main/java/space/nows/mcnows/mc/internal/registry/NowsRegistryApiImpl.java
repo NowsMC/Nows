@@ -3,7 +3,9 @@ package space.nows.mcnows.mc.internal.registry;
 import net.minecraft.core.Registry;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.network.chat.Component;
+import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.tags.TagKey;
 import net.minecraft.world.food.FoodProperties;
 import net.minecraft.world.item.ArmorItem;
 import net.minecraft.world.item.ArmorMaterial;
@@ -26,6 +28,21 @@ import java.util.function.Supplier;
 
 public final class NowsRegistryApiImpl implements NowsRegistryApi {
     private int nextTabColumn;
+
+    @Override
+    public ResourceLocation id(String id) {
+        return location(id);
+    }
+
+    @Override
+    public <T> ResourceKey<T> key(ResourceKey<? extends Registry<T>> registry, String id) {
+        return ResourceKey.create(registry, location(id));
+    }
+
+    @Override
+    public <T> TagKey<T> tag(ResourceKey<? extends Registry<T>> registry, String id) {
+        return TagKey.create(registry, location(id));
+    }
 
     @Override
     public <V, T extends V> T register(Registry<V> registry, String id, T value) {

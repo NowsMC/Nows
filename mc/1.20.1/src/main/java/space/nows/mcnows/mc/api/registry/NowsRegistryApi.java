@@ -2,6 +2,10 @@ package space.nows.mcnows.mc.api.registry;
 
 import net.minecraft.network.chat.Component;
 import net.minecraft.core.Registry;
+import net.minecraft.core.registries.Registries;
+import net.minecraft.resources.ResourceKey;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.tags.TagKey;
 import net.minecraft.world.food.FoodProperties;
 import net.minecraft.world.item.ArmorItem;
 import net.minecraft.world.item.ArmorMaterial;
@@ -19,6 +23,28 @@ import java.util.function.Supplier;
 
 /** Version-backed helpers for common Minecraft registries. */
 public interface NowsRegistryApi {
+    ResourceLocation id(String id);
+
+    <T> ResourceKey<T> key(ResourceKey<? extends Registry<T>> registry, String id);
+
+    <T> TagKey<T> tag(ResourceKey<? extends Registry<T>> registry, String id);
+
+    default ResourceKey<Item> itemKey(String id) {
+        return key(Registries.ITEM, id);
+    }
+
+    default ResourceKey<Block> blockKey(String id) {
+        return key(Registries.BLOCK, id);
+    }
+
+    default TagKey<Item> itemTag(String id) {
+        return tag(Registries.ITEM, id);
+    }
+
+    default TagKey<Block> blockTag(String id) {
+        return tag(Registries.BLOCK, id);
+    }
+
     <V, T extends V> T register(Registry<V> registry, String id, T value);
 
     Item registerItem(String id);

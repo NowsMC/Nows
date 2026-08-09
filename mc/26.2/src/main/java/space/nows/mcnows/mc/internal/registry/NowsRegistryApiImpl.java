@@ -6,6 +6,7 @@ import net.minecraft.core.registries.Registries;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.Identifier;
 import net.minecraft.resources.ResourceKey;
+import net.minecraft.tags.TagKey;
 import net.minecraft.world.food.FoodProperties;
 import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.CreativeModeTab;
@@ -27,6 +28,21 @@ import java.util.function.Supplier;
 
 public final class NowsRegistryApiImpl implements NowsRegistryApi {
     private int nextTabColumn;
+
+    @Override
+    public Identifier id(String id) {
+        return identifier(id);
+    }
+
+    @Override
+    public <T> ResourceKey<T> key(ResourceKey<? extends Registry<T>> registry, String id) {
+        return ResourceKey.create(registry, identifier(id));
+    }
+
+    @Override
+    public <T> TagKey<T> tag(ResourceKey<? extends Registry<T>> registry, String id) {
+        return TagKey.create(registry, identifier(id));
+    }
 
     @Override
     public <V, T extends V> T register(Registry<V> registry, String id, T value) {
