@@ -3,15 +3,11 @@ package space.nows.mcnows.mc.internal.mixin;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.Button;
-import net.minecraft.client.gui.components.Renderable;
-import net.minecraft.client.gui.components.events.GuiEventListener;
-import net.minecraft.client.gui.narration.NarratableEntry;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.gui.screens.TitleScreen;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import org.spongepowered.asm.mixin.Mixin;
-import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
@@ -22,17 +18,15 @@ import space.nows.mcnows.mc.internal.client.NowsUiImpl;
 
 @Mixin(value = TitleScreen.class, remap = false)
 public abstract class TitleScreenMixin {
-    @Shadow
-    protected abstract <T extends GuiEventListener & Renderable & NarratableEntry> T addRenderableWidget(T widget);
-
     @Inject(method = "init()V", at = @At("TAIL"), remap = false)
     private void nows$initTitleUi(CallbackInfo ci) {
         Screen screen = (Screen) (Object) this;
+        ScreenAccessor accessor = (ScreenAccessor) this;
         NowsUiImpl.INSTANCE.titleScreenImpl().addButtons(
                 new NowsScreenContext(
                         screen.width,
                         screen.height,
-                        (x, y, width, height, message, onPress) -> addRenderableWidget(
+                        (x, y, width, height, message, onPress) -> accessor.nows$addRenderableWidget(
                                 Button.builder(Component.literal(message), button -> onPress.run())
                                         .bounds(x, y, width, height)
                                         .build()),
