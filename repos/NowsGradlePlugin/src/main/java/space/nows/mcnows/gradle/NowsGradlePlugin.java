@@ -10,7 +10,7 @@ import org.gradle.api.tasks.compile.JavaCompile;
  * Keeps Minecraft/Gradle churn outside the loader core.
  *
  * <p>This plugin owns the development Minecraft JAR, Mojang mappings and the
- * compile-time Nows/Mixin/GEB wiring. It is deliberately a separate repo module
+ * compile-time Nows/Mixin/GEB/network wiring. It is deliberately a separate repo module
  * so Gradle changes never require changing nows-core.</p>
  */
 public final class NowsGradlePlugin implements Plugin<Project> {
@@ -57,6 +57,12 @@ public final class NowsGradlePlugin implements Plugin<Project> {
                 if (extension.getAddGeb().get()) {
                     p.getDependencies().add("compileOnly", GEB_CORE);
                     p.getDependencies().add("annotationProcessor", GEB_PROCESSOR);
+                }
+                if (extension.getAddNetwork().get()) {
+                    Project network = p.findProject(":integrations:network");
+                    p.getDependencies().add("compileOnly", network != null
+                            ? network
+                            : "space.nows.mcnows:nows-integration-network:" + extension.getNowsVersion().get());
                 }
                 if (extension.getAddMixin().get()) {
                     p.getDependencies().add("compileOnly", MIXIN);

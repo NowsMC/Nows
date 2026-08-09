@@ -31,6 +31,7 @@ val mavenPublishedProjectPaths = setOf(
     ":integrations:kdl",
     ":integrations:geb",
     ":integrations:logging",
+    ":integrations:network",
     ":integrations:mixin",
     ":runtime"
 )
@@ -43,6 +44,7 @@ fun publicArtifactId(projectPath: String): String = when (projectPath) {
     ":integrations:kdl" -> "nows-integration-kdl"
     ":integrations:geb" -> "nows-integration-geb"
     ":integrations:logging" -> "nows-integration-logging"
+    ":integrations:network" -> "nows-integration-network"
     ":integrations:mixin" -> "nows-integration-mixin"
     ":runtime" -> "nows-runtime"
     ":repos:NowsGradlePlugin" -> "nows-gradle-plugin"
@@ -197,6 +199,7 @@ tasks.register("dist") {
         ":integrations:kdl:jar",
         ":integrations:geb:jar",
         ":integrations:logging:jar",
+        ":integrations:network:jar",
         ":integrations:mixin:jar",
         ":runtime:jar",
         ":repos:NowsInstaller:jar",
@@ -331,6 +334,7 @@ fun publishedModuleArtifactsFor(minecraft: String): Map<String, String> = mapOf(
     ":integrations:kdl" to "space/nows/mcnows/nows-integration-kdl/${project.version}/nows-integration-kdl-${project.version}.jar",
     ":integrations:geb" to "space/nows/mcnows/nows-integration-geb/${project.version}/nows-integration-geb-${project.version}.jar",
     ":integrations:logging" to "space/nows/mcnows/nows-integration-logging/${project.version}/nows-integration-logging-${project.version}.jar",
+    ":integrations:network" to "space/nows/mcnows/nows-integration-network/${project.version}/nows-integration-network-${project.version}.jar",
     ":integrations:mixin" to "space/nows/mcnows/nows-integration-mixin/${project.version}/nows-integration-mixin-${project.version}.jar",
     ":runtime" to "space/nows/mcnows/nows-runtime/${project.version}/nows-runtime-${project.version}.jar"
 )
@@ -341,6 +345,7 @@ fun publishedModuleArtifactIndex(projectPath: String, minecraft: String): Int? =
     ":integrations:kdl" -> 2
     ":integrations:geb" -> 3
     ":integrations:logging" -> 4
+    ":integrations:network" -> 19
     ":integrations:mixin" -> 5
     ":runtime" -> 6
     ":mc:$minecraft" -> 18
@@ -353,6 +358,7 @@ fun publishedModuleArtifactId(projectPath: String, minecraft: String): String = 
     ":integrations:kdl" -> "nows-integration-kdl"
     ":integrations:geb" -> "nows-integration-geb"
     ":integrations:logging" -> "nows-integration-logging"
+    ":integrations:network" -> "nows-integration-network"
     ":integrations:mixin" -> "nows-integration-mixin"
     ":runtime" -> "nows-runtime"
     ":mc:$minecraft" -> "nows-mc-$minecraft"

@@ -8,6 +8,7 @@ dependencies {
     compileOnly(project(":core"))
     compileOnly(project(":integrations:geb"))
     compileOnly(project(":integrations:logging"))
+    compileOnly(project(":integrations:network"))
     annotationProcessor("foo.zaaarf.geb:processor:${providers.gradleProperty("geb_processor_version").get()}")
     compileOnly(files(officialMinecraftJar))
     compileOnly("org.spongepowered:mixin:${providers.gradleProperty("mixin_version").get()}")

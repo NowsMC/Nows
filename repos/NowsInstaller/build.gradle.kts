@@ -79,6 +79,7 @@ fun offlineModuleArtifactsFor(minecraft: String): Map<String, String> = mapOf(
     ":integrations:kdl" to "space/nows/mcnows/nows-integration-kdl/${project.version}/nows-integration-kdl-${project.version}.jar",
     ":integrations:geb" to "space/nows/mcnows/nows-integration-geb/${project.version}/nows-integration-geb-${project.version}.jar",
     ":integrations:logging" to "space/nows/mcnows/nows-integration-logging/${project.version}/nows-integration-logging-${project.version}.jar",
+    ":integrations:network" to "space/nows/mcnows/nows-integration-network/${project.version}/nows-integration-network-${project.version}.jar",
     ":integrations:mixin" to "space/nows/mcnows/nows-integration-mixin/${project.version}/nows-integration-mixin-${project.version}.jar",
     ":runtime" to "space/nows/mcnows/nows-runtime/${project.version}/nows-runtime-${project.version}.jar"
 )
@@ -153,6 +154,7 @@ fun offlineModuleArtifactIndex(projectPath: String, minecraft: String): Int? = w
     ":integrations:kdl" -> 2
     ":integrations:geb" -> 3
     ":integrations:logging" -> 4
+    ":integrations:network" -> 19
     ":integrations:mixin" -> 5
     ":runtime" -> 6
     ":mc:$minecraft" -> 18
@@ -165,6 +167,7 @@ fun offlineModuleArtifactId(projectPath: String, minecraft: String): String = wh
     ":integrations:kdl" -> "nows-integration-kdl"
     ":integrations:geb" -> "nows-integration-geb"
     ":integrations:logging" -> "nows-integration-logging"
+    ":integrations:network" -> "nows-integration-network"
     ":integrations:mixin" -> "nows-integration-mixin"
     ":runtime" -> "nows-runtime"
     ":mc:$minecraft" -> "nows-mc-$minecraft"

@@ -18,6 +18,7 @@ It currently provides:
 - automatic development Minecraft `compileOnly` classpath;
 - Nows core API dependency;
 - optional GEB compile/annotation-processor setup;
+- optional Nows network API dependency;
 - optional Mixin compile/annotation-processor setup.
 
 Example:
@@ -33,6 +34,7 @@ nows {
     officialMappings.set(true)
     developmentClientJar.set(layout.projectDirectory.file(".nows/minecraft/26.2/client-dev.jar"))
     addGeb.set(true)
+    addNetwork.set(true)
     addMixin.set(true)
 }
 ```

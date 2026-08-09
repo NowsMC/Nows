@@ -17,7 +17,7 @@ In short:
 
 The current Nows loader version and default Minecraft target live in `gradle.properties` as `nows_version` and `minecraft_version`. Supported Minecraft adapters are the directories under `mc/`. Runtime code is built for the target Minecraft Java level, while `repos/NowsInstaller` produces Java 8-compatible installer entrypoints.
 
-The loader's expected smoke-test path is: runtime startup, policy loading, profile-local version JAR lookup, Mixin bootstrap, built-in title-screen mixin registration, GEB installation, metadata-declared listener registration, loader lifecycle event dispatch, mod entrypoint execution and Minecraft main invocation. When the game is launched manually from a terminal with dummy auth values such as `--accessToken 0`, Mojang account and Realms `401`/JWT errors are expected and do not indicate a loader failure.
+The loader's expected smoke-test path is: runtime startup, policy loading, profile-local version JAR lookup, Mixin bootstrap, built-in title-screen mixin registration, GEB installation, network service installation, metadata-declared network channel registration, metadata-declared listener registration, loader lifecycle event dispatch, mod entrypoint execution and Minecraft main invocation. When the game is launched manually from a terminal with dummy auth values such as `--accessToken 0`, Mojang account and Realms `401`/JWT errors are expected and do not indicate a loader failure.
 
 The normal installed profile id is:
 
@@ -49,6 +49,7 @@ The installer should create and log both directories. Runtime logs should show `
 | `integrations/kdl/` | `nows.mod.kdl` parsing through KDL4J | medium |
 | `integrations/geb/` | GEB event integration | medium |
 | `integrations/logging/` | Reactor logging bridge and async logging support | medium |
+| `integrations/network/` | loader-level network channels, packet handler registry and transport abstraction | medium/high |
 | `integrations/mixin/` | Mixin host/service details | high |
 | `runtime/` | composition root that selects and connects core, Minecraft support and integrations | medium |
 | `repos/NowsInstaller/` | user-facing launcher installation/update tooling and dependency delivery | high |
@@ -78,6 +79,7 @@ Core deliberately does not know about:
 - Mojang metadata or mappings;
 - KDL or any metadata syntax;
 - GEB or any event implementation;
+- Minecraft networking or packet implementation details;
 - Log4j, SLF4J or Reactor;
 - Mixin;
 - Gradle;
@@ -96,12 +98,13 @@ core
  |-- integrations/kdl
  |-- integrations/geb
  |-- integrations/logging
+ |-- integrations/network
  |-- integrations/mixin --> integrations/logging
  |
  +-- runtime (composition root, depends on core, minecraft and integrations)
 
 repos/NowsApiMod and example-mod are consumers/fixtures of the public loader surface:
-core + mc/<minecraft version> + Gradle plugin + KDL + GEB + Mixin
+core + mc/<minecraft version> + Gradle plugin + KDL + GEB + Network + Mixin
 ```
 
 `core` must never depend on Minecraft, Mixin, KDL, GEB, Reactor, Gradle, installer code, web code or other integrations. Integrations may depend on `core`; `runtime/` wires the pieces together and should avoid reusable subsystem logic.
@@ -263,11 +266,19 @@ Nows-owned loader lifecycle events live in `integrations/geb/event/`. Mods shoul
 
 GEB remains optional from the perspective of `core`. A mod or optional companion surface that does not use GEB should be able to compile against `nows-core` without depending on GEB types.
 
+## Network policy
+
+`integrations/network/` owns the mod-facing network channel registry, packet handler API and `NetworkTransport` abstraction. It deliberately does not import `net.minecraft.*` or version-specific packet classes. Version adapters or later Minecraft integration code should install the concrete transport that knows how to send packets through the actual game connection.
+
+Mods may declare channels in metadata with `network-channel`, `network`, `clientbound-channel` or `serverbound-channel`. Runtime registers those channels before entrypoints run and exposes `NowsNetworking` through `NowsServices`. Mod entrypoints may then register handlers for declared or dynamically-created channels.
+
+Until a concrete Minecraft transport is installed, `NowsNetworking.send(...)` returns `false` rather than pretending a packet was sent. Receiving and handler dispatch are still fully testable at the integration layer. This keeps the public channel/handler contract stable while allowing each `mc/<version>` adapter to handle the details of custom payload registration, connection state and byte-buffer conversion later.
+
 ## Logging policy
 
 `integrations/logging/` owns Nows logging policy. Runtime and integrations should get loggers through `NowsLog` instead of configuring third-party logging directly.
 
-Loader startup should be observable from INFO logs. Nows should log phase start/end, selected runtime/policy facts, mod discovery, classloader setup, built-in Mixin config registration, transformer loading, service installation, metadata-declared listener registration, lifecycle dispatch points and entrypoint execution without printing access tokens or other launcher secrets.
+Loader startup should be observable from INFO logs. Nows should log phase start/end, selected runtime/policy facts, mod discovery, classloader setup, built-in Mixin config registration, transformer loading, service installation, metadata-declared network channel registration, metadata-declared listener registration, lifecycle dispatch points and entrypoint execution without printing access tokens or other launcher secrets.
 
 The default backend is `slf4j`, which flows into Minecraft's existing SLF4J -> Log4j2 backend. For local diagnostics, set:
 
@@ -306,6 +317,7 @@ mod id="example" name="Example Mod" version="1.0.0" minecraft="26.2" side="clien
     license "Apache-2.0"
     contact homepage="https://example.com" sources="https://github.com/example/mod"
     depends "other_mod" version=">=1.0.0"
+    network-channel "example:main"
     listener "example.ExampleLifecycleListener"
     entrypoint "example.Mod"
     mixin "example.mixins.json"
@@ -313,7 +325,7 @@ mod id="example" name="Example Mod" version="1.0.0" minecraft="26.2" side="clien
 }
 ```
 
-Only the integration that understands `future-feature` needs to change. Runtime and integrations may still agree on well-known declaration keys such as `entrypoint`, `transformer`, `mixin` and `listener`; those are loader/integration policy, not hard-coded fields in `core`.
+Only the integration that understands `future-feature` needs to change. Runtime and integrations may still agree on well-known declaration keys such as `entrypoint`, `transformer`, `mixin`, `network-channel` and `listener`; those are loader/integration policy, not hard-coded fields in `core`.
 
 `side` is typed as `NowsSide` rather than treated as an arbitrary property. Metadata formats should map `client`, `server` and `both`/`common` onto that enum. The current runtime is a client launcher, so it validates discovered mods against `NowsSide.CLIENT` and rejects server-only mods before loading mod classes. A future dedicated server runtime should set `NowsSide.SERVER` at the composition root and reuse the same compatibility contract.
 

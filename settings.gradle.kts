@@ -17,6 +17,7 @@ include(
     "integrations:kdl",
     "integrations:geb",
     "integrations:logging",
+    "integrations:network",
     "integrations:mixin",
     "runtime",
     "repos:NowsInstaller",

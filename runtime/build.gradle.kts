@@ -20,6 +20,7 @@ dependencies {
     implementation(project(":integrations:kdl"))
     implementation(project(":integrations:geb"))
     implementation(project(":integrations:logging"))
+    implementation(project(":integrations:network"))
     implementation(project(":integrations:mixin"))
 
     allJarLibraries("dev.kdl:kdl4j:${kdl4jVersion.get()}") { isTransitive = false }
@@ -72,6 +73,7 @@ val internalModules = listOf(
     ":integrations:kdl",
     ":integrations:geb",
     ":integrations:logging",
+    ":integrations:network",
     ":integrations:mixin"
 )
 

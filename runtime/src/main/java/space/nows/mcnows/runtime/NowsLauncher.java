@@ -19,6 +19,7 @@ import space.nows.mcnows.integration.geb.event.NowsModEntrypointCompletedEvent;
 import space.nows.mcnows.integration.geb.event.NowsModEntrypointStartingEvent;
 import space.nows.mcnows.integration.kdl.KdlModMetadataReader;
 import space.nows.mcnows.integration.logging.NowsLog;
+import space.nows.mcnows.integration.network.NowsNetworking;
 import space.nows.mcnows.minecraft.GameJarLocator;
 import space.nows.mcnows.minecraft.LaunchArguments;
 import space.nows.mcnows.minecraft.MinecraftCompatibility;
@@ -108,11 +109,18 @@ public final class NowsLauncher {
                 phase("Load class transformers", () -> loadTransformers(gameLoader, mods));
 
                 NowsServices services = new NowsServices();
+                phase("Install network integration", () -> NowsNetworking.install(services, RUNTIME_SIDE));
+                LOG.info("Service registered: {} -> {}", "NowsNetworking",
+                        services.require(NowsNetworking.class).getClass().getName());
                 phase("Install GEB integration", () -> GebIntegration.install(services, gameLoader));
                 LOG.info("Service registered: {} -> {}", "GEB", services.require(foo.zaaarf.geb.GEB.class).getClass().getName());
 
                 NowsContext context = new NowsContext(
                         launch.minecraftVersion(), RUNTIME_SIDE, launch.gameDirectory(), mods, gameLoader, services);
+                NowsNetworking networking = NowsNetworking.service(context);
+                int networkChannelCount = phase("Register network channels", () ->
+                        networking.registerDeclaredChannels(mods));
+                LOG.info("Registered {} declared network channel(s)", networkChannelCount);
                 NowsEvents events = GebIntegration.events(context);
                 int listenerCount = phase("Register GEB listeners", () ->
                         GebIntegration.registerDeclaredListeners(context));

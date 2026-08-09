@@ -6,7 +6,7 @@ mavenBaseUrl=https://repo1.maven.org/maven2
 
 # Nows modular jars are downloaded from files.nows.space. Keep these independently replaceable.
 # If files.nows.space is unavailable, NowsInstaller falls back to mavenBaseUrl + artifact path.
-artifact.count=19
+artifact.count=20
 artifact.0.coordinate=space.nows.mcnows:nows-core:${nows.version}
 artifact.0.path=space/nows/mcnows/nows-core/${nows.version}/nows-core-${nows.version}.jar
 artifact.0.url=https://files.nows.space/releases/nows/${nows.version}/26.2/libraries/space/nows/mcnows/nows-core/${nows.version}/nows-core-${nows.version}.jar
@@ -73,3 +73,6 @@ artifact.17.url=https://repo1.maven.org/maven2/org/ow2/asm/asm-util/9.8/asm-util
 artifact.18.coordinate=space.nows.mcnows:nows-mc-26.2:${nows.version}
 artifact.18.path=space/nows/mcnows/nows-mc-26.2/${nows.version}/nows-mc-26.2-${nows.version}.jar
 artifact.18.url=https://files.nows.space/releases/nows/${nows.version}/26.2/libraries/space/nows/mcnows/nows-mc-26.2/${nows.version}/nows-mc-26.2-${nows.version}.jar
+artifact.19.coordinate=space.nows.mcnows:nows-integration-network:${nows.version}
+artifact.19.path=space/nows/mcnows/nows-integration-network/${nows.version}/nows-integration-network-${nows.version}.jar
+artifact.19.url=https://files.nows.space/releases/nows/${nows.version}/26.2/libraries/space/nows/mcnows/nows-integration-network/${nows.version}/nows-integration-network-${nows.version}.jar

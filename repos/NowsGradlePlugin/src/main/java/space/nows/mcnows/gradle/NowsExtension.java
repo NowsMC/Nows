@@ -12,6 +12,7 @@ public abstract class NowsExtension {
     private final Property<String> nowsVersion;
     private final Property<Boolean> officialMappings;
     private final Property<Boolean> addGeb;
+    private final Property<Boolean> addNetwork;
     private final Property<Boolean> addMixin;
     private final RegularFileProperty developmentClientJar;
 
@@ -21,6 +22,7 @@ public abstract class NowsExtension {
         nowsVersion = objects.property(String.class).convention(NowsGradlePluginDefaults.nowsVersion());
         officialMappings = objects.property(Boolean.class).convention(true);
         addGeb = objects.property(Boolean.class).convention(true);
+        addNetwork = objects.property(Boolean.class).convention(true);
         addMixin = objects.property(Boolean.class).convention(true);
         developmentClientJar = objects.fileProperty();
     }
@@ -29,6 +31,7 @@ public abstract class NowsExtension {
     public Property<String> getNowsVersion() { return nowsVersion; }
     public Property<Boolean> getOfficialMappings() { return officialMappings; }
     public Property<Boolean> getAddGeb() { return addGeb; }
+    public Property<Boolean> getAddNetwork() { return addNetwork; }
     public Property<Boolean> getAddMixin() { return addMixin; }
     public RegularFileProperty getDevelopmentClientJar() { return developmentClientJar; }
 }
