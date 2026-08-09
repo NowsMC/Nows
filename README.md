@@ -201,6 +201,8 @@ registries.registerCreativeTab(
 Existing registry entries can be queried with Optional-returning methods or fail-fast getters:
 
 ```java
+ResourceKey<Item> widgetKey = registries.itemKey("my_mod:widget");
+TagKey<Block> machineBlocks = registries.blockTag("my_mod:machines");
 registries.item("minecraft:diamond").ifPresent(stackItem -> {});
 Item diamond = registries.getItem("minecraft:diamond");
 Block stone = registries.getBlock("minecraft:stone");
@@ -237,6 +239,23 @@ Path modPackDir = packs.modPackDirectory("my_mod");
 packs.registerSource(PackType.SERVER_DATA, repositoryConsumer -> {
     // Create or forward Minecraft RepositorySource packs for this version.
 });
+```
+
+Commands and generated JSON data are collected through the adapter as well. The command registrations are stored until a version-specific Minecraft hook applies them to a live dispatcher:
+
+```java
+NowsMinecraft.commands(context).register(dispatcher ->
+        dispatcher.register(Commands.literal("my_mod").executes(command -> 1)));
+
+NowsDataGen dataGen = NowsMinecraft.dataGen(context);
+dataGen.writeJson(dataGen.recipePath("my_mod:widget"), "{ \"type\": \"minecraft:crafting_shapeless\" }");
+```
+
+Basic per-mod config files live in core because they are not Minecraft-version-specific:
+
+```java
+Properties config = context.configs().loadProperties("my_mod", "client");
+context.configs().saveProperties("my_mod", "client", config, "My Mod client config");
 ```
 
 Runtime installs these APIs through `NowsServices` when a matching `nows-mc-<version>` adapter is present. `core` stays free of `net.minecraft.*` types.
