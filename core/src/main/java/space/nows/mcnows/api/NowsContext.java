@@ -13,12 +13,14 @@ import java.util.Optional;
 /** Stable runtime context. Optional functionality lives in {@link NowsServices}. */
 public record NowsContext(
         String minecraftVersion,
+        NowsSide side,
         Path gameDirectory,
         List<ModContainer> mods,
         ClassLoader gameClassLoader,
         NowsServices services
 ) {
     public NowsContext {
+        side = side == null ? NowsSide.CLIENT : side;
         mods = List.copyOf(mods);
     }
 

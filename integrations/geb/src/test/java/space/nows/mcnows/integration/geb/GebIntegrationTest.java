@@ -2,6 +2,7 @@ package space.nows.mcnows.integration.geb;
 
 import org.junit.jupiter.api.Test;
 import space.nows.mcnows.api.NowsContext;
+import space.nows.mcnows.api.NowsSide;
 import space.nows.mcnows.api.NowsServices;
 import space.nows.mcnows.integration.geb.event.NowsEntrypointsCompletedEvent;
 
@@ -17,6 +18,7 @@ class GebIntegrationTest {
         GebIntegration.install(services, getClass().getClassLoader());
         NowsContext context = new NowsContext(
                 "26.2",
+                NowsSide.CLIENT,
                 Path.of(".minecraft"),
                 List.of(),
                 getClass().getClassLoader(),

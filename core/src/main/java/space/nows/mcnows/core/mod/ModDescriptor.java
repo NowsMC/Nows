@@ -1,5 +1,7 @@
 package space.nows.mcnows.core.mod;
 
+import space.nows.mcnows.api.NowsSide;
+
 import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -15,6 +17,7 @@ public record ModDescriptor(
         String name,
         String version,
         String minecraft,
+        NowsSide side,
         String description,
         List<String> authors,
         List<String> contributors,
@@ -32,7 +35,7 @@ public record ModDescriptor(
             String minecraft,
             Map<String, List<String>> declarations
     ) {
-        this(id, name, version, minecraft, "", List.of(), List.of(), List.of(), "",
+        this(id, name, version, minecraft, NowsSide.BOTH, "", List.of(), List.of(), List.of(), "",
                 Map.of(), Map.of(), List.of(), declarations);
     }
 
@@ -44,6 +47,7 @@ public record ModDescriptor(
         name = name == null || name.isBlank() ? id : name.trim();
         version = version == null || version.isBlank() ? "unknown" : version.trim();
         minecraft = minecraft == null || minecraft.isBlank() ? "*" : minecraft.trim();
+        side = side == null ? NowsSide.BOTH : side;
         description = description == null ? "" : description.trim();
         authors = List.copyOf(authors == null ? List.of() : authors);
         contributors = List.copyOf(contributors == null ? List.of() : contributors);

@@ -16,6 +16,7 @@ public final class ExampleMod implements ModInitializer {
         // Do not force Minecraft's singleton to initialize before Main.main starts.
         LOG.info("Nows Example: Mojang-named class = {}", Minecraft.class.getName());
         LOG.info("Nows Example: Mods = {}", context.mods().size());
+        LOG.info("Nows Example: Runtime side = {}", context.side().metadataName());
         LOG.info("Nows Example: GEB = {}", context.service(GEB.class).getClass().getName());
     }
 }

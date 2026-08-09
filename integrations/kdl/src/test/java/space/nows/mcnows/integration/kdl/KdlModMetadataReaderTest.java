@@ -2,6 +2,7 @@ package space.nows.mcnows.integration.kdl;
 
 import dev.kdl.parse.KdlParser;
 import org.junit.jupiter.api.Test;
+import space.nows.mcnows.api.NowsSide;
 import space.nows.mcnows.core.mod.ModDescriptor;
 
 import java.io.ByteArrayInputStream;
@@ -39,13 +40,13 @@ class KdlModMetadataReaderTest {
                 Path.of("nows.mod.kdl"));
 
         assertEquals("Optional public helper APIs for Nows mods.", descriptor.description());
+        assertEquals(NowsSide.CLIENT, descriptor.side());
         assertEquals(List.of("TamKungZ_"), descriptor.authors());
         assertEquals(List.of("HollZaterQ"), descriptor.contributors());
         assertEquals(List.of("Apache-2.0"), descriptor.licenses());
         assertEquals("assets/nows/icon.png", descriptor.icon());
         assertEquals("https://nows.space", descriptor.contact("homepage").orElseThrow());
         assertEquals("https://github.com/NowsMC/Nows", descriptor.contact("sources").orElseThrow());
-        assertEquals("client", descriptor.property("side").orElseThrow());
         assertEquals("dev", descriptor.property("channel").orElseThrow());
         assertEquals(2, descriptor.dependencies().size());
         assertEquals("depends", descriptor.dependencies().get(0).kind());

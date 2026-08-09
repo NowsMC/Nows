@@ -67,7 +67,7 @@ Core currently owns:
 
 - `ModInitializer` - lifecycle entry contract.
 - `ClassTransformer` - raw pre-definition bytecode transformation contract.
-- `NowsContext` - stable runtime context, loaded-mod lookup helpers and typed service lookup.
+- `NowsContext` - stable runtime context, runtime-side fact, loaded-mod lookup helpers and typed service lookup.
 - `NowsServices` - implementation-neutral service registry.
 - `ModDescriptor`, `ModDependency`, `ModContainer`, `ModMetadataReader`, `ModDiscovery` - format-neutral mod model and discovery SPI.
 - `NowsClassLoader` - child-first game/mod classloader, transformer chain and synthetic-class hook.
@@ -295,7 +295,7 @@ KDL4J may come from GitHub Packages. Release/build tooling may need credentials 
 
 ## Why the metadata model is generic
 
-Core stores common mod facts such as id, name, version, target Minecraft version, description, authors, contributors, licenses, icon, contact links, arbitrary properties and dependency declarations because those concepts are useful across metadata formats. It also stores feature declarations as `Map<String, List<String>>` instead of fields like `mixins`, `entrypoints` or `listeners`. The KDL integration can therefore introduce a new declaration without forcing a core record/API revision.
+Core stores common mod facts such as id, name, version, target Minecraft version, target side, description, authors, contributors, licenses, icon, contact links, arbitrary properties and dependency declarations because those concepts are useful across metadata formats. It also stores feature declarations as `Map<String, List<String>>` instead of fields like `mixins`, `entrypoints` or `listeners`. The KDL integration can therefore introduce a new declaration without forcing a core record/API revision.
 
 For example:
 
@@ -315,7 +315,9 @@ mod id="example" name="Example Mod" version="1.0.0" minecraft="26.2" side="clien
 
 Only the integration that understands `future-feature` needs to change. Runtime and integrations may still agree on well-known declaration keys such as `entrypoint`, `transformer`, `mixin` and `listener`; those are loader/integration policy, not hard-coded fields in `core`.
 
-`NowsContext` should provide ergonomic loaded-mod lookup over this model, such as checking whether a mod id is present or retrieving a `ModDescriptor` by id. That lookup belongs in core because it is about the stable loaded-mod graph, not about KDL, Minecraft, GEB or Mixin.
+`side` is typed as `NowsSide` rather than treated as an arbitrary property. Metadata formats should map `client`, `server` and `both`/`common` onto that enum. The current runtime is a client launcher, so it validates discovered mods against `NowsSide.CLIENT` and rejects server-only mods before loading mod classes. A future dedicated server runtime should set `NowsSide.SERVER` at the composition root and reuse the same compatibility contract.
+
+`NowsContext` should provide ergonomic loaded-mod lookup and runtime-side access over this model, such as checking whether a mod id is present, retrieving a `ModDescriptor` by id or checking `context.side()`. That lookup belongs in core because it is about the stable loaded-mod graph/runtime fact, not about KDL, Minecraft, GEB or Mixin.
 
 ## Compatibility philosophy
 

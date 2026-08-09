@@ -90,9 +90,11 @@ Mods can query loaded metadata through `NowsContext`:
 if (context.isModLoaded("other_mod")) {
     String name = context.requireModDescriptor("other_mod").name();
 }
+
+boolean clientRuntime = context.side() == NowsSide.CLIENT;
 ```
 
-Unknown future declaration names can be retained without changing core because declarations are stored by key rather than by fixed record fields. Extra root properties are exposed through `ModDescriptor.property("key")`.
+`side` is typed metadata and accepts `client`, `server` or `both`/`common`. The current launcher runtime is client-side and rejects server-only mods with a clear compatibility error before loading mod classes. Unknown future declaration names can be retained without changing core because declarations are stored by key rather than by fixed record fields. Extra root properties are exposed through `ModDescriptor.property("key")`.
 
 ## GEB without coupling core to GEB
 

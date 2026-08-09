@@ -15,6 +15,7 @@ import dev.kdl.KdlNode;
 import dev.kdl.KdlValue;
 import dev.kdl.parse.KdlParseException;
 import dev.kdl.parse.KdlParser;
+import space.nows.mcnows.api.NowsSide;
 import space.nows.mcnows.core.mod.ModDescriptor;
 import space.nows.mcnows.core.mod.ModDependency;
 import space.nows.mcnows.core.mod.ModMetadataReader;
@@ -43,6 +44,12 @@ public final class KdlModMetadataReader implements ModMetadataReader {
         String name = property(mod, "name", id);
         String version = requiredProperty(mod, "version", source);
         String minecraft = property(mod, "minecraft", "*");
+        NowsSide side;
+        try {
+            side = NowsSide.parse(property(mod, "side", property(mod, "environment", "both")));
+        } catch (IllegalArgumentException e) {
+            throw new IOException(e.getMessage() + " in " + source, e);
+        }
         String description = property(mod, "description", "");
         String icon = property(mod, "icon", "");
 
@@ -73,7 +80,7 @@ public final class KdlModMetadataReader implements ModMetadataReader {
             }
         }
         if (declarations.isEmpty()) throw new IOException("Mod " + id + " has no declarations");
-        return new ModDescriptor(id, name, version, minecraft, description, authors, contributors, licenses, icon,
+        return new ModDescriptor(id, name, version, minecraft, side, description, authors, contributors, licenses, icon,
                 contacts, properties, dependencies, declarations);
     }
 
@@ -111,7 +118,7 @@ public final class KdlModMetadataReader implements ModMetadataReader {
     private static boolean isCoreProperty(String key) {
         return switch (key) {
             case "id", "name", "version", "minecraft", "description", "icon",
-                    "author", "authors", "contributor", "contributors", "license", "licenses" -> true;
+                    "side", "environment", "author", "authors", "contributor", "contributors", "license", "licenses" -> true;
             default -> false;
         };
     }

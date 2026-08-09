@@ -23,12 +23,14 @@ class NowsContextTest {
         ModContainer container = new ModContainer(Path.of("mods/nows-example.jar"), descriptor);
         NowsContext context = new NowsContext(
                 "26.2",
+                NowsSide.CLIENT,
                 Path.of(".minecraft"),
                 List.of(container),
                 getClass().getClassLoader(),
                 new NowsServices());
 
         assertTrue(context.isModLoaded("nows_example"));
+        assertEquals(NowsSide.CLIENT, context.side());
         assertEquals("Nows Example Mod", context.requireModDescriptor("nows_example").name());
         assertEquals(container, context.requireMod("nows_example"));
         assertEquals(List.of(descriptor), context.modDescriptors());

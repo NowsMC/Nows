@@ -6,9 +6,14 @@ val monorepoDevJar = rootProject.layout.projectDirectory.file(".nows/minecraft/$
 dependencies {
     api(project(":core"))
     implementation("com.google.code.gson:gson:2.14.0")
+    testImplementation(platform("org.junit:junit-bom:5.12.2"))
+    testImplementation("org.junit.jupiter:junit-jupiter")
+    testRuntimeOnly("org.junit.platform:junit-platform-launcher")
 }
 
 tasks.jar { archiveBaseName.set("nows-minecraft") }
+
+tasks.test { useJUnitPlatform() }
 
 tasks.processResources {
     from(rootProject.layout.projectDirectory.dir("mc")) {

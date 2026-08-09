@@ -4,6 +4,7 @@ import reactor.util.Logger;
 import space.nows.mcnows.api.ClassTransformer;
 import space.nows.mcnows.api.ModInitializer;
 import space.nows.mcnows.api.NowsContext;
+import space.nows.mcnows.api.NowsSide;
 import space.nows.mcnows.api.NowsServices;
 import space.nows.mcnows.core.classloading.NowsClassLoader;
 import space.nows.mcnows.core.mod.ModContainer;
@@ -38,6 +39,7 @@ import java.util.Properties;
 
 public final class NowsLauncher {
     private static final Logger LOG = NowsLog.get(NowsLauncher.class);
+    private static final NowsSide RUNTIME_SIDE = NowsSide.CLIENT;
     private NowsLauncher() {}
 
     public static void main(String[] args) throws Exception {
@@ -58,7 +60,8 @@ public final class NowsLauncher {
 
     private static void launch(String[] args) throws Exception {
         LaunchArguments launch = phase("Parse launch arguments", () -> LaunchArguments.parse(args));
-        LOG.info("Launch target: Minecraft {}, game directory {}", launch.minecraftVersion(), launch.gameDirectory());
+        LOG.info("Launch target: Minecraft {}, side {}, game directory {}",
+                launch.minecraftVersion(), RUNTIME_SIDE.metadataName(), launch.gameDirectory());
         LOG.info("Launcher profile id: {}", launch.profileId() == null ? "<unknown>" : launch.profileId());
         LOG.info("Minecraft root directory: {}", launch.minecraftDirectory());
         LOG.info("Minecraft argument summary: {} forwarded argument(s), access token hidden",
@@ -84,7 +87,7 @@ public final class NowsLauncher {
         logDiscoveredMods(mods);
 
         phase("Validate Minecraft compatibility", () ->
-                MinecraftCompatibility.validate(mods, launch.minecraftVersion()));
+                MinecraftCompatibility.validate(mods, launch.minecraftVersion(), RUNTIME_SIDE));
 
         List<URL> urls = new ArrayList<>();
         urls.add(gameJar.toUri().toURL());
@@ -109,7 +112,7 @@ public final class NowsLauncher {
                 LOG.info("Service registered: {} -> {}", "GEB", services.require(foo.zaaarf.geb.GEB.class).getClass().getName());
 
                 NowsContext context = new NowsContext(
-                        launch.minecraftVersion(), launch.gameDirectory(), mods, gameLoader, services);
+                        launch.minecraftVersion(), RUNTIME_SIDE, launch.gameDirectory(), mods, gameLoader, services);
                 NowsEvents events = GebIntegration.events(context);
                 int listenerCount = phase("Register GEB listeners", () ->
                         GebIntegration.registerDeclaredListeners(context));
