@@ -13,10 +13,32 @@ public final class ModDiscovery {
     private ModDiscovery() {}
 
     public static List<ModContainer> scan(Path modsDirectory, ModMetadataReader reader) throws IOException {
-        Files.createDirectories(modsDirectory);
         List<ModContainer> result = new ArrayList<>();
         Set<String> ids = new HashSet<>();
+        scanInto(modsDirectory, reader, result, ids);
+        return List.copyOf(result);
+    }
 
+    public static List<ModContainer> scan(List<Path> modsDirectories, ModMetadataReader reader) throws IOException {
+        List<ModContainer> result = new ArrayList<>();
+        Set<String> ids = new HashSet<>();
+        Set<Path> scanned = new HashSet<>();
+        for (Path modsDirectory : modsDirectories) {
+            Path normalized = modsDirectory.toAbsolutePath().normalize();
+            if (scanned.add(normalized)) {
+                scanInto(normalized, reader, result, ids);
+            }
+        }
+        return List.copyOf(result);
+    }
+
+    private static void scanInto(
+            Path modsDirectory,
+            ModMetadataReader reader,
+            List<ModContainer> result,
+            Set<String> ids
+    ) throws IOException {
+        Files.createDirectories(modsDirectory);
         try (var paths = Files.list(modsDirectory)) {
             for (Path jar : paths.filter(Files::isRegularFile)
                     .filter(path -> path.getFileName().toString().endsWith(".jar"))
@@ -30,6 +52,5 @@ public final class ModDiscovery {
                 result.add(new ModContainer(jar.toAbsolutePath().normalize(), descriptor.get()));
             }
         }
-        return List.copyOf(result);
     }
 }

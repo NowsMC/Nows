@@ -94,7 +94,8 @@ public final class NowsInstaller {
         installLauncherProfile(options, profile);
         listener.log("[NowsInstaller] launcher profiles: " + options.minecraftDir.resolve("launcher_profiles.json"));
         listener.log("[NowsInstaller] profile game dir: " + profileGameDirectory(options));
-        listener.log("[NowsInstaller] profile mods dir: " + profileModsDirectory(options));
+        listener.log("[NowsInstaller] minecraft mods dir: " + minecraftModsDirectory(options));
+        listener.log("[NowsInstaller] optional profile mods dir: " + profileModsDirectory(options));
         listener.log("[NowsInstaller] Installed " + profile);
     }
 
@@ -205,7 +206,7 @@ public final class NowsInstaller {
         if (count <= 0) {
             return;
         }
-        Path modsDir = profileModsDirectory(options);
+        Path modsDir = minecraftModsDirectory(options);
         Files.createDirectories(modsDir);
         for (int i = 0; i < count; i++) {
             String fileName = installMod(options, manifest, i, modsDir);
@@ -380,6 +381,7 @@ public final class NowsInstaller {
     private static Map<String, Object> launcherProfile(Options options, String versionProfile) throws IOException {
         Instant now = Instant.now();
         Path gameDir = profileGameDirectory(options);
+        Files.createDirectories(minecraftModsDirectory(options));
         Files.createDirectories(gameDir.resolve("mods"));
         Map<String, Object> profile = new LinkedHashMap<>();
         profile.put("name", "Nows " + options.nowsVersion + " - Minecraft " + options.minecraftVersion);
@@ -397,6 +399,10 @@ public final class NowsInstaller {
 
     private static Path profileGameDirectory(Options options) {
         return options.minecraftDir.resolve("nows").resolve("profiles").resolve(profileId(options));
+    }
+
+    private static Path minecraftModsDirectory(Options options) {
+        return options.minecraftDir.resolve("mods");
     }
 
     private static Path profileModsDirectory(Options options) {

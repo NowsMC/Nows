@@ -28,7 +28,7 @@ The installer logs the resolved `minecraft dir` at startup. If a profile does no
 
 Before changing an existing `launcher_profiles.json`, it creates a sibling backup named `launcher_profiles.json.nows-backup-<timestamp>`. Existing Fabric, Forge, Quilt, vanilla, or other custom profiles are preserved; the installer only creates or replaces the profile whose id is `nows-<nows-version>-<minecraft-version>`.
 
-The launcher profile uses a Nows-specific `gameDir`, so users can keep Nows mods under that profile's own `mods/` directory rather than global `.minecraft/mods`.
+The launcher profile uses a Nows-specific `gameDir` for saves, options, logs and profile-specific state. Nows mods are discovered from global `.minecraft/mods` first, matching other loaders, and from `.minecraft/nows/profiles/nows-<nows-version>-<minecraft-version>/mods` as an optional profile-local overlay.
 
 The profile icon is embedded from:
 
@@ -90,7 +90,7 @@ https://files.nows.space/releases/nows/<nows-version>/<minecraft-version>/instal
 
 Use `install.properties.template` as the release template. Release automation should fill SHA-256 values before publishing. For `source=internet` artifacts, the normal installer first tries `artifact.<n>.url`; if that download fails or the URL is missing, it falls back to `artifact.<n>.mavenUrl` or `mavenBaseUrl + artifact.<n>.path`.
 
-The manifest may also include `mod.<n>` companion mod entries. These are copied to the Nows profile-local `mods/` directory. The 0.4.0 default manifest does not use this for `NowsApiMod`; the title-screen badge is provided by the required `mc/<minecraft-version>` adapter instead.
+The manifest may also include `mod.<n>` companion mod entries. These are copied to the main `.minecraft/mods` directory. The 0.4.0 default manifest does not use this for `NowsApiMod`; the title-screen badge is provided by the required `mc/<minecraft-version>` adapter instead.
 
 ## Fully offline installer
 

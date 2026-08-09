@@ -52,6 +52,7 @@ public final class NowsLauncher {
     private static void launch(String[] args) throws Exception {
         LaunchArguments launch = phase("Parse launch arguments", () -> LaunchArguments.parse(args));
         LOG.info("Launch target: Minecraft {}, game directory {}", launch.minecraftVersion(), launch.gameDirectory());
+        LOG.info("Minecraft root directory: {}", launch.minecraftDirectory());
         LOG.info("Minecraft argument summary: {} forwarded argument(s), access token hidden",
                 launch.minecraftArguments().size());
 
@@ -66,10 +67,12 @@ public final class NowsLauncher {
         Path gameJar = phase("Locate Minecraft client JAR", GameJarLocator::locateClientJar);
         LOG.info("Minecraft client JAR: {}", gameJar);
 
-        Path modsDirectory = launch.gameDirectory().resolve("mods");
-        phase("Inspect Nows mods directory", () -> logModDirectory(modsDirectory));
+        Path mainModsDirectory = launch.minecraftDirectory().resolve("mods");
+        Path profileModsDirectory = launch.gameDirectory().resolve("mods");
+        List<Path> modsDirectories = List.of(mainModsDirectory, profileModsDirectory);
+        phase("Inspect Nows mods directories", () -> logModDirectories(mainModsDirectory, profileModsDirectory));
         List<ModContainer> mods = phase("Discover Nows mods", () ->
-                ModDiscovery.scan(modsDirectory, new KdlModMetadataReader()));
+                ModDiscovery.scan(modsDirectories, new KdlModMetadataReader()));
         logDiscoveredMods(mods);
 
         phase("Validate Minecraft compatibility", () ->
@@ -226,9 +229,20 @@ public final class NowsLauncher {
         }
     }
 
-    private static void logModDirectory(Path modsDirectory) throws IOException {
+    private static void logModDirectories(Path mainModsDirectory, Path profileModsDirectory) throws IOException {
+        Path main = mainModsDirectory.toAbsolutePath().normalize();
+        Path profile = profileModsDirectory.toAbsolutePath().normalize();
+        logModDirectory("Minecraft mods directory", main);
+        if (profile.equals(main)) {
+            LOG.info("Optional Nows profile mods directory is the same as the Minecraft mods directory");
+        } else {
+            logModDirectory("Optional Nows profile mods directory", profile);
+        }
+    }
+
+    private static void logModDirectory(String label, Path modsDirectory) throws IOException {
         Files.createDirectories(modsDirectory);
-        LOG.info("Nows mods directory: {}", modsDirectory);
+        LOG.info("{}: {}", label, modsDirectory);
         try (var paths = Files.list(modsDirectory)) {
             List<Path> jars = paths
                     .filter(Files::isRegularFile)
@@ -236,12 +250,12 @@ public final class NowsLauncher {
                     .sorted(Comparator.comparing(path -> path.getFileName().toString()))
                     .toList();
             if (jars.isEmpty()) {
-                LOG.info("Nows mods directory contains no jar candidates");
+                LOG.info("{} contains no jar candidates", label);
                 return;
             }
-            LOG.info("Nows mod jar candidates: {}", jars.size());
+            LOG.info("{} jar candidates: {}", label, jars.size());
             for (Path jar : jars) {
-                LOG.info("Nows mod candidate: {}", jar.toAbsolutePath().normalize());
+                LOG.info("{} candidate: {}", label, jar.toAbsolutePath().normalize());
             }
         }
     }
