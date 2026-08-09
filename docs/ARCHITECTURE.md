@@ -17,7 +17,7 @@ In short:
 
 The current Nows loader version and default Minecraft target live in `gradle.properties` as `nows_version` and `minecraft_version`. Supported Minecraft adapters are the directories under `mc/`. Runtime code is built for the target Minecraft Java level, while `repos/NowsInstaller` produces Java 8-compatible installer entrypoints.
 
-The loader's expected smoke-test path is: runtime startup, policy loading, profile-local version JAR lookup, Mixin bootstrap, built-in title-screen mixin registration, GEB installation, network service installation, metadata-declared network channel registration, metadata-declared listener registration, loader lifecycle event dispatch, mod entrypoint execution and Minecraft main invocation. When the game is launched manually from a terminal with dummy auth values such as `--accessToken 0`, Mojang account and Realms `401`/JWT errors are expected and do not indicate a loader failure.
+The loader's expected smoke-test path is: runtime startup, policy loading, profile-local version JAR lookup, mod dependency resolution, Mixin bootstrap, built-in title-screen mixin registration, GEB installation, network service installation, metadata-declared network channel registration, metadata-declared listener registration, loader lifecycle event dispatch, mod entrypoint execution and Minecraft main invocation. When the game is launched manually from a terminal with dummy auth values such as `--accessToken 0`, Mojang account and Realms `401`/JWT errors are expected and do not indicate a loader failure.
 
 The normal installed profile id is:
 
@@ -70,7 +70,7 @@ Core currently owns:
 - `ClassTransformer` - raw pre-definition bytecode transformation contract.
 - `NowsContext` - stable runtime context, runtime-side fact, loaded-mod lookup helpers and typed service lookup.
 - `NowsServices` - implementation-neutral service registry.
-- `ModDescriptor`, `ModDependency`, `ModContainer`, `ModMetadataReader`, `ModDiscovery` - format-neutral mod model and discovery SPI.
+- `ModDescriptor`, `ModDependency`, `ModDependencyResolver`, `ModContainer`, `ModMetadataReader`, `ModDiscovery` - format-neutral mod model, dependency graph and discovery SPI.
 - `NowsClassLoader` - child-first game/mod classloader, transformer chain and synthetic-class hook.
 
 Core deliberately does not know about:
@@ -317,6 +317,8 @@ mod id="example" name="Example Mod" version="1.0.0" minecraft="26.2" side="clien
     license "Apache-2.0"
     contact homepage="https://example.com" sources="https://github.com/example/mod"
     depends "other_mod" version=">=1.0.0"
+    incompatible-with "bad_mod" reason="Known broken integration"
+    load-after "other_mod"
     network-channel "example:main"
     listener "example.ExampleLifecycleListener"
     entrypoint "example.Mod"
@@ -330,6 +332,8 @@ Only the integration that understands `future-feature` needs to change. Runtime 
 `side` is typed as `NowsSide` rather than treated as an arbitrary property. Metadata formats should map `client`, `server` and `both`/`common` onto that enum. The current runtime is a client launcher, so it validates discovered mods against `NowsSide.CLIENT` and rejects server-only mods before loading mod classes. A future dedicated server runtime should set `NowsSide.SERVER` at the composition root and reuse the same compatibility contract.
 
 `NowsContext` should provide ergonomic loaded-mod lookup and runtime-side access over this model, such as checking whether a mod id is present, retrieving a `ModDescriptor` by id or checking `context.side()`. That lookup belongs in core because it is about the stable loaded-mod graph/runtime fact, not about KDL, Minecraft, GEB or Mixin.
+
+Dependency resolution belongs to the core mod graph because it is metadata-format neutral. Runtime supplies provided ids such as `minecraft`, `nows` and `nows-loader`, then asks core to validate required dependencies, reject conflicts and sort mods by required dependencies plus `load-before`/`load-after` rules before creating the game/mod classloader. Version-specific Minecraft compatibility checks may still run after this to validate side and Minecraft-version policy.
 
 ## Compatibility philosophy
 

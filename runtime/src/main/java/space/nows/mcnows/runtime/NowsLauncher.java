@@ -8,6 +8,7 @@ import space.nows.mcnows.api.NowsSide;
 import space.nows.mcnows.api.NowsServices;
 import space.nows.mcnows.core.classloading.NowsClassLoader;
 import space.nows.mcnows.core.mod.ModContainer;
+import space.nows.mcnows.core.mod.ModDependencyResolver;
 import space.nows.mcnows.core.mod.ModDiscovery;
 import space.nows.mcnows.integration.geb.GebIntegration;
 import space.nows.mcnows.integration.geb.NowsEvents;
@@ -36,6 +37,7 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Map;
 import java.util.Properties;
 
 public final class NowsLauncher {
@@ -83,8 +85,13 @@ public final class NowsLauncher {
         Path profileModsDirectory = optionalProfileModsDirectory(launch);
         List<Path> modsDirectories = List.of(gameModsDirectory, profileModsDirectory);
         phase("Inspect Nows mods directories", () -> logModDirectories(gameModsDirectory, profileModsDirectory));
-        List<ModContainer> mods = phase("Discover Nows mods", () ->
+        List<ModContainer> discoveredMods = phase("Discover Nows mods", () ->
                 ModDiscovery.scan(modsDirectories, new KdlModMetadataReader()));
+        List<ModContainer> mods = phase("Resolve mod dependencies", () ->
+                ModDependencyResolver.resolve(discoveredMods, Map.of(
+                        "minecraft", launch.minecraftVersion(),
+                        "nows", nowsVersion(),
+                        "nows-loader", nowsVersion())));
         logDiscoveredMods(mods);
 
         phase("Validate Minecraft compatibility", () ->

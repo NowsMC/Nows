@@ -74,7 +74,9 @@ public final class KdlModMetadataReader implements ModMetadataReader {
                 case "homepage", "website", "sources", "source", "issues", "wiki", "discord", "email" ->
                         contacts.put(contactKey(child.name()), firstArgument(child, ""));
                 case "property" -> readPropertyNode(child, properties);
-                case "depends", "dependency", "requires", "recommends", "suggests", "breaks", "conflicts" ->
+                case "depends", "dependency", "requires", "require", "recommends", "suggests",
+                        "breaks", "conflicts", "conflict", "incompatible", "incompatible-with",
+                        "load-before", "load-after", "before", "after" ->
                         dependencies.add(readDependency(child));
                 default -> readDeclaration(child, declarations, properties);
             }

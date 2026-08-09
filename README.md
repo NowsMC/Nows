@@ -76,7 +76,12 @@ mod id="my_mod" name="My Mod" version="1.0.0" minecraft="26.2" side="client" {
     license "Apache-2.0"
     icon "assets/my_mod/icon.png"
     contact homepage="https://example.com" sources="https://github.com/example/my-mod"
-    depends "other_mod" version=">=1.0.0"
+    requires "minecraft" version="26.2"
+    depends "cloth-config" version=">=11.0.0"
+    recommends "modmenu" version=">=1.0.0"
+    incompatible-with "bad_mod" reason="Breaks the same screen"
+    load-after "cloth-config"
+    load-before "late_mod"
     property "channel" "stable"
     network-channel "my_mod:main"
     listener "com.example.MyLifecycleListener"
@@ -97,6 +102,8 @@ boolean clientRuntime = context.side() == NowsSide.CLIENT;
 ```
 
 `side` is typed metadata and accepts `client`, `server` or `both`/`common`. The current launcher runtime is client-side and rejects server-only mods with a clear compatibility error before loading mod classes. Unknown future declaration names can be retained without changing core because declarations are stored by key rather than by fixed record fields. Extra root properties are exposed through `ModDescriptor.property("key")`.
+
+Dependency metadata is validated before mod classes are loaded. `depends`/`requires` must be present and match the requested version, `recommends`/`suggests` are optional, `conflicts`/`breaks`/`incompatible-with` reject matching loaded/provided ids, and `load-before`/`load-after` influence deterministic entrypoint order when the target mod is present. Runtime provides virtual ids such as `minecraft`, `nows` and `nows-loader` for requirements.
 
 ## GEB without coupling core to GEB
 

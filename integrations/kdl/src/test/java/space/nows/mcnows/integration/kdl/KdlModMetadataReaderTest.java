@@ -24,8 +24,12 @@ class KdlModMetadataReaderTest {
                     license "Apache-2.0"
                     icon "assets/nows/icon.png"
                     contact homepage="https://nows.space" sources="https://github.com/NowsMC/Nows"
+                    requires "minecraft" version=">=26.2"
                     depends "nows_example" version=">=1.0.0" reason="Used by this fixture"
                     recommends "modmenu" version="*"
+                    incompatible-with "bad_mod" reason="Known broken integration"
+                    load-after "cloth-config"
+                    load-before "late_mod"
                     property "channel" "dev"
                     entrypoint "space.nows.mod.api.NowsApiMod"
                     mixin "nows_api_mod.mixins.json"
@@ -48,13 +52,19 @@ class KdlModMetadataReaderTest {
         assertEquals("https://nows.space", descriptor.contact("homepage").orElseThrow());
         assertEquals("https://github.com/NowsMC/Nows", descriptor.contact("sources").orElseThrow());
         assertEquals("dev", descriptor.property("channel").orElseThrow());
-        assertEquals(2, descriptor.dependencies().size());
-        assertEquals("depends", descriptor.dependencies().get(0).kind());
-        assertEquals("nows_example", descriptor.dependencies().get(0).id());
-        assertEquals(">=1.0.0", descriptor.dependencies().get(0).version());
-        assertEquals("Used by this fixture", descriptor.dependencies().get(0).reason());
-        assertEquals("recommends", descriptor.dependencies().get(1).kind());
-        assertTrue(descriptor.dependencies().get(1).optional());
+        assertEquals(6, descriptor.dependencies().size());
+        assertEquals("requires", descriptor.dependencies().get(0).kind());
+        assertEquals("minecraft", descriptor.dependencies().get(0).id());
+        assertEquals("depends", descriptor.dependencies().get(1).kind());
+        assertEquals("nows_example", descriptor.dependencies().get(1).id());
+        assertEquals(">=1.0.0", descriptor.dependencies().get(1).version());
+        assertEquals("Used by this fixture", descriptor.dependencies().get(1).reason());
+        assertEquals("recommends", descriptor.dependencies().get(2).kind());
+        assertTrue(descriptor.dependencies().get(2).optional());
+        assertEquals("incompatible-with", descriptor.dependencies().get(3).kind());
+        assertEquals("load-after", descriptor.dependencies().get(4).kind());
+        assertEquals("cloth-config", descriptor.dependencies().get(4).id());
+        assertEquals("load-before", descriptor.dependencies().get(5).kind());
         assertEquals(List.of("client-ui", "modmenu"), descriptor.declarations("api-feature"));
         assertEquals("client-ui", descriptor.declaration("api-feature").orElseThrow());
         assertEquals(List.of("space.nows.mod.api.client.NowsApiModMenu"), descriptor.declarations("modmenu"));
