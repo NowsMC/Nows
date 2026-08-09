@@ -28,7 +28,9 @@ The installer logs the resolved `minecraft dir` at startup. If a profile does no
 
 Before changing an existing `launcher_profiles.json`, it creates a sibling backup named `launcher_profiles.json.nows-backup-<timestamp>`. Existing Fabric, Forge, Quilt, vanilla, or other custom profiles are preserved; the installer only creates or replaces the profile whose id is `nows-<nows-version>-<minecraft-version>`.
 
-The launcher profile uses a Nows-specific `gameDir` for saves, options, logs and profile-specific state. Nows mods are discovered from global `.minecraft/mods` first, matching other loaders, and from `.minecraft/nows/profiles/nows-<nows-version>-<minecraft-version>/mods` as an optional profile-local overlay.
+By default, the launcher profile does not set `gameDir`, so the game runs on the launcher's normal Minecraft game folder. Nows mods are discovered from that game folder's `mods` directory first, matching other loaders, and from `.minecraft/nows/profiles/nows-<nows-version>-<minecraft-version>/mods` as an optional Nows-only overlay.
+
+Use `--profileGameDir` in the CLI installer, or enable `Use profile-local game folder` in the UI installer, to make the launcher profile use `.minecraft/nows/profiles/nows-<nows-version>-<minecraft-version>/` as its game folder.
 
 The profile icon is embedded from:
 

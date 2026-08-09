@@ -11,7 +11,15 @@ import space.nows.mcnows.mc.internal.NowsMinecraftClientHooks;
 
 @Mixin(value = TitleScreen.class, remap = false)
 public abstract class TitleScreenMixin {
-    @Inject(method = "render(Lnet/minecraft/client/gui/GuiGraphics;IIF)V", at = @At("TAIL"), remap = false)
+    @Inject(
+            method = "render(Lnet/minecraft/client/gui/GuiGraphics;IIF)V",
+            at = @At(
+                    value = "INVOKE",
+                    target = "Lnet/minecraft/client/gui/GuiGraphics;drawString(Lnet/minecraft/client/gui/Font;Ljava/lang/String;III)I",
+                    shift = At.Shift.AFTER
+            ),
+            remap = false
+    )
     private void nows$renderTitleBadge(GuiGraphics graphics, int mouseX, int mouseY, float delta, CallbackInfo ci) {
         Minecraft minecraft = Minecraft.getInstance();
         int x = 2;

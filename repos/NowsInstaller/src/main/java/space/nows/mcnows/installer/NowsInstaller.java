@@ -93,8 +93,9 @@ public final class NowsInstaller {
                 + options.minecraftDir.resolve("versions").resolve(profile).resolve(profile + ".json"));
         installLauncherProfile(options, profile);
         listener.log("[NowsInstaller] launcher profiles: " + options.minecraftDir.resolve("launcher_profiles.json"));
-        listener.log("[NowsInstaller] profile game dir: " + profileGameDirectory(options));
-        listener.log("[NowsInstaller] minecraft mods dir: " + minecraftModsDirectory(options));
+        listener.log("[NowsInstaller] default game dir: " + options.minecraftDir);
+        listener.log("[NowsInstaller] optional profile game dir: " + profileGameDirectory(options));
+        listener.log("[NowsInstaller] game mods dir: " + minecraftModsDirectory(options));
         listener.log("[NowsInstaller] optional profile mods dir: " + profileModsDirectory(options));
         listener.log("[NowsInstaller] Installed " + profile);
     }
@@ -389,7 +390,9 @@ public final class NowsInstaller {
         profile.put("created", now.toString());
         profile.put("lastUsed", now.toString());
         profile.put("lastVersionId", versionProfile);
-        profile.put("gameDir", gameDir.toString());
+        if (options.profileGameDir) {
+            profile.put("gameDir", gameDir.toString());
+        }
         String icon = launcherIcon();
         if (icon != null) {
             profile.put("icon", icon);
@@ -956,6 +959,7 @@ public final class NowsInstaller {
         final Path artifactDir;
         final String embeddedManifestResource;
         final boolean embeddedArtifacts;
+        final boolean profileGameDir;
 
         private Options(
                 String nowsVersion,
@@ -965,7 +969,8 @@ public final class NowsInstaller {
                 boolean offline,
                 Path artifactDir,
                 String embeddedManifestResource,
-                boolean embeddedArtifacts
+                boolean embeddedArtifacts,
+                boolean profileGameDir
         ) {
             this.nowsVersion = nowsVersion;
             this.minecraftVersion = minecraftVersion;
@@ -975,6 +980,7 @@ public final class NowsInstaller {
             this.artifactDir = artifactDir;
             this.embeddedManifestResource = embeddedManifestResource;
             this.embeddedArtifacts = embeddedArtifacts;
+            this.profileGameDir = profileGameDir;
         }
 
         static Options parse(String[] args) {
@@ -982,6 +988,7 @@ public final class NowsInstaller {
             String minecraft = defaultMinecraftVersion();
             String manifest = null;
             boolean offline = false;
+            boolean profileGameDir = false;
             Path artifactDir = null;
             Path minecraftDir = defaultMinecraftDir();
 
@@ -998,6 +1005,8 @@ public final class NowsInstaller {
                     manifest = requireValue(args, ++i, "--manifest");
                 } else if ("--offline".equals(arg)) {
                     offline = true;
+                } else if ("--profileGameDir".equals(arg)) {
+                    profileGameDir = true;
                 } else if ("--artifactDir".equals(arg)) {
                     artifactDir = Paths.get(requireValue(args, ++i, "--artifactDir"))
                             .toAbsolutePath().normalize();
@@ -1008,7 +1017,7 @@ public final class NowsInstaller {
             if (offline && manifest == null) {
                 throw new IllegalArgumentException("Offline install requires --manifest pointing to a local file");
             }
-            return new Options(nows, minecraft, minecraftDir, manifest, offline, artifactDir, null, false);
+            return new Options(nows, minecraft, minecraftDir, manifest, offline, artifactDir, null, false, profileGameDir);
         }
 
         Options withEmbeddedOfflinePayload() throws IOException {
@@ -1022,7 +1031,8 @@ public final class NowsInstaller {
                     false,
                     artifactDir,
                     resource,
-                    true
+                    true,
+                    profileGameDir
             );
         }
 

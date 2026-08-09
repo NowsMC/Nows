@@ -25,7 +25,7 @@ The normal installed profile id is:
 nows-<nows-version>-<minecraft-version>
 ```
 
-The profile's `gameDir` is profile-local, but the main mod folder is the normal Minecraft-wide folder:
+The installer does not set `gameDir` in the launcher profile by default. The profile therefore runs on the launcher's normal game folder, and the main mod folder is:
 
 ```text
 .minecraft/mods
@@ -37,7 +37,7 @@ Nows also scans this optional overlay:
 .minecraft/nows/profiles/nows-<nows-version>-<minecraft-version>/mods
 ```
 
-The installer should create and log both directories. Runtime logs should show `Minecraft mods directory` and `Optional Nows profile mods directory` during mod discovery.
+The installer should create and log both directories. Runtime logs should show `Game mods directory` and `Optional Nows profile mods directory` during mod discovery.
 
 ## Ownership boundaries
 
@@ -137,7 +137,7 @@ The optional `:runtime:allJar` task is the assembly point for a later monolithic
 
 Launcher version profiles should inherit from the target vanilla Minecraft profile. When the vanilla client JAR already exists locally, the installer may copy it to the Nows version directory as a profile-local version JAR. That copy is an alias of Mojang's vanilla client JAR, not a bundled Nows library and not a redistributed loader dependency. If the vanilla JAR is missing, the version JSON may use the inherited `jar` field so the launcher can resolve the parent version.
 
-Nows launcher profiles should use a profile-local game directory under `.minecraft/nows/profiles/<profile-id>/` for saves, options, logs and profile-specific state. Mod discovery still treats `.minecraft/mods` as the main user mod folder, matching the convention used by other loaders. Runtime also scans `.minecraft/nows/profiles/<profile-id>/mods` as an optional profile-local overlay for testing or per-profile extras. The global folder is scanned first; duplicate Nows mod ids across both folders are invalid.
+Nows launcher profiles should inherit the launcher's normal game folder by default by omitting `gameDir` from `launcher_profiles.json`. This matches other loaders and makes `.minecraft/mods` the normal user mod folder. A profile-local game folder under `.minecraft/nows/profiles/<profile-id>/` is available only when the installer is run with `--profileGameDir` or the UI option is selected. Runtime always also scans `.minecraft/nows/profiles/<profile-id>/mods` as an optional Nows-only overlay for testing or per-profile extras. The game folder is scanned first; duplicate Nows mod ids across both folders are invalid.
 
 The title-screen Nows badge and mod-count display are required loader proof-of-life, so they belong to `mc/<minecraft version>` rather than `repos/NowsApiMod/`. Each supported `mc/<version>` adapter can declare built-in Mixin configs through `runtime.builtinMixinConfigs` in `nows-minecraft.properties`; runtime registers those configs before mod-declared configs and passes the Nows version, Minecraft version and discovered mod count into the version adapter's client hook.
 

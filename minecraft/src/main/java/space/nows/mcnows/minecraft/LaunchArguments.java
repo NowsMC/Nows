@@ -6,12 +6,14 @@ import java.util.List;
 
 public record LaunchArguments(
         String minecraftVersion,
+        String profileId,
         Path minecraftDirectory,
         Path gameDirectory,
         List<String> minecraftArguments
 ) {
     public static LaunchArguments parse(String[] args) {
         String minecraftVersion = null;
+        String profileId = null;
         Path minecraftDirectory = null;
         Path gameDirectory = Path.of(".").toAbsolutePath().normalize();
         List<String> forwarded = new ArrayList<>();
@@ -20,6 +22,11 @@ public record LaunchArguments(
             if (arg.equals("--nowsMinecraftVersion") && i + 1 < args.length) {
                 minecraftVersion = args[++i];
                 continue;
+            }
+            if (arg.equals("--version") && i + 1 < args.length) {
+                String value = args[++i];
+                profileId = value;
+                forwarded.add(arg); forwarded.add(value); continue;
             }
             if (arg.equals("--gameDir") && i + 1 < args.length) {
                 String value = args[++i];
@@ -39,7 +46,7 @@ public record LaunchArguments(
         if (minecraftDirectory == null) {
             minecraftDirectory = inferMinecraftDirectory(gameDirectory);
         }
-        return new LaunchArguments(minecraftVersion, minecraftDirectory, gameDirectory, List.copyOf(forwarded));
+        return new LaunchArguments(minecraftVersion, profileId, minecraftDirectory, gameDirectory, List.copyOf(forwarded));
     }
 
     private static Path inferMinecraftDirectory(Path gameDirectory) {

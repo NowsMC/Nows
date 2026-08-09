@@ -30,6 +30,7 @@ public final class NowsInstallerGui {
     private final JTextField manifest = new JTextField();
     private final JTextField artifactDir = new JTextField();
     private final JCheckBox offline = new JCheckBox("Offline install");
+    private final JCheckBox profileGameDir = new JCheckBox("Use profile-local game folder");
     private final JButton install = new JButton("Install");
     private final JTextArea log = new JTextArea();
 
@@ -74,6 +75,9 @@ public final class NowsInstallerGui {
         GridBagConstraints gbc = constraints(5, 1);
         gbc.gridwidth = 2;
         panel.add(offline, gbc);
+        GridBagConstraints profileGbc = constraints(6, 1);
+        profileGbc.gridwidth = 2;
+        panel.add(profileGameDir, profileGbc);
         return panel;
     }
 
@@ -143,6 +147,9 @@ public final class NowsInstallerGui {
         addOption(args, "--artifactDir", artifactDir.getText());
         if (offline.isSelected()) {
             args.add("--offline");
+        }
+        if (profileGameDir.isSelected()) {
+            args.add("--profileGameDir");
         }
         return args.toArray(new String[0]);
     }

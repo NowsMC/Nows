@@ -52,6 +52,7 @@ public final class NowsLauncher {
     private static void launch(String[] args) throws Exception {
         LaunchArguments launch = phase("Parse launch arguments", () -> LaunchArguments.parse(args));
         LOG.info("Launch target: Minecraft {}, game directory {}", launch.minecraftVersion(), launch.gameDirectory());
+        LOG.info("Launcher profile id: {}", launch.profileId() == null ? "<unknown>" : launch.profileId());
         LOG.info("Minecraft root directory: {}", launch.minecraftDirectory());
         LOG.info("Minecraft argument summary: {} forwarded argument(s), access token hidden",
                 launch.minecraftArguments().size());
@@ -67,10 +68,10 @@ public final class NowsLauncher {
         Path gameJar = phase("Locate Minecraft client JAR", GameJarLocator::locateClientJar);
         LOG.info("Minecraft client JAR: {}", gameJar);
 
-        Path mainModsDirectory = launch.minecraftDirectory().resolve("mods");
-        Path profileModsDirectory = launch.gameDirectory().resolve("mods");
-        List<Path> modsDirectories = List.of(mainModsDirectory, profileModsDirectory);
-        phase("Inspect Nows mods directories", () -> logModDirectories(mainModsDirectory, profileModsDirectory));
+        Path gameModsDirectory = launch.gameDirectory().resolve("mods");
+        Path profileModsDirectory = optionalProfileModsDirectory(launch);
+        List<Path> modsDirectories = List.of(gameModsDirectory, profileModsDirectory);
+        phase("Inspect Nows mods directories", () -> logModDirectories(gameModsDirectory, profileModsDirectory));
         List<ModContainer> mods = phase("Discover Nows mods", () ->
                 ModDiscovery.scan(modsDirectories, new KdlModMetadataReader()));
         logDiscoveredMods(mods);
@@ -229,12 +230,24 @@ public final class NowsLauncher {
         }
     }
 
-    private static void logModDirectories(Path mainModsDirectory, Path profileModsDirectory) throws IOException {
-        Path main = mainModsDirectory.toAbsolutePath().normalize();
+    private static Path optionalProfileModsDirectory(LaunchArguments launch) {
+        String profileId = launch.profileId();
+        if (profileId == null || profileId.isBlank()) {
+            profileId = "nows-" + nowsVersion() + "-" + launch.minecraftVersion();
+        }
+        return launch.minecraftDirectory()
+                .resolve("nows")
+                .resolve("profiles")
+                .resolve(profileId)
+                .resolve("mods");
+    }
+
+    private static void logModDirectories(Path gameModsDirectory, Path profileModsDirectory) throws IOException {
+        Path main = gameModsDirectory.toAbsolutePath().normalize();
         Path profile = profileModsDirectory.toAbsolutePath().normalize();
-        logModDirectory("Minecraft mods directory", main);
+        logModDirectory("Game mods directory", main);
         if (profile.equals(main)) {
-            LOG.info("Optional Nows profile mods directory is the same as the Minecraft mods directory");
+            LOG.info("Optional Nows profile mods directory is the same as the game mods directory");
         } else {
             logModDirectory("Optional Nows profile mods directory", profile);
         }
