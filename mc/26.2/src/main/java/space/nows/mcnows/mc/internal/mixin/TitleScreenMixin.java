@@ -17,16 +17,19 @@ import space.nows.mcnows.mc.internal.NowsMinecraftClientHooks;
 import space.nows.mcnows.mc.internal.client.NowsUiImpl;
 
 @Mixin(value = TitleScreen.class, remap = false)
-public abstract class TitleScreenMixin {
+public abstract class TitleScreenMixin extends Screen {
+    protected TitleScreenMixin(Component title) {
+        super(title);
+    }
+
     @Inject(method = "init()V", at = @At("TAIL"), remap = false)
     private void nows$initTitleUi(CallbackInfo ci) {
         Screen screen = (Screen) (Object) this;
-        ScreenAccessor accessor = (ScreenAccessor) this;
         NowsUiImpl.INSTANCE.titleScreenImpl().addButtons(
                 new NowsScreenContext(
                         screen.width,
                         screen.height,
-                        (x, y, width, height, message, onPress) -> accessor.nows$addRenderableWidget(
+                        (x, y, width, height, message, onPress) -> addRenderableWidget(
                                 Button.builder(Component.literal(message), button -> onPress.run())
                                         .bounds(x, y, width, height)
                                         .build()),
