@@ -284,6 +284,8 @@ Runtime installs the version adapter by reflecting `space.nows.mcnows.mc.interna
 
 Datapack management is intentionally a source registry first. Mods can declare or collect `RepositorySource` instances and inspect/create `PackRepository` views through `NowsDataPacks`; later game hooks may feed those sources into Minecraft's live pack repositories at the correct lifecycle point for each version.
 
+The registry API should expose two escape levels. Common convenience helpers may wrap simple behavior through small logic interfaces such as `NowsItemLogic` and `NowsBlockLogic`. Full-detail Minecraft behavior must remain possible through custom `Item`/`Block` factories so mod authors can override version-specific methods directly when the stable helper layer is too small.
+
 ## Logging policy
 
 `integrations/logging/` owns Nows logging policy. Runtime and integrations should get loggers through `NowsLog` instead of configuring third-party logging directly.

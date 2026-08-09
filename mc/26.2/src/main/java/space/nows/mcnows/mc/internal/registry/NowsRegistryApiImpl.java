@@ -12,7 +12,9 @@ import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.state.BlockBehaviour;
+import space.nows.mcnows.mc.api.registry.NowsBlockLogic;
 import space.nows.mcnows.mc.api.registry.NowsBlockEntry;
+import space.nows.mcnows.mc.api.registry.NowsItemLogic;
 import space.nows.mcnows.mc.api.registry.NowsRegistryApi;
 
 import java.util.Optional;
@@ -28,8 +30,18 @@ public final class NowsRegistryApiImpl implements NowsRegistryApi {
     }
 
     @Override
+    public Item registerItem(String id, NowsItemLogic logic) {
+        return registerItem(id, Function.identity(), logic);
+    }
+
+    @Override
     public Item registerItem(String id, Function<Item.Properties, Item.Properties> configure) {
         return registerCustomItem(id, properties -> new Item(apply(configure, properties)));
+    }
+
+    @Override
+    public Item registerItem(String id, Function<Item.Properties, Item.Properties> configure, NowsItemLogic logic) {
+        return registerCustomItem(id, properties -> new NowsLogicItem(apply(configure, properties), logic));
     }
 
     @Override
@@ -45,8 +57,22 @@ public final class NowsRegistryApiImpl implements NowsRegistryApi {
     }
 
     @Override
+    public Block registerBlock(String id, NowsBlockLogic logic) {
+        return registerBlock(id, Function.identity(), logic);
+    }
+
+    @Override
     public Block registerBlock(String id, Function<BlockBehaviour.Properties, BlockBehaviour.Properties> configure) {
         return registerCustomBlock(id, properties -> new Block(apply(configure, properties)));
+    }
+
+    @Override
+    public Block registerBlock(
+            String id,
+            Function<BlockBehaviour.Properties, BlockBehaviour.Properties> configure,
+            NowsBlockLogic logic
+    ) {
+        return registerCustomBlock(id, properties -> new NowsLogicBlock(apply(configure, properties), logic));
     }
 
     @Override

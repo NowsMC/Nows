@@ -16,13 +16,21 @@ import java.util.function.Supplier;
 public interface NowsRegistryApi {
     Item registerItem(String id);
 
+    Item registerItem(String id, NowsItemLogic logic);
+
     Item registerItem(String id, Function<Item.Properties, Item.Properties> configure);
+
+    Item registerItem(String id, Function<Item.Properties, Item.Properties> configure, NowsItemLogic logic);
 
     Item registerCustomItem(String id, Function<Item.Properties, ? extends Item> factory);
 
     Block registerBlock(String id);
 
+    Block registerBlock(String id, NowsBlockLogic logic);
+
     Block registerBlock(String id, Function<BlockBehaviour.Properties, BlockBehaviour.Properties> configure);
+
+    Block registerBlock(String id, Function<BlockBehaviour.Properties, BlockBehaviour.Properties> configure, NowsBlockLogic logic);
 
     Block registerCustomBlock(String id, Function<BlockBehaviour.Properties, ? extends Block> factory);
 

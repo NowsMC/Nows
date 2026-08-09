@@ -184,6 +184,27 @@ registries.registerCreativeTab(
         });
 ```
 
+For simple behavior, mods can attach small logic hooks without writing a full subclass:
+
+```java
+registries.registerItem("my_mod:wrench", props -> props.stacksTo(1), new NowsItemLogic() {
+    @Override
+    public InteractionResult useOn(UseOnContext context) {
+        // Run custom item behavior for this Minecraft version.
+        return InteractionResult.SUCCESS;
+    }
+});
+
+registries.registerBlock("my_mod:speed_plate", props -> props.strength(1.0F), new NowsBlockLogic() {
+    @Override
+    public void stepOn(Level level, BlockPos pos, BlockState state, Entity entity) {
+        entity.setDeltaMovement(entity.getDeltaMovement().multiply(1.4D, 1.0D, 1.4D));
+    }
+});
+```
+
+For maximum Minecraft detail, use `registerCustomItem` or `registerCustomBlock` and return your own `Item`/`Block` subclass. That keeps every version-specific override available without pushing all Minecraft methods into Nows' stable wrapper API.
+
 Datapack and resource-pack sources are exposed through the same version adapter:
 
 ```java
