@@ -35,6 +35,10 @@ public final class NowsScreenContext {
         buttons.addButton(x, y, width, height, message, onPress);
     }
 
+    public void addIconButton(int x, int y, int width, int height, String icon, String message, Runnable onPress) {
+        buttons.addIconButton(x, y, width, height, icon, message, onPress);
+    }
+
     public void showSimpleScreen(String title, NowsScreenInitializer initializer, NowsScreenRenderer renderer) {
         screens.showSimpleScreen(title, initializer, renderer);
     }
