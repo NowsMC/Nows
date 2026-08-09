@@ -49,6 +49,8 @@ import java.util.Properties;
 public final class NowsLauncher {
     private static final Logger LOG = NowsLog.get(NowsLauncher.class);
     private static final NowsSide RUNTIME_SIDE = NowsSide.CLIENT;
+    private static final String MINECRAFT_ADAPTER_MARKER =
+            "space/nows/mcnows/mc/internal/NowsMinecraftIntegration.class";
     private NowsLauncher() {}
 
     public static void main(String[] args) throws Exception {
@@ -227,11 +229,14 @@ public final class NowsLauncher {
         if (!policy.bundled()) {
             return Optional.empty();
         }
-        URL resource = NowsLauncher.class.getClassLoader().getResource(policy.resourcePath());
+        URL resource = NowsLauncher.class.getClassLoader().getResource(MINECRAFT_ADAPTER_MARKER);
         if (resource == null) {
             return Optional.empty();
         }
+        return resourceContainerUrl(resource, MINECRAFT_ADAPTER_MARKER);
+    }
 
+    private static Optional<URL> resourceContainerUrl(URL resource, String resourcePath) throws IOException {
         URLConnection connection = resource.openConnection();
         if (connection instanceof JarURLConnection jarConnection) {
             return Optional.of(jarConnection.getJarFileURL());
@@ -239,7 +244,7 @@ public final class NowsLauncher {
         if ("file".equals(resource.getProtocol())) {
             try {
                 Path path = Path.of(resource.toURI());
-                for (int i = 0; i < policy.resourcePath().split("/").length; i++) {
+                for (int i = 0; i < resourcePath.split("/").length; i++) {
                     path = path.getParent();
                     if (path == null) {
                         return Optional.empty();
