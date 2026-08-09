@@ -17,7 +17,7 @@ import java.util.Comparator;
 import java.util.List;
 
 public final class NowsModListScreen extends Screen {
-    private static final Identifier ICON = Identifier.parse("nows_api_mod:icon.png");
+    private static final Identifier ICON = Identifier.parse("nows_api_mod:textures/gui/mod_menu_icon.png");
 
     private final Screen parent;
     private final NowsContext context;
