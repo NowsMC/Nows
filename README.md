@@ -177,7 +177,36 @@ Update the coordinated project version:
 ./gradlew setNowsVersion -Pnew_nows_version=0.5.0
 ```
 
-The generated files are written under `.publishing/releases/nows/<nows-version>/<minecraft-version>/`.
+The generated release files are written under `.publishing/releases/nows/<nows-version>/<minecraft-version>/`.
+Developer-facing Maven artifacts are written under `.publishing/maven/`.
+
+Build only the local Maven repository for mod developers:
+
+```bash
+./gradlew publishMavenLayout
+```
+
+After uploading `.publishing/maven/` to `https://files.nows.space/maven/`, external mod projects can use:
+
+```kotlin
+pluginManagement {
+    repositories {
+        maven("https://files.nows.space/maven")
+        gradlePluginPortal()
+        mavenCentral()
+    }
+}
+
+repositories {
+    maven("https://files.nows.space/maven")
+    mavenCentral()
+}
+
+dependencies {
+    compileOnly("space.nows.mcnows:nows-core:0.4.0")
+    compileOnly("space.nows.mcnows:nows-mc-26.2:0.4.0")
+}
+```
 
 Build the same upload layout inside Docker:
 

@@ -119,6 +119,12 @@ The title-screen Nows badge and mod-count display are required loader proof-of-l
 
 Release files are staged locally under `.publishing/` by `publishLayout`. That directory is intentionally ignored by Git because it is an upload staging area for `files.nows.space` backed by CDN/object storage.
 
+`.publishing/releases/nows/<nows-version>/<minecraft-version>/` is the player/install surface. It contains the installer manifest, checksums, installers and release artifacts used by NowsInstaller.
+
+`.publishing/maven/` is the developer surface. It is a complete local Maven repository intended to be uploaded to `https://files.nows.space/maven/` so mod developers can depend on Nows APIs and tooling. It publishes public Nows modules, version-specific `nows-mc-<minecraft-version>` adapters, integrations, runtime artifacts and the Gradle plugin marker under the `space.nows.mcnows` group.
+
+Maven POM metadata should be kept truthful and release-ready: Apache License 2.0, project SCM pointing at `NowsMC/Nows`, `TamKungZ_` / `tamkungz` / `dev@tamkungz.me` as maintainer, and `HollZaterQ` / `hollzaterq` as tester.
+
 The expected upload backing is `files.nows.space` in front of object storage/CDN infrastructure such as Backblaze B2 plus Gcore. Release generation does not upload anything; it only produces the local tree, manifest and checksum file for manual publishing.
 
 Docker is allowed as a reproducible build shell for this multi-project workspace. The Docker path should build the same `.publishing/` layout as local Gradle and should not introduce a separate release protocol.

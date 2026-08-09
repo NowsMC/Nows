@@ -1,10 +1,77 @@
 import java.security.MessageDigest
+import org.gradle.api.publish.PublishingExtension
+import org.gradle.api.publish.maven.MavenPublication
+import org.gradle.api.publish.maven.tasks.PublishToMavenRepository
 
 plugins { base }
 
 val nowsVersion = providers.gradleProperty("nows_version")
 val minecraftVersion = providers.gradleProperty("minecraft_version")
 val nowsReleaseBaseUrl = providers.gradleProperty("nows_release_base_url")
+val publishLayoutDir = layout.projectDirectory.dir(".publishing")
+val publishingMavenDir = publishLayoutDir.dir("maven")
+
+val cleanPublishingMavenLayout by tasks.registering(Delete::class) {
+    delete(publishingMavenDir)
+}
+
+val mavenPublishedProjectPaths = setOf(
+    ":core",
+    ":minecraft",
+    ":mc:26.2",
+    ":mc:1.20.1",
+    ":integrations:kdl",
+    ":integrations:geb",
+    ":integrations:logging",
+    ":integrations:mixin",
+    ":runtime"
+)
+
+fun publicArtifactId(projectPath: String): String = when (projectPath) {
+    ":core" -> "nows-core"
+    ":minecraft" -> "nows-minecraft"
+    ":mc:26.2" -> "nows-mc-26.2"
+    ":mc:1.20.1" -> "nows-mc-1.20.1"
+    ":integrations:kdl" -> "nows-integration-kdl"
+    ":integrations:geb" -> "nows-integration-geb"
+    ":integrations:logging" -> "nows-integration-logging"
+    ":integrations:mixin" -> "nows-integration-mixin"
+    ":runtime" -> "nows-runtime"
+    ":repos:NowsGradlePlugin" -> "nows-gradle-plugin"
+    else -> throw GradleException("No public artifact id registered for $projectPath")
+}
+
+fun MavenPublication.configureNowsPom(projectPath: String) {
+    pom {
+        name.set(publicArtifactId(projectPath))
+        description.set("Nows Minecraft loader artifact for $projectPath")
+        url.set("https://nows.space")
+        licenses {
+            license {
+                name.set("Apache License, Version 2.0")
+                url.set("https://www.apache.org/licenses/LICENSE-2.0")
+            }
+        }
+        developers {
+            developer {
+                id.set("tamkungz")
+                name.set("TamKungZ_")
+                email.set("dev@tamkungz.me")
+                roles.add("Maintainer")
+            }
+            developer {
+                id.set("hollzaterq")
+                name.set("HollZaterQ")
+                roles.add("Tester")
+            }
+        }
+        scm {
+            connection.set("scm:git:git@github.com:NowsMC/Nows.git")
+            developerConnection.set("scm:git:git@github.com:NowsMC/Nows.git")
+            url.set("https://github.com/NowsMC/Nows")
+        }
+    }
+}
 
 allprojects {
     group = "space.nows.mcnows"
@@ -46,6 +113,56 @@ subprojects {
         tasks.withType<AbstractArchiveTask>().configureEach {
             isPreserveFileTimestamps = false
             isReproducibleFileOrder = true
+        }
+
+        if (path in mavenPublishedProjectPaths) {
+            pluginManager.apply("maven-publish")
+            plugins.withId("maven-publish") {
+                extensions.configure<PublishingExtension> {
+                    publications {
+                        create<MavenPublication>("mavenJava") {
+                            from(components.getByName("java"))
+                            artifactId = publicArtifactId(project.path)
+                            configureNowsPom(project.path)
+                        }
+                    }
+                    repositories {
+                        maven {
+                            name = "PublishingMaven"
+                            url = rootProject.uri(publishingMavenDir.asFile)
+                        }
+                    }
+                }
+                tasks.withType<PublishToMavenRepository>().configureEach {
+                    if (name.endsWith("ToPublishingMavenRepository")) {
+                        dependsOn(rootProject.tasks.named("cleanPublishingMavenLayout"))
+                    }
+                }
+            }
+        }
+    }
+}
+
+project(":repos:NowsGradlePlugin") {
+    plugins.withId("maven-publish") {
+        extensions.configure<PublishingExtension> {
+            publications.withType<MavenPublication>().configureEach {
+                if (name == "pluginMaven") {
+                    artifactId = publicArtifactId(project.path)
+                }
+                configureNowsPom(project.path)
+            }
+            repositories {
+                maven {
+                    name = "PublishingMaven"
+                    url = rootProject.uri(publishingMavenDir.asFile)
+                }
+            }
+        }
+        tasks.withType<PublishToMavenRepository>().configureEach {
+            if (name.endsWith("ToPublishingMavenRepository")) {
+                dependsOn(rootProject.tasks.named("cleanPublishingMavenLayout"))
+            }
         }
     }
 }
@@ -132,11 +249,11 @@ val publishedMavenArtifactPaths = mapOf(
     "asm-util-9.8.jar" to "org/ow2/asm/asm-util/9.8/asm-util-9.8.jar"
 )
 
-val publishLayoutDir = layout.projectDirectory.dir(".publishing")
 val publishLayout by tasks.registering {
     group = "nows"
     description = "Builds the local upload layout for files.nows.space."
     dependsOn(
+        "publishMavenLayout",
         ":repos:NowsInstaller:jar",
         ":repos:NowsInstaller:guiJar",
         ":repos:NowsInstaller:offlineJar",
@@ -251,6 +368,13 @@ val publishLayout by tasks.registering {
                 }
         }
     }
+}
+
+tasks.register("publishMavenLayout") {
+    group = "nows"
+    description = "Publishes developer-facing Maven artifacts into .publishing/maven."
+    dependsOn(mavenPublishedProjectPaths.map { "$it:publishAllPublicationsToPublishingMavenRepository" })
+    dependsOn(":repos:NowsGradlePlugin:publishAllPublicationsToPublishingMavenRepository")
 }
 
 fun updateGradleProperty(file: File, key: String, value: String) {
