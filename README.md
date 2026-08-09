@@ -69,14 +69,29 @@ Nows logs loader progress at INFO level: phase start/end, selected Minecraft pol
 The core never imports KDL4J. `integrations/kdl` implements the `ModMetadataReader` SPI and turns `nows.mod.kdl` into a generic `ModDescriptor`.
 
 ```kdl
-mod id="my_mod" name="My Mod" version="1.0.0" minecraft="26.2" {
+mod id="my_mod" name="My Mod" version="1.0.0" minecraft="26.2" side="client" {
+    description "Short description shown to tools and companion UI."
+    author "YourName"
+    license "Apache-2.0"
+    icon "assets/my_mod/icon.png"
+    contact homepage="https://example.com" sources="https://github.com/example/my-mod"
+    depends "other_mod" version=">=1.0.0"
+    property "channel" "stable"
     entrypoint "com.example.MyMod"
     transformer "com.example.MyTransformer"
     mixin "my_mod.mixins.json"
 }
 ```
 
-Unknown future declaration names can be retained without changing core because declarations are stored by key rather than by fixed record fields.
+Mods can query loaded metadata through `NowsContext`:
+
+```java
+if (context.isModLoaded("other_mod")) {
+    String name = context.requireModDescriptor("other_mod").name();
+}
+```
+
+Unknown future declaration names can be retained without changing core because declarations are stored by key rather than by fixed record fields. Extra root properties are exposed through `ModDescriptor.property("key")`.
 
 ## GEB without coupling core to GEB
 

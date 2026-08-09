@@ -1,4 +1,11 @@
-mod id="nows_example" name="Nows Example Mod" version="${nowsVersion}" minecraft="${minecraftVersion}" {
+mod id="nows_example" name="Nows Example Mod" version="${nowsVersion}" minecraft="${minecraftVersion}" side="client" {
+    description "Small example mod used to smoke-test Nows metadata, entrypoints and Mixin."
+    author "TamKungZ_"
+    contributor "HollZaterQ"
+    license "Apache-2.0"
+    icon "assets/nows_example/icon.png"
+    contact homepage="https://nows.space" sources="https://github.com/NowsMC/Nows" issues="https://github.com/NowsMC/Nows/issues"
+    property "channel" "example"
     entrypoint "space.nows.mcnows.example.ExampleMod"
     mixin "nows_example.mixins.json"
 }
