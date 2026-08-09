@@ -100,6 +100,8 @@ https://files.nows.space/releases/nows/<nows-version>/<minecraft-version>/instal
 
 and installs all listed Nows modules/libraries into the normal `.minecraft/libraries` tree before generating an inherited Official Launcher version and merging a Nows installation entry into `launcher_profiles.json`. Existing launcher profiles are preserved and `launcher_profiles.json` is backed up before modification.
 
+The default Minecraft directory is OS-specific: `%APPDATA%\.minecraft` on Windows, `~/.minecraft` on Linux and `~/Library/Application Support/minecraft` on macOS. The installer logs the resolved path before writing files.
+
 ### GitHub Package rule
 
 `dev.kdl:kdl4j:1.0.1` requires GitHub Packages access at **build/release time**. The installer build resolves the original JAR once and stores it inside the installer JARs under:

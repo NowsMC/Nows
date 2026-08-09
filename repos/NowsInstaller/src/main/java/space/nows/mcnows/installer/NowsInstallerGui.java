@@ -7,7 +7,6 @@ import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.Insets;
 import java.io.File;
-import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
 import javax.swing.JButton;
@@ -211,6 +210,6 @@ public final class NowsInstallerGui {
     }
 
     private static String defaultMinecraftDir() {
-        return Paths.get(System.getProperty("user.home"), ".minecraft").toString();
+        return NowsInstaller.defaultMinecraftDir().toString();
     }
 }

@@ -16,6 +16,16 @@ NowsInstaller writes only the Nows version directory and Nows launcher profile:
 .minecraft/launcher_profiles.json
 ```
 
+The default Minecraft directory follows the official launcher location for the OS:
+
+```text
+Windows: %APPDATA%\.minecraft
+Linux:   ~/.minecraft
+macOS:   ~/Library/Application Support/minecraft
+```
+
+The installer logs the resolved `minecraft dir` at startup. If a profile does not appear in the launcher, confirm that path matches the launcher instance you actually use.
+
 Before changing an existing `launcher_profiles.json`, it creates a sibling backup named `launcher_profiles.json.nows-backup-<timestamp>`. Existing Fabric, Forge, Quilt, vanilla, or other custom profiles are preserved; the installer only creates or replaces the profile whose id is `nows-<nows-version>-<minecraft-version>`.
 
 The launcher profile uses a Nows-specific `gameDir`, so users can keep Nows mods under that profile's own `mods/` directory rather than global `.minecraft/mods`.

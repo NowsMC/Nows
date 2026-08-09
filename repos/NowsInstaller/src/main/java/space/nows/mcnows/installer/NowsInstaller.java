@@ -16,6 +16,7 @@ import java.util.ArrayList;
 import java.util.Base64;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Properties;
 
@@ -44,6 +45,7 @@ public final class NowsInstaller {
     static void install(Options options, InstallerListener listener) throws Exception {
         String manifestLocation = options.manifestLocation();
 
+        listener.log("[NowsInstaller] minecraft dir: " + options.minecraftDir);
         listener.log("[NowsInstaller] manifest: " + manifestLocation);
         Properties manifest = loadProperties(options, manifestLocation);
         verifyManifest(manifest, options);
@@ -532,6 +534,23 @@ public final class NowsInstaller {
         return defaultProperty("minecraft.version", "26.2");
     }
 
+    static Path defaultMinecraftDir() {
+        String os = System.getProperty("os.name", "").toLowerCase(Locale.ROOT);
+        if (os.contains("win")) {
+            String appData = System.getenv("APPDATA");
+            if (!isBlank(appData)) {
+                return Paths.get(appData, ".minecraft").toAbsolutePath().normalize();
+            }
+            return Paths.get(System.getProperty("user.home"), "AppData", "Roaming", ".minecraft")
+                    .toAbsolutePath().normalize();
+        }
+        if (os.contains("mac")) {
+            return Paths.get(System.getProperty("user.home"), "Library", "Application Support", "minecraft")
+                    .toAbsolutePath().normalize();
+        }
+        return Paths.get(System.getProperty("user.home"), ".minecraft").toAbsolutePath().normalize();
+    }
+
     private static String defaultProperty(String key, String fallback) {
         Properties defaults = new Properties();
         try (InputStream input = NowsInstaller.class.getResourceAsStream(DEFAULTS_RESOURCE)) {
@@ -911,8 +930,7 @@ public final class NowsInstaller {
             String manifest = null;
             boolean offline = false;
             Path artifactDir = null;
-            Path minecraftDir = Paths.get(System.getProperty("user.home"), ".minecraft")
-                    .toAbsolutePath().normalize();
+            Path minecraftDir = defaultMinecraftDir();
 
             for (int i = 0; i < args.length; i++) {
                 String arg = args[i];
