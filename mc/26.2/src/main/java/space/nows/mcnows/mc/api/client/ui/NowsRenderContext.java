@@ -29,8 +29,12 @@ public final class NowsRenderContext {
         return graphics;
     }
 
+    public Minecraft minecraft() {
+        return Minecraft.getInstance();
+    }
+
     public Font font() {
-        return Minecraft.getInstance().font;
+        return minecraft().font;
     }
 
     public int width() {
