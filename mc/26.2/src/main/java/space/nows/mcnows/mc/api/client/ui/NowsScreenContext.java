@@ -47,6 +47,10 @@ public final class NowsScreenContext {
         return addWidget(button(x, y, width, height, message, onPress));
     }
 
+    public void addButton(int x, int y, int width, int height, String message, Runnable onPress) {
+        addButton(x, y, width, height, Component.literal(message), button -> onPress.run());
+    }
+
     @SuppressWarnings("unchecked")
     public <T extends AbstractWidget> T addWidget(T widget) {
         return (T) addWidget.apply(widget);

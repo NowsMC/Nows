@@ -58,4 +58,9 @@ public final class NowsUiImpl implements NowsUi {
     public Screen simpleScreen(Component title, NowsScreenInitializer initializer, NowsScreenRenderer renderer) {
         return new NowsSimpleScreen(title, initializer, renderer);
     }
+
+    @Override
+    public void showSimpleScreen(String title, NowsScreenInitializer initializer, NowsScreenRenderer renderer) {
+        show(simpleScreen(Component.literal(title), initializer, renderer));
+    }
 }

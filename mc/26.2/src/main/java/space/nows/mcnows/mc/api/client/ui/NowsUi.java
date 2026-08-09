@@ -29,4 +29,6 @@ public interface NowsUi {
     Button button(int x, int y, int width, int height, Component message, Consumer<Button> onPress);
 
     Screen simpleScreen(Component title, NowsScreenInitializer initializer, NowsScreenRenderer renderer);
+
+    void showSimpleScreen(String title, NowsScreenInitializer initializer, NowsScreenRenderer renderer);
 }

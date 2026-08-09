@@ -5,6 +5,7 @@ import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
+import net.minecraft.resources.ResourceLocation;
 
 public final class NowsRenderContext {
     private final Screen screen;
@@ -71,5 +72,9 @@ public final class NowsRenderContext {
 
     public void centeredText(Component text, int x, int y, int color) {
         graphics.drawCenteredString(font(), text, x, y, color);
+    }
+
+    public void icon(String id, int x, int y, int width, int height) {
+        graphics.blit(ResourceLocation.tryParse(id), x, y, 0, 0, width, height, width, height);
     }
 }

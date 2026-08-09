@@ -25,7 +25,7 @@ public final class NowsTitleScreenUiImpl implements NowsTitleScreenUi {
 
     public void addButtons(NowsScreenContext context) {
         for (NowsTitleButtonFactory factory : buttonFactories) {
-            context.addWidget(factory.create(context));
+            factory.add(context);
         }
     }
 
