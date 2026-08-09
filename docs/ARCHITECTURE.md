@@ -123,6 +123,8 @@ Release files are staged locally under `.publishing/` by `publishLayout`. That d
 
 `.publishing/maven/` is the developer surface. It is a complete local Maven repository intended to be uploaded to `https://files.nows.space/maven/` so mod developers can depend on Nows APIs and tooling. It publishes public Nows modules, version-specific `nows-mc-<minecraft-version>` adapters, integrations, runtime artifacts and the Gradle plugin marker under the `space.nows.mcnows` group.
 
+All Maven publications must be signed with local GPG every time, including local `.publishing/maven/` builds. Unsigned Maven artifacts are considered invalid release output. The build should fail if `gpg` or a usable signing key is unavailable.
+
 Maven POM metadata should be kept truthful and release-ready: Apache License 2.0, project SCM pointing at `NowsMC/Nows`, `TamKungZ_` / `tamkungz` / `dev@tamkungz.me` as maintainer, and `HollZaterQ` / `hollzaterq` as tester.
 
 The expected upload backing is `files.nows.space` in front of object storage/CDN infrastructure such as Backblaze B2 plus Gcore. Release generation does not upload anything; it only produces the local tree, manifest and checksum file for manual publishing.

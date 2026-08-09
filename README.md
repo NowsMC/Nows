@@ -186,6 +186,9 @@ Build only the local Maven repository for mod developers:
 ./gradlew publishMavenLayout
 ```
 
+Maven publishing always uses local GPG signing, even for `.publishing/maven/`.
+Make sure `gpg` has a usable default signing key before running this task.
+
 After uploading `.publishing/maven/` to `https://files.nows.space/maven/`, external mod projects can use:
 
 ```kotlin

@@ -2,6 +2,7 @@ import java.security.MessageDigest
 import org.gradle.api.publish.PublishingExtension
 import org.gradle.api.publish.maven.MavenPublication
 import org.gradle.api.publish.maven.tasks.PublishToMavenRepository
+import org.gradle.plugins.signing.SigningExtension
 
 plugins { base }
 
@@ -117,6 +118,7 @@ subprojects {
 
         if (path in mavenPublishedProjectPaths) {
             pluginManager.apply("maven-publish")
+            pluginManager.apply("signing")
             plugins.withId("maven-publish") {
                 extensions.configure<PublishingExtension> {
                     publications {
@@ -139,12 +141,20 @@ subprojects {
                     }
                 }
             }
+            plugins.withId("signing") {
+                extensions.configure<SigningExtension> {
+                    isRequired = true
+                    useGpgCmd()
+                    sign(extensions.getByType(PublishingExtension::class.java).publications)
+                }
+            }
         }
     }
 }
 
 project(":repos:NowsGradlePlugin") {
     plugins.withId("maven-publish") {
+        pluginManager.apply("signing")
         extensions.configure<PublishingExtension> {
             publications.withType<MavenPublication>().configureEach {
                 if (name == "pluginMaven") {
@@ -162,6 +172,13 @@ project(":repos:NowsGradlePlugin") {
         tasks.withType<PublishToMavenRepository>().configureEach {
             if (name.endsWith("ToPublishingMavenRepository")) {
                 dependsOn(rootProject.tasks.named("cleanPublishingMavenLayout"))
+            }
+        }
+        plugins.withId("signing") {
+            extensions.configure<SigningExtension> {
+                isRequired = true
+                useGpgCmd()
+                sign(extensions.getByType(PublishingExtension::class.java).publications)
             }
         }
     }
