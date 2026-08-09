@@ -299,7 +299,11 @@ public final class NowsMixinService implements IMixinService, IClassProvider, IC
     private static final class NowsMixinAuditTrail implements IMixinAuditTrail {
         @Override
         public void onApply(String targetClassName, String mixinClassName) {
-            LOG.debug("Mixin applied: {} -> {}", mixinClassName, targetClassName);
+            if ("net.minecraft.client.gui.screens.TitleScreen".equals(targetClassName)) {
+                LOG.info("Mixin applied: {} -> {}", mixinClassName, targetClassName);
+            } else {
+                LOG.debug("Mixin applied: {} -> {}", mixinClassName, targetClassName);
+            }
         }
 
         @Override

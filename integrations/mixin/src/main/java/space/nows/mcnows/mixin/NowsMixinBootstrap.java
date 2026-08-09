@@ -3,7 +3,6 @@ package space.nows.mcnows.mixin;
 import org.spongepowered.asm.launch.MixinBootstrap;
 import org.spongepowered.asm.mixin.MixinEnvironment;
 import org.spongepowered.asm.mixin.Mixins;
-import org.spongepowered.asm.mixin.extensibility.IMixinConfigSource;
 import org.spongepowered.asm.mixin.transformer.IMixinTransformer;
 import reactor.util.Logger;
 import space.nows.mcnows.core.classloading.NowsClassLoader;
@@ -12,6 +11,7 @@ import space.nows.mcnows.integration.logging.NowsLog;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.lang.reflect.Method;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
@@ -31,8 +31,12 @@ public final class NowsMixinBootstrap {
         Thread.currentThread().setContextClassLoader(loader);
         LOG.info("Bootstrapping Mixin with context classloader {}", loader.getName());
         MixinBootstrap.init();
+        MixinEnvironment currentEnvironment = MixinEnvironment.getCurrentEnvironment();
         MixinEnvironment defaultEnvironment = MixinEnvironment.getDefaultEnvironment();
-        LOG.info("Mixin default environment: {} side {}", defaultEnvironment, defaultEnvironment.getSide());
+        LOG.info("Mixin current environment: {} phase {} side {}",
+                currentEnvironment, currentEnvironment.getPhase(), currentEnvironment.getSide());
+        LOG.info("Mixin default environment: {} phase {} side {}",
+                defaultEnvironment, defaultEnvironment.getPhase(), defaultEnvironment.getSide());
 
         Set<String> configs = new LinkedHashSet<>();
         for (String config : builtInConfigs) {
@@ -41,8 +45,8 @@ public final class NowsMixinBootstrap {
                 LOG.warn("Duplicate built-in Mixin config declaration ignored after first registration: {}", config);
                 continue;
             }
-            addConfiguration(config);
-            LOG.info("Built-in Mixin config: {}", config);
+            addConfiguration(currentEnvironment, config);
+            LOG.info("Built-in Mixin config: {} ({})", config, currentEnvironment);
         }
         for (ModContainer mod : mods) {
             for (String config : mod.descriptor().declarations("mixin")) {
@@ -51,8 +55,8 @@ public final class NowsMixinBootstrap {
                     LOG.warn("Duplicate Mixin config declaration ignored after first registration: {}", config);
                     continue;
                 }
-                addConfiguration(config);
-                LOG.info("Mixin config: {} -> {}", mod.descriptor().id(), config);
+                addConfiguration(currentEnvironment, config);
+                LOG.info("Mixin config: {} -> {} ({})", mod.descriptor().id(), config, currentEnvironment);
             }
         }
         LOG.info("Registered {} Mixin config(s)", configs.size());
@@ -65,12 +69,20 @@ public final class NowsMixinBootstrap {
         loader.addTransformerFirst((className, classBytes) ->
                 transformer.transformClassBytes(className, className, classBytes));
         loader.setClassGenerator(className ->
-                transformer.generateClass(MixinEnvironment.getCurrentEnvironment(), className));
+                transformer.generateClass(currentEnvironment, className));
         LOG.info("Mixin transformer installed into NowsClassLoader: {}", transformer.getClass().getName());
     }
 
-    private static void addConfiguration(String config) {
-        Mixins.addConfiguration(config, (IMixinConfigSource) null);
+    private static void addConfiguration(MixinEnvironment environment, String config) {
+        try {
+            Method addConfiguration = Mixins.class.getDeclaredMethod(
+                    "addConfiguration", String.class, MixinEnvironment.class);
+            addConfiguration.setAccessible(true);
+            addConfiguration.invoke(null, config, environment);
+        } catch (ReflectiveOperationException | RuntimeException failure) {
+            LOG.warn("Falling back to deprecated MixinEnvironment.addConfiguration for {}", config, failure);
+            environment.addConfiguration(config);
+        }
     }
 
     public static void detach(NowsClassLoader loader) {
