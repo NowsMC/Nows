@@ -46,7 +46,7 @@ Build/test the Gradle plugin:
 ./gradlew :repos:NowsGradlePlugin:build
 ```
 
-Build the CLI and Swing UI installers:
+Build the user-facing UI installer, CLI installer and offline installer:
 
 ```bash
 ./gradlew :repos:NowsInstaller:assemble
@@ -134,6 +134,12 @@ For local testing without downloads:
 
 ```bash
 java -jar NowsInstaller-cli-<version>.jar --offline --manifest <local install.properties> --artifactDir <local library root>
+```
+
+The normal public download should point to the UI installer:
+
+```text
+.publishing/releases/nows/<nows-version>/<minecraft-version>/installers/NowsInstaller-ui-<nows-version>.jar
 ```
 
 ## GitHub Package rule

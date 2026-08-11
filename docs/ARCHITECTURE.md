@@ -115,7 +115,7 @@ core + mc/<minecraft version> + Gradle plugin + KDL + GEB + Network + Mixin
 
 The default install is modular. Minecraft Launcher libraries contain separate Nows module JARs plus only the third-party runtime libraries that Minecraft does not already provide.
 
-`repos/NowsInstaller/` owns the Official Launcher install protocol. The normal CLI/UI installers read an install manifest, install each declared artifact under `.minecraft/libraries`, then write an inherited Launcher version profile whose `mainClass` is `space.nows.mcnows.runtime.NowsLauncher`.
+`repos/NowsInstaller/` owns the Official Launcher install protocol. The UI installer is the normal public entrypoint; the CLI remains available for scripting and local development. Both read an install manifest, install each declared artifact under `.minecraft/libraries`, then write an inherited Launcher version profile whose `mainClass` is `space.nows.mcnows.runtime.NowsLauncher`.
 
 Normal installer artifact resolution is:
 
@@ -126,7 +126,7 @@ Normal installer artifact resolution is:
 
 `NowsInstaller-offline` is a separate Java 8-compatible installer JAR that embeds the install manifest and all manifest artifacts needed by Nows, then copies those embedded payloads into the Minecraft libraries directory without network access. Its Nows module payloads come from the workspace's Gradle project JAR tasks when built locally, so the same offline installer covers local-development installation for the selected `minecraft_version`.
 
-The normal CLI/UI installers are generic installer entrypoints. They choose the target release manifest from `--minecraft`, `--nows` or their Gradle defaults and download from:
+The normal UI/CLI installers are generic installer entrypoints. They choose the target release manifest from `--minecraft`, `--nows` or their Gradle defaults and download from:
 
 ```text
 https://files.nows.space/releases/nows/<nows-version>/<minecraft-version>/install.properties
@@ -198,6 +198,12 @@ After `publishLayout`, the offline installer for the selected release is expecte
 
 ```text
 .publishing/releases/nows/<nows-version>/<minecraft-version>/installers/NowsInstaller-offline-<nows-version>-mc-<minecraft-version>.jar
+```
+
+The normal public installer link should point to:
+
+```text
+.publishing/releases/nows/<nows-version>/<minecraft-version>/installers/NowsInstaller-ui-<nows-version>.jar
 ```
 
 ## Gradle and mappings policy
