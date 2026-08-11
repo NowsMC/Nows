@@ -9,7 +9,7 @@ import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
-import space.nows.mcnows.mc.internal.NowsMinecraftClientHooks;
+import space.nows.mcnows.mc.internal.ClientHooks;
 
 import java.util.Set;
 
@@ -22,6 +22,6 @@ public abstract class PackRepositoryMixin {
 
     @Inject(method = "<init>", at = @At("TAIL"), remap = false)
     private void nows$installModResourcePackSource(RepositorySource[] repositorySources, CallbackInfo ci) {
-        sources = NowsMinecraftClientHooks.withModResourcePackSource(sources, repositorySources);
+        sources = ClientHooks.withModResourcePackSource(sources, repositorySources);
     }
 }

@@ -12,7 +12,7 @@ Each version directory can contain:
 
 Only one `nows-mc-<minecraft-version>` artifact should be installed for a launcher profile.
 
-Runtime installs `space.nows.mcnows.mc.internal.NowsMinecraftIntegration` when it is present. Mods should normally reach the services through `NowsMinecraft.registries(context)` and `NowsMinecraft.dataPacks(context)` instead of depending on runtime reflection details.
+Runtime installs `space.nows.mcnows.mc.internal.MinecraftIntegration` when it is present. Mods should normally reach the services through `MinecraftApi.registries(context)` and `MinecraftApi.dataPacks(context)` instead of depending on runtime reflection details.
 
 Minecraft versions that do not ship Mojang-named client jars, such as 1.20.1, need a remapped `.nows/minecraft/<version>/client-dev.jar` before their adapter module can compile.
 

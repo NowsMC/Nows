@@ -11,12 +11,12 @@ import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
-import space.nows.mcnows.mc.api.client.ui.NowsRenderContext;
-import space.nows.mcnows.mc.api.client.ui.NowsButtonSink;
-import space.nows.mcnows.mc.api.client.ui.NowsScreenContext;
-import space.nows.mcnows.mc.internal.NowsMinecraftClientHooks;
-import space.nows.mcnows.mc.internal.client.NowsIconButton;
-import space.nows.mcnows.mc.internal.client.NowsUiImpl;
+import space.nows.mcnows.mc.api.client.ui.RenderContext;
+import space.nows.mcnows.mc.api.client.ui.ButtonSink;
+import space.nows.mcnows.mc.api.client.ui.ScreenContext;
+import space.nows.mcnows.mc.internal.ClientHooks;
+import space.nows.mcnows.mc.internal.client.IconButton;
+import space.nows.mcnows.mc.internal.client.UiImpl;
 
 @Mixin(value = TitleScreen.class, remap = false)
 public abstract class TitleScreenMixin extends Screen {
@@ -27,11 +27,11 @@ public abstract class TitleScreenMixin extends Screen {
     @Inject(method = "init()V", at = @At("TAIL"), remap = false)
     private void nows$initTitleUi(CallbackInfo ci) {
         Screen screen = (Screen) (Object) this;
-        NowsUiImpl.INSTANCE.titleScreenImpl().addButtons(
-                new NowsScreenContext(
+        UiImpl.INSTANCE.titleScreenImpl().addButtons(
+                new ScreenContext(
                         screen.width,
                         screen.height,
-                        new NowsButtonSink() {
+                        new ButtonSink() {
                             @Override
                             public void addButton(int x, int y, int width, int height, String message, Runnable onPress) {
                                 addRenderableWidget(Button.builder(Component.literal(message), button -> onPress.run())
@@ -49,7 +49,7 @@ public abstract class TitleScreenMixin extends Screen {
                                     String message,
                                     Runnable onPress
                             ) {
-                                addRenderableWidget(new NowsIconButton(
+                                addRenderableWidget(new IconButton(
                                         x,
                                         y,
                                         width,
@@ -60,7 +60,7 @@ public abstract class TitleScreenMixin extends Screen {
                             }
                         },
                         (title, initializer, renderer) -> Minecraft.getInstance().setScreenAndShow(
-                                new space.nows.mcnows.mc.internal.client.NowsSimpleScreen(
+                                new space.nows.mcnows.mc.internal.client.SimpleScreen(
                                         Component.literal(title), initializer, renderer)),
                         () -> Minecraft.getInstance().setScreenAndShow(null)));
     }
@@ -78,20 +78,20 @@ public abstract class TitleScreenMixin extends Screen {
         Minecraft minecraft = Minecraft.getInstance();
         int x = 2;
         int y = graphics.guiHeight() - 30;
-        graphics.text(minecraft.font, NowsMinecraftClientHooks.loaderLine(), x, y, 0xFFFFFFFF, true);
-        graphics.text(minecraft.font, NowsMinecraftClientHooks.modLine(), x, y + 10, 0xFFB8B8B8, true);
-        NowsUiImpl.INSTANCE.titleScreenImpl().renderAll(
-                new NowsRenderContext(
+        graphics.text(minecraft.font, ClientHooks.loaderLine(), x, y, 0xFFFFFFFF, true);
+        graphics.text(minecraft.font, ClientHooks.modLine(), x, y + 10, 0xFFB8B8B8, true);
+        UiImpl.INSTANCE.titleScreenImpl().renderAll(
+                new RenderContext(
                         graphics.guiWidth(),
                         graphics.guiHeight(),
                         mouseX,
                         mouseY,
                         delta,
-                        new NowsTitleRenderSink(graphics)));
+                        new TitleRenderSink(graphics)));
     }
 
-    private record NowsTitleRenderSink(GuiGraphicsExtractor graphics)
-            implements space.nows.mcnows.mc.api.client.ui.NowsRenderSink {
+    private record TitleRenderSink(GuiGraphicsExtractor graphics)
+            implements space.nows.mcnows.mc.api.client.ui.RenderSink {
         @Override
         public void fill(int x1, int y1, int x2, int y2, int color) {
             graphics.fill(x1, y1, x2, y2, color);

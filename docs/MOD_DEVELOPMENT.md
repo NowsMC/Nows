@@ -111,7 +111,7 @@ Sending goes through `NetworkTransport`, which is installed by version-specific 
 Mods can use the same Nows API class names across supported versions while each adapter handles common version details:
 
 ```java
-NowsRegistryApi registries = NowsMinecraft.registries(context);
+RegistryApi registries = MinecraftApi.registries(context);
 
 Item raw = registries.register(BuiltInRegistries.ITEM, "my_mod:raw_widget", new Item(new Item.Properties()));
 Item item = registries.registerItem("my_mod:widget", props -> props.stacksTo(16));
@@ -121,7 +121,7 @@ Item food = registries.registerFood("my_mod:berry", new FoodProperties.Builder()
         .build());
 Item sword = registries.registerSword("my_mod:blade", ToolMaterial.IRON, 3.0F, -2.4F);
 Item helmet = registries.registerArmor("my_mod:helmet", ArmorMaterials.IRON, ArmorType.HELMET);
-NowsBlockEntry block = registries.registerBlockWithItem(
+BlockEntry block = registries.registerBlockWithItem(
         "my_mod:machine",
         props -> props.strength(2.0F, 6.0F),
         props -> props);
@@ -140,14 +140,14 @@ Block stone = registries.getBlock("minecraft:stone");
 For simple behavior, mods can attach small logic hooks:
 
 ```java
-registries.registerItem("my_mod:wrench", props -> props.stacksTo(1), new NowsItemLogic() {
+registries.registerItem("my_mod:wrench", props -> props.stacksTo(1), new ItemLogic() {
     @Override
     public InteractionResult useOn(UseOnContext context) {
         return InteractionResult.SUCCESS;
     }
 });
 
-registries.registerBlock("my_mod:speed_plate", props -> props.strength(1.0F), new NowsBlockLogic() {
+registries.registerBlock("my_mod:speed_plate", props -> props.strength(1.0F), new BlockLogic() {
     @Override
     public void stepOn(Level level, BlockPos pos, BlockState state, Entity entity) {
         entity.setDeltaMovement(entity.getDeltaMovement().multiply(1.4D, 1.0D, 1.4D));
@@ -162,7 +162,7 @@ For custom behavior beyond the basic layer, use Minecraft's API directly. `regis
 Datapack and resource-pack sources are exposed through the version adapter:
 
 ```java
-NowsDataPacks packs = NowsMinecraft.dataPacks(context);
+DataPacks packs = MinecraftApi.dataPacks(context);
 Path modPackDir = packs.modPackDirectory("my_mod");
 packs.registerSource(PackType.SERVER_DATA, repositoryConsumer -> {
     // Create or forward Minecraft RepositorySource packs for this version.
@@ -172,10 +172,10 @@ packs.registerSource(PackType.SERVER_DATA, repositoryConsumer -> {
 Commands and generated JSON data are collected through the adapter as well:
 
 ```java
-NowsMinecraft.commands(context).register(dispatcher ->
+MinecraftApi.commands(context).register(dispatcher ->
         dispatcher.register(Commands.literal("my_mod").executes(command -> 1)));
 
-NowsDataGen dataGen = NowsMinecraft.dataGen(context);
+DataGen dataGen = MinecraftApi.dataGen(context);
 dataGen.writeJson(dataGen.recipePath("my_mod:widget"), Map.class, Map.of(
         "type", "minecraft:crafting_shapeless",
         "ingredients", List.of(Map.of("item", "minecraft:stone")),
@@ -188,7 +188,7 @@ dataGen.writeJson(dataGen.recipePath("my_mod:widget"), Map.class, Map.of(
 Client UI helpers cover common cases: opening a screen, making a simple screen, adding title-screen buttons and drawing small overlays. Raw Minecraft UI objects remain exposed for deeper behavior.
 
 ```java
-NowsUi ui = NowsMinecraft.ui(context);
+Ui ui = MinecraftApi.ui(context);
 ui.titleScreen().addButton(title -> title.button(
         title.centerX(98), title.height() / 4 + 120, 98, 20,
         Component.literal("My Mod"),
@@ -208,9 +208,9 @@ ui.titleScreen().render(render ->
 Client player helpers expose both nullable and fail-fast player access. On multiplayer servers, server-authoritative values may be corrected by the server:
 
 ```java
-NowsPlayerApi player = NowsMinecraft.player(context);
+PlayerApi player = MinecraftApi.player(context);
 player.current().ifPresent(local -> {
-    NowsPlayerSnapshot snapshot = player.snapshot();
+    PlayerSnapshot snapshot = player.snapshot();
     player.sendOverlayMessage(Component.literal("Hello " + snapshot.name()));
     player.setHealth(Math.min(snapshot.maxHealth(), snapshot.health() + 2.0F));
     player.setFood(20);

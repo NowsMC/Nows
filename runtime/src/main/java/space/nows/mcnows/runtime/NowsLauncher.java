@@ -50,7 +50,7 @@ public final class NowsLauncher {
     private static final Logger LOG = NowsLog.get(NowsLauncher.class);
     private static final NowsSide RUNTIME_SIDE = NowsSide.CLIENT;
     private static final String MINECRAFT_ADAPTER_MARKER =
-            "space/nows/mcnows/mc/internal/NowsMinecraftIntegration.class";
+            "space/nows/mcnows/mc/internal/MinecraftIntegration.class";
     private NowsLauncher() {}
 
     public static void main(String[] args) throws Exception {
@@ -203,7 +203,7 @@ public final class NowsLauncher {
             String minecraftVersion,
             List<ModContainer> mods
     ) throws Exception {
-        String hookClassName = "space.nows.mcnows.mc.internal.NowsMinecraftClientHooks";
+        String hookClassName = "space.nows.mcnows.mc.internal.ClientHooks";
         try {
             Class<?> hookClass = Class.forName(hookClassName, true, loader);
             try {
@@ -225,7 +225,7 @@ public final class NowsLauncher {
             Path gameDirectory,
             String minecraftVersion
     ) throws Exception {
-        String integrationClassName = "space.nows.mcnows.mc.internal.NowsMinecraftIntegration";
+        String integrationClassName = "space.nows.mcnows.mc.internal.MinecraftIntegration";
         try {
             Class<?> integrationClass = Class.forName(integrationClassName, true, loader);
             Method install = integrationClass.getMethod("install", NowsServices.class, Path.class);
@@ -241,7 +241,7 @@ public final class NowsLauncher {
             NowsContext context,
             String minecraftVersion
     ) throws Exception {
-        String integrationClassName = "space.nows.mcnows.mc.internal.NowsMinecraftIntegration";
+        String integrationClassName = "space.nows.mcnows.mc.internal.MinecraftIntegration";
         try {
             Class<?> integrationClass = Class.forName(integrationClassName, true, loader);
             try {
