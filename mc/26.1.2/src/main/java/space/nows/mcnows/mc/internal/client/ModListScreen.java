@@ -25,7 +25,7 @@ import java.util.Map;
 import java.util.StringJoiner;
 
 public final class ModListScreen extends Screen {
-    private static final Identifier FALLBACK_ICON = Identifier.parse("nows:textures/gui/mod_menu_icon.png");
+    private static final Identifier FALLBACK_ICON = Identifier.tryParse("nows:textures/gui/mod_menu_icon.png");
     private static final int TOP = 36;
     private static final int BOTTOM = 34;
     private static final int GAP = 8;
@@ -127,7 +127,7 @@ public final class ModListScreen extends Screen {
                     .toList();
             replaceEntries(entries);
             if (!entries.isEmpty()) {
-                setSelected(entries.getFirst());
+                setSelected(entries.get(0));
             }
         }
 
@@ -136,7 +136,7 @@ public final class ModListScreen extends Screen {
             if (selected != null) {
                 return selected.mod;
             }
-            return children().isEmpty() ? null : children().getFirst().mod;
+            return children().isEmpty() ? null : children().get(0).mod;
         }
 
         @Override
@@ -325,8 +325,8 @@ public final class ModListScreen extends Screen {
         mapList(lines, descriptor.declarations());
         section(lines, "Properties");
         map(lines, descriptor.properties());
-        if (lines.getLast() instanceof SpacerLine) {
-            lines.removeLast();
+        if (!lines.isEmpty() && lines.get(lines.size() - 1) instanceof SpacerLine) {
+            lines.remove(lines.size() - 1);
         }
         return lines;
     }

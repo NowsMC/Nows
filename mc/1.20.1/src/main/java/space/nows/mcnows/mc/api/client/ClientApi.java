@@ -3,7 +3,7 @@ package space.nows.mcnows.mc.api.client;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.screens.Screen;
 
-/** Client helpers backed directly by Minecraft 1.20.1 APIs. */
+/** Client helpers backed directly by the active Minecraft APIs. */
 public final class ClientApi {
     private ClientApi() {}
 

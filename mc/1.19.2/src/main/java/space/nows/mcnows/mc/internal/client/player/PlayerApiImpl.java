@@ -210,7 +210,7 @@ public final class PlayerApiImpl implements PlayerApi {
 
     @Override
     public void sendSystemMessage(Component message) {
-        requireCurrent().sendSystemMessage(message);
+        requireCurrent().displayClientMessage(message, false);
     }
 
     @Override

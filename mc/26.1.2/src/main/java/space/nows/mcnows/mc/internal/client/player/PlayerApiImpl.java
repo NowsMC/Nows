@@ -205,6 +205,7 @@ public final class PlayerApiImpl implements PlayerApi {
     public void setSelectedHotbarSlot(int slot) {
         Inventory inventory = requireCurrent().getInventory();
         inventory.setSelectedSlot(slot);
+        inventory.setChanged();
     }
 
     @Override

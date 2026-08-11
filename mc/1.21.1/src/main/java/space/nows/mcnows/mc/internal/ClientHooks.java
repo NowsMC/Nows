@@ -9,7 +9,7 @@ import java.util.Set;
 
 public final class ClientHooks {
     private static volatile String nowsVersion = "development";
-    private static volatile String minecraftVersion = "1.20.1";
+    private static volatile String minecraftVersion = "unknown";
     private static volatile int modCount;
     private static volatile List<ModContainer> mods = List.of();
 
