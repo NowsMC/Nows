@@ -4,3 +4,12 @@
 [submodule "repos/NowsApiMod"]
 	path = repos/NowsApiMod
 	url = git@github.com:NowsMC/NowsApiMod.git
+[submodule "repos/NowsGradlePlugin"]
+	path = repos/NowsGradlePlugin
+	url = git@github.com:NowsMC/NowsGradlePlugin.git
+[submodule "repos/NowsInstaller"]
+	path = repos/NowsInstaller
+	url = git@github.com:NowsMC/NowsInstaller.git
+[submodule "example-mod"]
+	path = example-mod
+	url = git@github.com:NowsMC/example-mod.git
