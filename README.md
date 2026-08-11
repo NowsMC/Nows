@@ -108,15 +108,11 @@ plugins {
 
 nows {
     minecraftVersion.set("26.2")
-    officialMappings.set(true)
     nowsVersion.set("0.4.0")
-    addGeb.set(true)
-    addNetwork.set(true)
-    addMixin.set(true)
 }
 ```
 
-The plugin owns Minecraft development setup, official Mojang mappings and optional Nows integration dependencies. Those policies do not belong in `nows-core`.
+The plugin applies Gradle's Java plugin and owns Minecraft development setup, official Mojang mappings, the matching Minecraft adapter, common Nows integrations and `nows.mod.kdl` resource expansion. Those policies do not belong in `nows-core`.
 
 ## License
 

@@ -190,11 +190,6 @@ repositories {
     maven("https://files.nows.space/maven")
     mavenCentral()
 }
-
-dependencies {
-    compileOnly("space.nows.mcnows:nows-core:0.4.0")
-    compileOnly("space.nows.mcnows:nows-mc-26.2:0.4.0")
-}
 ```
 
 Maven publishing always uses local GPG signing, even for `.publishing/maven/`. Make sure `gpg` has a usable default signing key before running `publishMavenLayout`.
@@ -210,14 +205,10 @@ plugins {
 
 nows {
     minecraftVersion.set("26.2")
-    officialMappings.set(true)
     nowsVersion.set("0.4.0")
-    addGeb.set(true)
-    addNetwork.set(true)
-    addMixin.set(true)
 }
 ```
 
 The plugin owns Minecraft development setup rather than loader core. `nowsPrepareMinecraft` downloads the official client artifact and official `client_mappings` metadata. For modern unobfuscated Minecraft it detects Mojang-named classes and skips remapping. For older obfuscated versions it reads Mojang's ProGuard mapping file with Nows' own parser and remaps obfuscated names to official Mojang names with the Nows ASM remapper.
 
-It also wires the prepared development client JAR into `compileOnly`, makes Java compilation depend on preparation, adds the matching `nows-core` API, and can add GEB, Network and Mixin compile/annotation-processor tooling to mod projects.
+It applies Gradle's Java plugin, wires the prepared development client JAR into `compileOnly`, makes Java compilation depend on preparation, adds `nows-core`, the matching `nows-mc-<minecraft-version>` adapter, default KDL/logging/GEB/network/Mixin compile-time tooling, common Minecraft-owned compile libraries, and expands `${nowsVersion}` plus `${minecraftVersion}` in `nows.mod.kdl`.
