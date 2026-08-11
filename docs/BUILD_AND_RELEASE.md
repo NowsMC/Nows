@@ -142,18 +142,18 @@ The normal public download should point to the UI installer:
 .publishing/releases/nows/<nows-version>/<minecraft-version>/installers/NowsInstaller-ui-<nows-version>.jar
 ```
 
-## GitHub Package rule
+## KDL4J resolution rule
 
-`dev.kdl:kdl4j:1.0.1` requires GitHub Packages access at build/release time. Installer builds resolve the original JAR once and store it inside installer JARs under:
+`com.github.kdl-org:kdl4j:v1.0.1` is resolved from JitPack first. GitHub Packages remains configured after JitPack for release environments that still need legacy fallback access. Installer builds resolve the original JAR once and store it inside installer JARs under:
 
 ```text
-META-INF/nows/embedded-libs/kdl4j-1.0.1.jar
+META-INF/nows/embedded-libs/kdl4j-v1.0.1.jar
 ```
 
 At install time, the installer copies that untouched JAR to:
 
 ```text
-.minecraft/libraries/dev/kdl/kdl4j/1.0.1/kdl4j-1.0.1.jar
+.minecraft/libraries/com/github/kdl-org/kdl4j/v1.0.1/kdl4j-v1.0.1.jar
 ```
 
 Players do not need `GITHUB_TOKEN` to install or run Nows.

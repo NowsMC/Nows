@@ -103,9 +103,13 @@ allprojects {
         mavenCentral()
         maven("https://repo.spongepowered.org/repository/maven-public/")
 
-        // KDL4J 1.0.1 is a GitHub Package. Only build-time resolution uses credentials.
-        // NowsInstaller embeds the original JAR and extracts it into .minecraft/libraries,
-        // so end users never need a GitHub token.
+        // Prefer the public JitPack KDL4J artifact. GitHub Packages remains configured
+        // after it for release environments that still need to resolve legacy coordinates.
+        maven {
+            name = "JitPack"
+            url = uri("https://jitpack.io")
+            content { includeGroup("com.github.kdl-org") }
+        }
         maven {
             name = "KDL4JGitHubPackages"
             url = uri("https://maven.pkg.github.com/kdl-org/kdl4j")
@@ -263,12 +267,6 @@ val checkWorkspacePrerequisites by tasks.registering {
             throw GradleException(
                 "Missing workspace paths: ${missing.joinToString()}. "
                     + "Run: git submodule update --init --recursive"
-            )
-        }
-        if (githubPackageToken.orNull.isNullOrBlank()) {
-            throw GradleException(
-                "Missing GitHub Packages token for dev.kdl:kdl4j. "
-                    + "Set GITHUB_TOKEN or gradle property gpr.token."
             )
         }
         if (!commandSucceeds("gpg", "--version")) {

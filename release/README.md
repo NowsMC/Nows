@@ -5,7 +5,7 @@ Nows 0.4.x installs modularly. Upload the module JARs and `install.properties` t
 `https://files.nows.space/releases/nows/<nows-version>/<minecraft-version>/`
 
 `repos/NowsInstaller/install.properties.template` documents the internet install protocol.
-Before publishing, fill SHA-256 fields for every artifact. `dev.kdl:kdl4j` is intentionally **not** downloaded by the end user: its original JAR is embedded in the NowsInstaller CLI/UI/offline JARs at build time and extracted to the normal Minecraft library path. The offline installer additionally embeds every manifest artifact so local testing/installing does not require network access.
+Before publishing, fill SHA-256 fields for every artifact. `com.github.kdl-org:kdl4j` is intentionally **not** downloaded by the end user: its original JAR is resolved from JitPack first, embedded in the NowsInstaller CLI/UI/offline JARs at build time, and extracted to the normal Minecraft library path. The offline installer additionally embeds every manifest artifact so local testing/installing does not require network access.
 
 Use `./gradlew publishLayout` to build `.publishing/releases/nows/<nows-version>/<minecraft-version>/` and `.publishing/maven/`.
 

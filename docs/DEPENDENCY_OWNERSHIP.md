@@ -14,7 +14,7 @@ These remain parent-first in `NowsClassLoader`.
 
 ## Supplied by Nows
 
-- KDL4J 1.0.1 — embedded in the Nows installer JARs because its primary release is GitHub Packages.
+- KDL4J 1.0.1 — embedded in the Nows installer JARs, resolved from JitPack first with GitHub Packages kept as a release fallback.
 - GEB core 0.5.4 — internet install.
 - Reactor Core 3.8.6 — internet install.
 - Reactive Streams 1.0.4 — internet install.

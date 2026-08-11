@@ -134,7 +134,7 @@ https://files.nows.space/releases/nows/<nows-version>/<minecraft-version>/instal
 
 The published offline installer is intentionally per Minecraft version because it embeds the version-specific `nows-mc-<minecraft-version>` adapter and a processed manifest for exactly one game version. Publish it with a versioned filename such as `NowsInstaller-offline-<nows-version>-mc-<minecraft-version>.jar`.
 
-GitHub Packages-only dependencies, currently KDL4J, may be embedded into installer artifacts and copied into the Minecraft libraries directory when necessary. Normal Nows users must not need GitHub credentials just to install or run Nows.
+Installer-embedded dependencies, currently KDL4J, may be embedded into installer artifacts and copied into the Minecraft libraries directory when necessary. KDL4J resolves from JitPack first, with GitHub Packages kept as a release fallback. Normal Nows users must not need GitHub credentials just to install or run Nows.
 
 The optional `:runtime:allJar` task is the assembly point for a later monolithic distribution. It merges Nows modules and Nows-owned third-party runtime libraries while intentionally omitting Minecraft-owned Log4j2, SLF4J, Gson, Guava and JSpecify. Moshi is a Nows-owned runtime library and is installed with its Okio/Kotlin runtime dependencies so loader APIs can expose one JSON stack consistently.
 
@@ -325,12 +325,12 @@ Important libraries currently intended for Nows include the following. Their exa
 
 - `foo.zaaarf.geb:processor`
 - `foo.zaaarf.geb:core`
-- `dev.kdl:kdl4j`
+- `com.github.kdl-org:kdl4j`
 - Reactor logging through `io.projectreactor:reactor-core`
 - Log4j2 Async Logger support through Disruptor
 - SpongePowered Mixin through `org.spongepowered:mixin`
 
-KDL4J may come from GitHub Packages. Release/build tooling may need credentials to resolve it, but installer/runtime users should not.
+KDL4J should resolve from JitPack first. GitHub Packages remains a release fallback, but installer/runtime users should not need credentials.
 
 ## Why the metadata model is generic
 

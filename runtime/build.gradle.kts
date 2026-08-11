@@ -10,6 +10,7 @@ val okioVersion = providers.gradleProperty("okio_version")
 val kotlinVersion = providers.gradleProperty("kotlin_version")
 val jetbrainsAnnotationsVersion = providers.gradleProperty("jetbrains_annotations_version")
 val nowsVersion = providers.gradleProperty("nows_version")
+val kdl4jCoordinate = "com.github.kdl-org:kdl4j:v${kdl4jVersion.get()}"
 
 // This configuration is only for the optional future single-JAR distribution.
 // It intentionally omits Minecraft-owned Log4j2/SLF4J/Gson/Guava/JSpecify.
@@ -27,7 +28,7 @@ dependencies {
     implementation(project(":integrations:network"))
     implementation(project(":integrations:mixin"))
 
-    allJarLibraries("dev.kdl:kdl4j:${kdl4jVersion.get()}") { isTransitive = false }
+    allJarLibraries(kdl4jCoordinate) { isTransitive = false }
     allJarLibraries("foo.zaaarf.geb:core:${gebCoreVersion.get()}") { isTransitive = false }
     allJarLibraries("io.projectreactor:reactor-core:${reactorVersion.get()}") { isTransitive = false }
     allJarLibraries("org.reactivestreams:reactive-streams:1.0.4") { isTransitive = false }
