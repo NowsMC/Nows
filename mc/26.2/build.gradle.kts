@@ -1,19 +1,29 @@
-plugins { `java-library` }
-
-val minecraftVersion = project.name
-val minecraftDevJar = rootProject.layout.projectDirectory.file(".nows/minecraft/$minecraftVersion/client-dev.jar")
-
-dependencies {
-    compileOnly(project(":core"))
-    compileOnly(files(minecraftDevJar))
-    compileOnly("com.mojang:datafixerupper:${providers.gradleProperty("datafixerupper_version").get()}")
-    compileOnly("com.mojang:brigadier:${providers.gradleProperty("brigadier_version").get()}")
-    api("com.squareup.moshi:moshi:${providers.gradleProperty("moshi_version").get()}")
-    compileOnly("org.spongepowered:mixin:${providers.gradleProperty("mixin_version").get()}")
+plugins {
+    `java-library`
+    id("space.nows.mcnows")
 }
 
-tasks.compileJava {
-    dependsOn(":minecraft:prepareMinecraft")
+val javaRelease = 21
+
+val minecraftVersion = project.name
+
+nows {
+    minecraftVersion.set(project.name)
+    addMinecraftAdapter.set(false)
+    addKdl.set(false)
+    addGeb.set(false)
+    addLogging.set(false)
+    addNetwork.set(false)
+    expandNowsModMetadata.set(false)
+}
+
+dependencies {
+    api("com.squareup.moshi:moshi:${providers.gradleProperty("moshi_version").get()}")
+    compileOnly("org.jspecify:jspecify:${providers.gradleProperty("jspecify_version").get()}")
+}
+
+tasks.withType<JavaCompile>().configureEach {
+    options.release.set(javaRelease)
 }
 
 tasks.jar {
