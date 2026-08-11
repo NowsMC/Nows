@@ -5,16 +5,24 @@ import net.minecraft.core.Registry;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.sounds.SoundEvent;
 import net.minecraft.tags.TagKey;
 import net.minecraft.world.food.FoodProperties;
+import net.minecraft.world.inventory.AbstractContainerMenu;
+import net.minecraft.world.inventory.MenuType;
 import net.minecraft.world.item.ArmorItem;
 import net.minecraft.world.item.ArmorMaterial;
 import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.CreativeModeTab;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.crafting.Recipe;
+import net.minecraft.world.item.crafting.RecipeSerializer;
+import net.minecraft.world.item.crafting.RecipeType;
 import net.minecraft.world.item.Tier;
 import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.entity.BlockEntity;
+import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockBehaviour;
 
 import java.util.Optional;
@@ -101,6 +109,26 @@ public interface RegistryApi {
             Function<BlockBehaviour.Properties, BlockBehaviour.Properties> blockConfigure,
             Function<Item.Properties, Item.Properties> itemConfigure
     );
+
+    <T extends BlockEntity> BlockEntityType<T> registerBlockEntity(
+            String id,
+            BlockEntityFactory<T> factory,
+            Block... validBlocks
+    );
+
+    <T extends AbstractContainerMenu> MenuType<T> registerMenu(
+            String id,
+            MenuFactory<T> factory
+    );
+
+    <T extends Recipe<?>> RecipeType<T> registerRecipeType(String id);
+
+    <T extends Recipe<?>> RecipeSerializer<T> registerRecipeSerializer(
+            String id,
+            RecipeSerializer<T> serializer
+    );
+
+    SoundEvent registerVariableRangeSound(String id);
 
     CreativeModeTab registerCreativeTab(
             String id,

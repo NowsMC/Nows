@@ -5,24 +5,40 @@ import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.sounds.SoundEvent;
 import net.minecraft.tags.TagKey;
+import net.minecraft.world.flag.FeatureFlags;
 import net.minecraft.world.food.FoodProperties;
+import net.minecraft.world.inventory.AbstractContainerMenu;
+import net.minecraft.world.inventory.MenuType;
 import net.minecraft.world.item.ArmorItem;
 import net.minecraft.world.item.ArmorMaterial;
 import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.CreativeModeTab;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.crafting.Recipe;
+import net.minecraft.world.item.crafting.RecipeSerializer;
+import net.minecraft.world.item.crafting.RecipeType;
 import net.minecraft.world.item.SwordItem;
 import net.minecraft.world.item.Tier;
 import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.entity.BlockEntity;
+import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockBehaviour;
-import space.nows.mcnows.mc.api.registry.BlockLogic;
 import space.nows.mcnows.mc.api.registry.BlockEntry;
+import space.nows.mcnows.mc.api.registry.BlockEntityFactory;
+import space.nows.mcnows.mc.api.registry.BlockLogic;
 import space.nows.mcnows.mc.api.registry.ItemLogic;
+import space.nows.mcnows.mc.api.registry.MenuFactory;
 import space.nows.mcnows.mc.api.registry.RegistryApi;
 
+import java.lang.reflect.Constructor;
+import java.lang.reflect.Proxy;
+import java.util.Arrays;
+import java.util.LinkedHashSet;
 import java.util.Optional;
+import java.util.Set;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
@@ -171,6 +187,48 @@ public final class RegistryApiImpl implements RegistryApi {
     }
 
     @Override
+    public <T extends BlockEntity> BlockEntityType<T> registerBlockEntity(
+            String id,
+            BlockEntityFactory<T> factory,
+            Block... validBlocks
+    ) {
+        return register(BuiltInRegistries.BLOCK_ENTITY_TYPE, id, createBlockEntityType(factory, validBlocks));
+    }
+
+    @Override
+    public <T extends AbstractContainerMenu> MenuType<T> registerMenu(
+            String id,
+            MenuFactory<T> factory
+    ) {
+        return register(BuiltInRegistries.MENU, id, createMenuType(factory));
+    }
+
+    @Override
+    public <T extends Recipe<?>> RecipeType<T> registerRecipeType(String id) {
+        ResourceLocation location = location(id);
+        return register(BuiltInRegistries.RECIPE_TYPE, id, new RecipeType<>() {
+            @Override
+            public String toString() {
+                return location.toString();
+            }
+        });
+    }
+
+    @Override
+    public <T extends Recipe<?>> RecipeSerializer<T> registerRecipeSerializer(
+            String id,
+            RecipeSerializer<T> serializer
+    ) {
+        return register(BuiltInRegistries.RECIPE_SERIALIZER, id, serializer);
+    }
+
+    @Override
+    public SoundEvent registerVariableRangeSound(String id) {
+        ResourceLocation location = location(id);
+        return register(BuiltInRegistries.SOUND_EVENT, id, SoundEvent.createVariableRangeEvent(location));
+    }
+
+    @Override
     public CreativeModeTab registerCreativeTab(
             String id,
             Component title,
@@ -202,6 +260,70 @@ public final class RegistryApiImpl implements RegistryApi {
 
     private static ResourceLocation location(String id) {
         return new ResourceLocation(id);
+    }
+
+    @SuppressWarnings("unchecked")
+    private static <T extends BlockEntity> BlockEntityType<T> createBlockEntityType(
+            BlockEntityFactory<T> factory,
+            Block... validBlocks
+    ) {
+        try {
+            Class<?> supplierType = Class.forName(BlockEntityType.class.getName() + "$BlockEntitySupplier");
+            Object supplier = Proxy.newProxyInstance(
+                    supplierType.getClassLoader(),
+                    new Class<?>[] { supplierType },
+                    (proxy, method, args) -> {
+                        if ("create".equals(method.getName())) {
+                            return factory.create(
+                                    (net.minecraft.core.BlockPos) args[0],
+                                    (net.minecraft.world.level.block.state.BlockState) args[1]);
+                        }
+                        return handleObjectMethod(proxy, method.getName(), args);
+                    });
+            Constructor<BlockEntityType> constructor = BlockEntityType.class
+                    .getConstructor(supplierType, Set.class, com.mojang.datafixers.types.Type.class);
+            return (BlockEntityType<T>) constructor.newInstance(
+                    supplier,
+                    new LinkedHashSet<>(Arrays.asList(validBlocks)),
+                    null);
+        }
+        catch (ReflectiveOperationException exception) {
+            throw new IllegalStateException("Unable to create block entity type", exception);
+        }
+    }
+
+    @SuppressWarnings("unchecked")
+    private static <T extends AbstractContainerMenu> MenuType<T> createMenuType(MenuFactory<T> factory) {
+        try {
+            Class<?> supplierType = Class.forName(MenuType.class.getName() + "$MenuSupplier");
+            Object supplier = Proxy.newProxyInstance(
+                    supplierType.getClassLoader(),
+                    new Class<?>[] { supplierType },
+                    (proxy, method, args) -> {
+                        if ("create".equals(method.getName())) {
+                            return factory.create(
+                                    (Integer) args[0],
+                                    (net.minecraft.world.entity.player.Inventory) args[1]);
+                        }
+                        return handleObjectMethod(proxy, method.getName(), args);
+                    });
+            Constructor<MenuType> constructor = MenuType.class
+                    .getDeclaredConstructor(supplierType, net.minecraft.world.flag.FeatureFlagSet.class);
+            constructor.setAccessible(true);
+            return (MenuType<T>) constructor.newInstance(supplier, FeatureFlags.VANILLA_SET);
+        }
+        catch (ReflectiveOperationException exception) {
+            throw new IllegalStateException("Unable to create menu type", exception);
+        }
+    }
+
+    private static Object handleObjectMethod(Object proxy, String methodName, Object[] args) {
+        return switch (methodName) {
+            case "toString" -> proxy.getClass().getName();
+            case "hashCode" -> System.identityHashCode(proxy);
+            case "equals" -> proxy == args[0];
+            default -> null;
+        };
     }
 
     private static <T> T apply(Function<T, T> configure, T value) {

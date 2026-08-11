@@ -10,6 +10,7 @@ import space.nows.mcnows.integration.logging.NowsLog;
 import space.nows.mcnows.integration.network.NetworkDirection;
 import space.nows.mcnows.integration.network.NowsNetworking;
 import space.nows.mcnows.mc.api.MinecraftApi;
+import space.nows.mcnows.mc.api.registry.RegistryApi;
 
 public final class ExampleMod implements ModInitializer {
     private static final Logger LOG = NowsLog.get(ExampleMod.class);
@@ -26,6 +27,8 @@ public final class ExampleMod implements ModInitializer {
         LOG.info("Nows Example: GEB = {}", context.service(GEB.class).getClass().getName());
         LOG.info("Nows Example: Minecraft registries API = {}",
                 MinecraftApi.registries(context).getClass().getName());
+        RegistryApi registries = MinecraftApi.registries(context);
+        registries.registerVariableRangeSound("nows_example:ping");
         LOG.info("Nows Example: Nows pack directory = {}",
                 MinecraftApi.dataPacks(context).nowsPackDirectory());
         MinecraftApi.configUi(context).register("nows_example", parent ->

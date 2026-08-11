@@ -127,6 +127,36 @@ BlockEntry block = registries.registerBlockWithItem(
         props -> props);
 ```
 
+For content-heavy mods, the registry adapter also covers the common objects that usually differ between Fabric, Forge and Minecraft versions:
+
+```java
+RecipeType<MyRecipe> type = registries.registerRecipeType("my_mod:oven_baking");
+RecipeSerializer<MyRecipe> serializer = registries.registerRecipeSerializer(
+        "my_mod:oven_baking",
+        MyRecipeSerializer.create());
+
+MenuType<MyMenu> menu = registries.registerMenu("my_mod:oven", MyMenu::new);
+BlockEntityType<MyBlockEntity> blockEntity = registries.registerBlockEntity(
+        "my_mod:oven",
+        MyBlockEntity::new,
+        ovenBlock);
+
+SoundEvent sound = registries.registerVariableRangeSound("my_mod:frying");
+```
+
+Mods with simple facing machine blocks can reuse Nows base block classes instead of copying the same state boilerplate across versions:
+
+```java
+import space.nows.mcnows.mc.api.registry.block.HorizontalBlock;
+import space.nows.mcnows.mc.api.registry.block.HorizontalLitBlock;
+
+Block pan = registries.registerCustomBlock("my_mod:pan",
+        props -> new HorizontalBlock(props.strength(1.5F)));
+Block stove = registries.registerCustomBlock("my_mod:stove",
+        props -> new HorizontalLitBlock(props.strength(3.5F).lightLevel(state ->
+                state.getValue(HorizontalLitBlock.LIT) ? 13 : 0)));
+```
+
 Existing registry entries can be queried with Optional-returning methods or fail-fast getters:
 
 ```java
