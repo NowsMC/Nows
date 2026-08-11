@@ -9,6 +9,7 @@ import space.nows.mcnows.mc.api.datapack.DataPacks;
 import space.nows.mcnows.mc.api.datagen.DataGen;
 import space.nows.mcnows.mc.api.event.GameEvents;
 import space.nows.mcnows.mc.api.nbt.NbtApi;
+import space.nows.mcnows.mc.api.recipe.RecipeViewerApi;
 import space.nows.mcnows.mc.api.registry.RegistryApi;
 import space.nows.mcnows.mc.api.text.TextApi;
 
@@ -38,6 +39,10 @@ public final class MinecraftApi {
 
     public static NbtApi nbt(NowsContext context) {
         return context.service(NbtApi.class);
+    }
+
+    public static RecipeViewerApi recipeViewer(NowsContext context) {
+        return context.service(RecipeViewerApi.class);
     }
 
     public static Ui ui(NowsContext context) {

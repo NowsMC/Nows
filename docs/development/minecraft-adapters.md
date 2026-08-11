@@ -154,6 +154,37 @@ String firstHistoryEntry = nbt.getString(nbt.getList(data, "history"), 0, "");
 
 This layer intentionally avoids item-stack custom data for now. Minecraft 1.20.5+ moved much of that surface toward data components, so stack data helpers should be designed separately.
 
+## Recipe Viewer Porting
+
+Mods that already expose recipes to JEI can move their category and layout logic to Nows without depending on JEI at compile time. The `RecipeViewerApi` stores neutral display metadata that can be bridged later to JEI, REI, EMI or a built-in viewer:
+
+```java
+RecipeViewerApi recipes = MinecraftApi.recipeViewer(context);
+
+recipes.registerCategory(
+        "my_mod:oven",
+        OvenRecipe.class,
+        text.translatable("recipe.my_mod.oven"),
+        new ItemStack(ovenBlock),
+        (recipe, layout) -> layout
+                .input(20, 18, recipe.ingredient())
+                .catalyst(20, 52, new ItemStack(ovenBlock))
+                .output(82, 18, recipe.result())
+                .build());
+
+recipes.registerCatalyst("my_mod:oven", new ItemStack(ovenBlock));
+recipes.registerRecipeTransfer("my_mod:oven", ovenMenu);
+```
+
+The porting shape mirrors the common JEI split:
+
+- `registerCategory` replaces the JEI category registration boundary while keeping the mod's own recipe class.
+- `RecipeViewerLayout.Builder` covers the usual `input`, `inputStack`, `inputStacks`, `output`, `outputStacks` and `catalyst` slots with stable x/y coordinates.
+- `registerCatalyst` records workstation or tool stacks that should open the category.
+- `registerRecipeTransfer` links a menu type to the category so a later viewer bridge can offer transfer buttons.
+
+Keep recipe lookup, validation and screen rendering in normal Minecraft code. This API is only the shared display contract, so the same mod code can run on Nows even when JEI is absent.
+
 For simple behavior, mods can attach small logic hooks:
 
 ```java
