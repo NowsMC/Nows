@@ -292,6 +292,8 @@ Datapack and command management are intentionally source registries first. Mods 
 
 The registry API is a portability convenience, not a full replacement for Minecraft APIs. Common convenience helpers may wrap simple behavior through small logic interfaces such as `ItemLogic` and `BlockLogic`. Full-detail Minecraft behavior must remain possible through custom `Item`/`Block` factories so mod authors can override version-specific methods directly when the basic helper layer is too small.
 
+Content-mod porting helpers belong in `RegistryApi` when they hide boring version drift without taking ownership of mod behavior. Recipe type/serializer, menu type, block entity type and sound-event registration are good examples: Fabric, Forge and newer Minecraft versions all express the registration boundary differently, but the mod's recipe matching, inventory logic, screen rendering and ticking should stay in the mod's own Minecraft subclasses. Small base blocks such as horizontal-facing and horizontal-lit blocks may live under the adapter API because they remove common state boilerplate while still exposing normal Minecraft block inheritance.
+
 `core` may own Minecraft-neutral developer conveniences such as side checks and per-mod config files. Runtime should register those core services before Minecraft-version adapter services.
 
 ## Logging policy

@@ -144,6 +144,56 @@ BlockEntityType<MyBlockEntity> blockEntity = registries.registerBlockEntity(
 SoundEvent sound = registries.registerVariableRangeSound("my_mod:frying");
 ```
 
+These helpers are aimed at the boring registration layer that changes shape across loaders and Minecraft versions:
+
+- `registerRecipeType` creates the named recipe type and gives it a stable string id for recipe lookup and debugging.
+- `registerRecipeSerializer` registers your custom serializer object without making the mod repeat the raw registry call in every target.
+- `registerMenu` registers a simple two-argument `AbstractContainerMenu` factory, the common pattern for inventory/container menus.
+- `registerBlockEntity` registers a block entity type from a Nows `BlockEntityFactory`, so mods do not need to depend on Minecraft's version-specific builder or supplier names.
+- `registerVariableRangeSound` registers a regular variable-range `SoundEvent`, matching the usual custom sound event pattern.
+
+For item-only or food-heavy mods, keep the mod data in your own constants and call the item helpers in a loop. This is the easiest path for mods that mainly differ by food values, stack sizes, creative tabs or generated assets:
+
+```java
+Map<String, Item> foods = new LinkedHashMap<>();
+
+for (FoodEntry entry : FoodEntries.ALL) {
+    Item item = registries.registerFood(
+            "my_mod:" + entry.id(),
+            new FoodProperties.Builder()
+                    .nutrition(entry.nutrition())
+                    .saturationModifier(entry.saturation())
+                    .build(),
+            props -> props.stacksTo(entry.maxStackSize()));
+    foods.put(entry.id(), item);
+}
+
+registries.registerCreativeTab(
+        "my_mod:foods",
+        Component.translatable("itemGroup.my_mod.foods"),
+        () -> new ItemStack(foods.get("complete_breakfast")),
+        (parameters, output) -> foods.values().forEach(output::accept));
+```
+
+For machine or workstation mods, keep the machine behavior in normal Minecraft subclasses and use Nows only for the stable registration boundary. A cooking block entity can still own its inventory, ticking, recipe lookup, save/load and experience logic directly. Nows only removes the repeated registry wiring:
+
+```java
+Block ovenBlock = registries.registerCustomBlock("my_mod:oven",
+        props -> new OvenBlock(props.strength(3.5F)));
+BlockItem ovenItem = registries.registerBlockItem("my_mod:oven", ovenBlock);
+
+RecipeType<OvenRecipe> ovenRecipes = registries.registerRecipeType("my_mod:oven");
+RecipeSerializer<OvenRecipe> ovenSerializer = registries.registerRecipeSerializer(
+        "my_mod:oven",
+        OvenRecipeSerializer.create());
+
+BlockEntityType<OvenBlockEntity> ovenEntity = registries.registerBlockEntity(
+        "my_mod:oven",
+        OvenBlockEntity::new,
+        ovenBlock);
+MenuType<OvenMenu> ovenMenu = registries.registerMenu("my_mod:oven", OvenMenu::new);
+```
+
 Mods with simple facing machine blocks can reuse Nows base block classes instead of copying the same state boilerplate across versions:
 
 ```java
@@ -156,6 +206,8 @@ Block stove = registries.registerCustomBlock("my_mod:stove",
         props -> new HorizontalLitBlock(props.strength(3.5F).lightLevel(state ->
                 state.getValue(HorizontalLitBlock.LIT) ? 13 : 0)));
 ```
+
+`HorizontalBlock` adds the `HORIZONTAL_FACING` property, placement direction, rotation and mirror behavior. `HorizontalLitBlock` adds the same facing behavior plus Minecraft's `LIT` property. They are useful for simple props, stoves, pans, ovens and other workstation blocks. If a block has custom voxel shapes, waterlogging, redstone behavior, menu opening, ticking or entity interaction, subclass one of these or use `registerCustomBlock` with your own Minecraft block class.
 
 Existing registry entries can be queried with Optional-returning methods or fail-fast getters:
 
