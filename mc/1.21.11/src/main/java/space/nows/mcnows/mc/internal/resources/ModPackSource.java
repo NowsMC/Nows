@@ -12,6 +12,7 @@ import net.minecraft.world.flag.FeatureFlagSet;
 import space.nows.mcnows.core.mod.ModContainer;
 
 import java.io.IOException;
+import java.net.URL;
 import java.nio.file.Path;
 import java.util.Collections;
 import java.util.LinkedHashSet;
@@ -41,7 +42,7 @@ public final class ModPackSource implements RepositorySource {
             RepositorySource[] originalSources,
             List<ModContainer> mods) {
         int resourceMods = countResourceMods(mods);
-        Path loaderResources = ownJar();
+        Path loaderResources = ownResources();
         boolean hasLoaderResources = loaderResources != null && hasResources(loaderResources);
         if ((resourceMods == 0 && !hasLoaderResources) || !isClientResourceRepository(originalSources)) {
             return sources;
@@ -116,18 +117,43 @@ public final class ModPackSource implements RepositorySource {
         }
     }
 
-    private static Path ownJar() {
+    private static Path ownResources() {
         try {
-            return Path.of(ModPackSource.class.getProtectionDomain().getCodeSource().getLocation().toURI())
+            Path codeSource = Path.of(ModPackSource.class.getProtectionDomain().getCodeSource().getLocation().toURI())
                     .toAbsolutePath()
                     .normalize();
+            if (hasResources(codeSource)) {
+                return codeSource;
+            }
+        } catch (Exception e) {
+            // Fall through to the classpath resource lookup used by dev runs.
+        }
+        try {
+            URL resource = ModPackSource.class.getClassLoader()
+                    .getResource("assets/nows/textures/gui/mod_menu_icon.png");
+            if (resource == null || !"file".equals(resource.getProtocol())) {
+                return null;
+            }
+            return stripResourcePath(Path.of(resource.toURI()), 5);
         } catch (Exception e) {
             return null;
         }
     }
 
-    private static boolean hasResources(Path jar) {
-        try (ZipFile zip = new ZipFile(jar.toFile())) {
+    private static Path stripResourcePath(Path resource, int segments) {
+        Path root = resource;
+        for (int i = 0; i < segments && root != null; i++) {
+            root = root.getParent();
+        }
+        return root == null ? null : root.toAbsolutePath().normalize();
+    }
+
+    private static boolean hasResources(Path root) {
+        if (java.nio.file.Files.isDirectory(root)) {
+            return java.nio.file.Files.isDirectory(root.resolve("assets"))
+                    || java.nio.file.Files.isDirectory(root.resolve("data"));
+        }
+        try (ZipFile zip = new ZipFile(root.toFile())) {
             return zip.stream().anyMatch(entry -> {
                 String name = entry.getName();
                 return !entry.isDirectory() && (name.startsWith("assets/") || name.startsWith("data/"));
