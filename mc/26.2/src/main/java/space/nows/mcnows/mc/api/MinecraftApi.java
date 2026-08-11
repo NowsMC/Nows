@@ -2,6 +2,7 @@ package space.nows.mcnows.mc.api;
 
 import space.nows.mcnows.api.NowsContext;
 import space.nows.mcnows.mc.api.client.config.ConfigUi;
+import space.nows.mcnows.mc.api.client.keybind.KeybindApi;
 import space.nows.mcnows.mc.api.client.player.PlayerApi;
 import space.nows.mcnows.mc.api.client.ui.Ui;
 import space.nows.mcnows.mc.api.command.CommandApi;
@@ -51,6 +52,10 @@ public final class MinecraftApi {
 
     public static ConfigUi configUi(NowsContext context) {
         return context.service(ConfigUi.class);
+    }
+
+    public static KeybindApi keybinds(NowsContext context) {
+        return context.service(KeybindApi.class);
     }
 
     public static GameEvents events(NowsContext context) {

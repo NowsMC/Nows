@@ -3,6 +3,7 @@ package space.nows.mcnows.mc.internal;
 import space.nows.mcnows.api.NowsServices;
 import space.nows.mcnows.api.NowsContext;
 import space.nows.mcnows.mc.api.client.config.ConfigUi;
+import space.nows.mcnows.mc.api.client.keybind.KeybindApi;
 import space.nows.mcnows.mc.api.client.player.PlayerApi;
 import space.nows.mcnows.mc.api.client.ui.Ui;
 import space.nows.mcnows.mc.api.command.CommandApi;
@@ -14,6 +15,7 @@ import space.nows.mcnows.mc.api.recipe.RecipeViewerApi;
 import space.nows.mcnows.mc.api.registry.RegistryApi;
 import space.nows.mcnows.mc.api.text.TextApi;
 import space.nows.mcnows.mc.internal.client.config.ConfigUiImpl;
+import space.nows.mcnows.mc.internal.client.keybind.KeybindApiImpl;
 import space.nows.mcnows.mc.internal.client.player.PlayerApiImpl;
 import space.nows.mcnows.mc.internal.client.LoaderMenu;
 import space.nows.mcnows.mc.internal.client.UiImpl;
@@ -42,6 +44,7 @@ public final class MinecraftIntegration {
         services.register(RecipeViewerApi.class, new RecipeViewerApiImpl());
         services.register(Ui.class, UiImpl.INSTANCE);
         services.register(ConfigUi.class, new ConfigUiImpl());
+        services.register(KeybindApi.class, new KeybindApiImpl());
         services.register(GameEvents.class, GameEventsImpl.INSTANCE);
         services.register(PlayerApi.class, new PlayerApiImpl());
     }

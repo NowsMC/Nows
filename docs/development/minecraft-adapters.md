@@ -133,6 +133,39 @@ Component title = text.translatable("screen.my_mod.settings");
 Component help = text.literal("Hold ").append(text.keybind("key.sneak"));
 ```
 
+## Keybinds
+
+Client mods can register keybind categories and key mappings through Nows instead of wiring each Minecraft version by hand:
+
+```java
+KeybindApi keys = MinecraftApi.keybinds(context);
+
+keys.registerCategory("key.categories.my_mod");
+
+keys.registerKeyboard(
+        "key.my_mod.open_oven",
+        "key.categories.my_mod",
+        GLFW.GLFW_KEY_O,
+        () -> MyScreens.openOven(context));
+```
+
+For actions that should run while the key is held, keep the returned mapping and use the normal client tick hook:
+
+```java
+KeybindRegistration boost = keys.registerKeyboard(
+        "key.my_mod.boost",
+        "key.categories.my_mod",
+        GLFW.GLFW_KEY_B);
+
+MinecraftApi.events(context).clientTick(client -> {
+    if (boost.isDown() && client.player != null) {
+        client.player.setDeltaMovement(client.player.getDeltaMovement().multiply(1.2D, 1.0D, 1.2D));
+    }
+});
+```
+
+The default category is `key.categories.nows`. Key ids and categories should be translation keys so Minecraft's Controls screen can show localized names.
+
 NBT helpers cover common compound/list reads and writes with explicit fallbacks. The returned values are still Minecraft's real NBT classes, so mods can drop down to direct APIs when needed:
 
 ```java
