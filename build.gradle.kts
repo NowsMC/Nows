@@ -259,14 +259,13 @@ val checkWorkspacePrerequisites by tasks.registering {
         val requiredPaths = listOf(
             "repos/NowsInstaller/build.gradle.kts",
             "repos/NowsGradlePlugin/build.gradle.kts",
-            "repos/NowsApiMod/build.gradle.kts",
-            "repos/NowsWeb/package.json"
+            "repos/NowsApiMod/build.gradle.kts"
         )
         val missing = requiredPaths.filterNot { layout.projectDirectory.file(it).asFile.exists() }
         if (missing.isNotEmpty()) {
             throw GradleException(
                 "Missing workspace paths: ${missing.joinToString()}. "
-                    + "Run: git submodule update --init --recursive"
+                    + "Run: ./gradlew syncSubmodules"
             )
         }
         if (!commandSucceeds("gpg", "--version")) {
@@ -277,18 +276,25 @@ val checkWorkspacePrerequisites by tasks.registering {
         if (!hasSecretKey) {
             throw GradleException("No usable GPG secret key found. Create/import a signing key before publishing Maven artifacts.")
         }
-        if (!commandSucceeds("npm", "--version")) {
-            throw GradleException("Missing npm. It is required to build repos/NowsWeb from a fresh workspace.")
-        }
     }
 }
 
 val prepareNowsWebDependencies by tasks.registering(Exec::class) {
     group = "nows"
     description = "Installs NowsWeb dependencies from package-lock.json."
-    dependsOn(checkWorkspacePrerequisites)
     workingDir = nowsWebDir.asFile
     commandLine("npm", "ci")
+    doFirst {
+        if (!nowsWebDir.file("package.json").asFile.exists()) {
+            throw GradleException(
+                "Missing repos/NowsWeb/package.json. "
+                    + "NowsWeb is optional/private; check it out separately before running buildNowsWeb."
+            )
+        }
+        if (!commandSucceeds("npm", "--version")) {
+            throw GradleException("Missing npm. It is required to build repos/NowsWeb.")
+        }
+    }
     inputs.files(
         nowsWebDir.file("package.json"),
         nowsWebDir.file("package-lock.json")
@@ -315,8 +321,18 @@ val buildNowsWeb by tasks.registering(Exec::class) {
 
 val syncSubmodules by tasks.registering(Exec::class) {
     group = "nows"
-    description = "Initializes and updates git submodules needed by the workspace."
-    commandLine("git", "submodule", "update", "--init", "--recursive")
+    description = "Initializes and updates required git submodules needed by the workspace."
+    commandLine(
+        "git",
+        "submodule",
+        "update",
+        "--init",
+        "--recursive",
+        "repos/NowsInstaller",
+        "repos/NowsGradlePlugin",
+        "repos/NowsApiMod",
+        "example-mod"
+    )
     inputs.file(layout.projectDirectory.file(".gitmodules"))
 }
 
@@ -547,7 +563,6 @@ tasks.register("prepareWorkspace") {
         checkWorkspacePrerequisites,
         "versionReport",
         "dist",
-        buildNowsWeb,
         publishLayout
     )
 
@@ -555,12 +570,13 @@ tasks.register("prepareWorkspace") {
         println("Nows workspace is prepared.")
         println("Release layout: ${publishLayoutDir.dir("releases").asFile}")
         println("Developer Maven layout: ${publishingMavenDir.asFile}")
-        println("NowsWeb dist: ${nowsWebDir.dir("dist").asFile}")
+        if (nowsWebDir.file("package.json").asFile.exists()) {
+            println("Optional NowsWeb checkout: ${nowsWebDir.asFile}")
+        }
     }
 }
 
 tasks.named("dist").configure { mustRunAfter(checkWorkspacePrerequisites) }
-buildNowsWeb.configure { mustRunAfter(checkWorkspacePrerequisites) }
 publishLayout.configure { mustRunAfter(checkWorkspacePrerequisites) }
 
 gradle.projectsEvaluated {

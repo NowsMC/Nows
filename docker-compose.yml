@@ -3,7 +3,6 @@ x-nows-volumes: &nows-volumes
   - nows-gradle-cache:/workspace/.gradle-docker
   - nows-minecraft-cache:/workspace/.nows
   - nows-npm-cache:/workspace/.npm
-  - nows-web-node-modules:/workspace/repos/NowsWeb/node_modules
 
 x-nows-common: &nows-common
   build:
@@ -20,7 +19,7 @@ services:
   nows-build:
     <<: *nows-common
     volumes: *nows-volumes
-    command: ["./gradlew", "--no-parallel", "--max-workers=1", "dist", "buildNowsWeb"]
+    command: ["./gradlew", "--no-parallel", "--max-workers=1", "dist"]
 
   nows-release:
     <<: *nows-common
@@ -29,7 +28,6 @@ services:
       - nows-gradle-cache:/workspace/.gradle-docker
       - nows-minecraft-cache:/workspace/.nows
       - nows-npm-cache:/workspace/.npm
-      - nows-web-node-modules:/workspace/repos/NowsWeb/node_modules
       - ${HOME}/.gnupg:/root/.gnupg
     command: ["./gradlew", "--no-parallel", "--max-workers=1", "publishLayout"]
 
@@ -43,7 +41,10 @@ services:
   nows-web:
     <<: *nows-common
     working_dir: /workspace/repos/NowsWeb
-    volumes: *nows-volumes
+    volumes:
+      - .:/workspace
+      - nows-npm-cache:/workspace/.npm
+      - nows-web-node-modules:/workspace/repos/NowsWeb/node_modules
     ports:
       - "5173:5173"
     command: ["bash", "-lc", "npm ci && npm run dev -- --host 0.0.0.0"]

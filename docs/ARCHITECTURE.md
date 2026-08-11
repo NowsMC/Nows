@@ -55,7 +55,7 @@ The installer should create and log both directories. Runtime logs should show `
 | `repos/NowsInstaller/` | user-facing launcher installation/update tooling and dependency delivery | high |
 | `repos/NowsGradlePlugin/` | developer tooling, Minecraft dependency preparation, Mojang mappings, remapping when needed and Gradle integration | high |
 | `repos/NowsApiMod/` | optional companion mod and fixture for Gradle plugin, KDL metadata, Mixin and version-specific API adapters; separate repository/submodule | high |
-| `repos/NowsWeb/` | web surface for docs, downloads and release metadata; kept as a git submodule with separate frontend tooling | high |
+| `repos/NowsWeb/` | optional private submodule for docs, downloads and release metadata; separate frontend tooling | low/optional |
 | `example-mod/` | local example and smoke-test mod | medium |
 
 `repos/*` projects are tooling, distribution or companion-mod surfaces. They are intentionally outside the runtime loader architecture and must not push policy back into `nows-core`.

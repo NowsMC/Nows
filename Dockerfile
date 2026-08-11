@@ -34,4 +34,4 @@ RUN chmod +x ./gradlew
 
 COPY . .
 
-CMD ["./gradlew", "--no-parallel", "--max-workers=1", "dist", "buildNowsWeb"]
+CMD ["./gradlew", "--no-parallel", "--max-workers=1", "dist"]

@@ -52,7 +52,7 @@ Build the user-facing UI installer, CLI installer and offline installer:
 ./gradlew :repos:NowsInstaller:assemble
 ```
 
-Build distribution artifacts and the web surface inside Docker. This uses one Gradle worker by default and stores Gradle, npm and Minecraft caches in Docker volumes:
+Build distribution artifacts inside Docker. This uses one Gradle worker by default and stores Gradle and Minecraft caches in Docker volumes:
 
 ```bash
 docker compose run --rm nows-build
@@ -70,9 +70,10 @@ Open a container shell with the same toolchain and caches:
 docker compose run --rm nows-shell
 ```
 
-Run NowsWeb through Vite:
+Run NowsWeb through Vite when the optional private checkout exists at `repos/NowsWeb`:
 
 ```bash
+git submodule update --init repos/NowsWeb
 docker compose up nows-web
 ```
 

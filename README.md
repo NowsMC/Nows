@@ -40,7 +40,7 @@ Nows/
 │  ├─ NowsInstaller/             installer
 │  ├─ NowsGradlePlugin/          mod development Gradle plugin
 │  ├─ NowsApiMod/                optional companion/API mod
-│  └─ NowsWeb/                   website/download surface
+│  └─ NowsWeb/                   optional private website submodule
 └─ example-mod/                  local example mod
 ```
 
@@ -89,6 +89,7 @@ docker compose run --rm nows-release
 Run the web surface locally in Docker:
 
 ```bash
+git submodule update --init repos/NowsWeb
 docker compose up nows-web
 ```
 
