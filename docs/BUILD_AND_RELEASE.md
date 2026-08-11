@@ -133,7 +133,15 @@ Nows also scans this optional profile overlay:
 
 ## Offline installer
 
-The published offline installer is version-specific because it embeds `install.properties`, Nows modules and `nows-mc-<minecraft-version>` for one Minecraft version.
+`publishLayout` stages release folders for every supported `mc/<minecraft-version>` adapter:
+
+```text
+.publishing/releases/nows/<nows-version>/<minecraft-version>/
+```
+
+Each staged version contains the generic UI/CLI installers, libraries, a processed `install.properties` and `SHA256SUMS`.
+
+The published offline installer is still version-specific because it embeds `install.properties`, Nows modules and `nows-mc-<minecraft-version>` for one Minecraft version. The normal `publishLayout` run copies the offline installer only for the active `minecraft_version` from `gradle.properties`.
 
 Expected output:
 

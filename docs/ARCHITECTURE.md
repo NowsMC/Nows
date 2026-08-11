@@ -170,16 +170,16 @@ Use this from a fresh clone intended for local testing:
 ./gradlew prepareWorkspace
 ```
 
-Use this to stage release files for the default Minecraft target from `gradle.properties`:
+Use this to stage release files for every supported `mc/<minecraft-version>` adapter:
 
 ```bash
 ./gradlew publishLayout
 ```
 
-Use this to stage a different supported Minecraft target:
+`publishLayout` writes one folder per supported game version:
 
-```bash
-./gradlew -Pminecraft_version=<minecraft-version> publishLayout
+```text
+.publishing/releases/nows/<nows-version>/<minecraft-version>/
 ```
 
 Use this to bump the coordinated Nows version:
@@ -194,7 +194,7 @@ Use this to inspect the coordinated version state:
 ./gradlew versionReport
 ```
 
-After `publishLayout`, the offline installer for the selected release is expected at:
+After `publishLayout`, the generic UI/CLI installers and processed `install.properties` are staged for every supported version. The offline installer remains tied to the active `minecraft_version` because it embeds one processed manifest and one `nows-mc-<minecraft-version>` adapter. For the selected release it is expected at:
 
 ```text
 .publishing/releases/nows/<nows-version>/<minecraft-version>/installers/NowsInstaller-offline-<nows-version>-mc-<minecraft-version>.jar

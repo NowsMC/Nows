@@ -46,6 +46,10 @@ val mavenPublishedProjectPaths = setOf(
     ":runtime"
 )
 
+val publishedMinecraftVersions = mavenPublishedProjectPaths.mapNotNull { projectPath ->
+    if (projectPath.startsWith(":mc:")) projectPath.removePrefix(":mc:") else null
+}
+
 fun publicArtifactId(projectPath: String): String = when (projectPath) {
     ":core" -> "nows-core"
     ":minecraft" -> "nows-minecraft"
@@ -425,11 +429,15 @@ val publishLayout by tasks.registering {
     inputs.file("repos/NowsInstaller/install.properties.template")
     inputs.property("nowsVersion", nowsVersion)
     inputs.property("minecraftVersion", minecraftVersion)
+    inputs.property("publishedMinecraftVersions", publishedMinecraftVersions.joinToString(","))
     inputs.property("nowsReleaseBaseUrl", nowsReleaseBaseUrl)
     inputs.files(provider {
-        publishedModuleArtifactsFor(minecraftVersion.get()).keys.map { projectPath ->
-            project(projectPath).tasks.named<Jar>("jar").get().archiveFile.get().asFile
-        }
+        publishedMinecraftVersions
+            .flatMap { minecraft -> publishedModuleArtifactsFor(minecraft).keys }
+            .distinct()
+            .map { projectPath ->
+                project(projectPath).tasks.named<Jar>("jar").get().archiveFile.get().asFile
+            }
     })
     inputs.files(provider {
         val installerProject = project(":repos:NowsInstaller")
@@ -448,103 +456,107 @@ val publishLayout by tasks.registering {
 
     doLast {
         val nows = nowsVersion.get()
-        val minecraft = minecraftVersion.get()
-        val releaseRoot = publishLayoutDir.dir("releases/nows/$nows/$minecraft").asFile
-        val librariesRoot = releaseRoot.resolve("libraries")
-        val installersRoot = releaseRoot.resolve("installers")
-        val modsRoot = releaseRoot.resolve("mods")
-        val toolingRoot = releaseRoot.resolve("tooling")
-        val artifactFiles = linkedMapOf<String, File>()
-
-        delete(releaseRoot)
-        librariesRoot.mkdirs()
-        installersRoot.mkdirs()
-        modsRoot.mkdirs()
-        toolingRoot.mkdirs()
-
-        val moduleArtifacts = publishedModuleArtifactsFor(minecraft)
-        moduleArtifacts.forEach { (projectPath, relativePath) ->
-            val source = project(projectPath).tasks.named<Jar>("jar").get().archiveFile.get().asFile
-            val target = librariesRoot.resolve(relativePath)
-            target.parentFile.mkdirs()
-            source.copyTo(target, overwrite = true)
-            artifactFiles[relativePath] = target
-        }
-
+        val activeMinecraft = minecraftVersion.get()
         val installerProject = project(":repos:NowsInstaller")
         val offlineMavenArtifacts = installerProject.configurations.getByName("offlineMavenArtifacts").resolve()
-        offlineMavenArtifacts.forEach { source ->
-            val relativePath = publishedMavenArtifactPaths[source.name]
-                ?: throw GradleException("No publish path registered for ${source.name}")
-            val target = librariesRoot.resolve(relativePath)
-            target.parentFile.mkdirs()
-            source.copyTo(target, overwrite = true)
-            artifactFiles[relativePath] = target
-        }
-
         val cliInstaller = installerProject.tasks.named<Jar>("jar").get().archiveFile.get().asFile
-        cliInstaller.copyTo(installersRoot.resolve(cliInstaller.name), overwrite = true)
         val uiInstaller = installerProject.tasks.named<Jar>("guiJar").get().archiveFile.get().asFile
-        uiInstaller.copyTo(installersRoot.resolve(uiInstaller.name), overwrite = true)
         val offlineInstaller = installerProject.tasks.named<Jar>("offlineJar").get().archiveFile.get().asFile
-        offlineInstaller.copyTo(
-            installersRoot.resolve("NowsInstaller-offline-$nows-mc-$minecraft.jar"),
-            overwrite = true
-        )
-
         val apiMod = project(":repos:NowsApiMod").tasks.named<Jar>("jar").get().archiveFile.get().asFile
-        apiMod.copyTo(modsRoot.resolve(apiMod.name), overwrite = true)
         val gradlePlugin = project(":repos:NowsGradlePlugin").tasks.named<Jar>("jar").get().archiveFile.get().asFile
-        gradlePlugin.copyTo(toolingRoot.resolve(gradlePlugin.name), overwrite = true)
 
-        val template = java.util.Properties()
-        file("repos/NowsInstaller/install.properties.template").inputStream().use(template::load)
-        template["nows.version"] = nows
-        template["minecraft.version"] = minecraft
-        val releaseBaseUrl = "${nowsReleaseBaseUrl.get()}/$nows/$minecraft"
-        template["releaseBaseUrl"] = releaseBaseUrl
-        moduleArtifacts.forEach { (projectPath, relativePath) ->
-            val index = publishedModuleArtifactIndex(projectPath, minecraft) ?: return@forEach
-            val artifactId = publishedModuleArtifactId(projectPath, minecraft)
-            template["artifact.$index.coordinate"] = "space.nows.mcnows:$artifactId:$nows"
-            template["artifact.$index.path"] = relativePath
-        }
-        val count = template.getProperty("artifact.count").toInt()
-        for (index in 0 until count) {
-            val prefix = "artifact.$index."
-            val source = template.getProperty(prefix + "source", "internet")
-            if (source == "embedded") {
-                continue
+        publishedMinecraftVersions.forEach { minecraft ->
+            val releaseRoot = publishLayoutDir.dir("releases/nows/$nows/$minecraft").asFile
+            val librariesRoot = releaseRoot.resolve("libraries")
+            val installersRoot = releaseRoot.resolve("installers")
+            val modsRoot = releaseRoot.resolve("mods")
+            val toolingRoot = releaseRoot.resolve("tooling")
+            val artifactFiles = linkedMapOf<String, File>()
+
+            delete(releaseRoot)
+            librariesRoot.mkdirs()
+            installersRoot.mkdirs()
+            toolingRoot.mkdirs()
+
+            val moduleArtifacts = publishedModuleArtifactsFor(minecraft)
+            moduleArtifacts.forEach { (projectPath, relativePath) ->
+                val source = project(projectPath).tasks.named<Jar>("jar").get().archiveFile.get().asFile
+                val target = librariesRoot.resolve(relativePath)
+                target.parentFile.mkdirs()
+                source.copyTo(target, overwrite = true)
+                artifactFiles[relativePath] = target
             }
-            val relativePath = template.getProperty(prefix + "path")
-            val artifactFile = artifactFiles[relativePath]
-                ?: throw GradleException("No staged artifact for $relativePath")
-            template[prefix + "url"] = "$releaseBaseUrl/libraries/$relativePath"
-            template[prefix + "sha256"] = sha256(artifactFile)
-        }
 
-        releaseRoot.resolve("install.properties").bufferedWriter().use { writer ->
-            writer.appendLine("# Generated by ./gradlew publishLayout")
-            writer.appendLine("# Upload this directory to $releaseBaseUrl")
-            template.stringPropertyNames().sortedWith(compareBy<String> {
-                it.substringBefore('.')
-            }.thenBy { key ->
-                key.split('.').getOrNull(1)?.toIntOrNull() ?: -1
-            }.thenBy { it }).forEach { key ->
-                writer.append(key).append('=').append(template.getProperty(key)).appendLine()
+            offlineMavenArtifacts.forEach { source ->
+                val relativePath = publishedMavenArtifactPaths[source.name]
+                    ?: throw GradleException("No publish path registered for ${source.name}")
+                val target = librariesRoot.resolve(relativePath)
+                target.parentFile.mkdirs()
+                source.copyTo(target, overwrite = true)
+                artifactFiles[relativePath] = target
             }
-        }
 
-        releaseRoot.resolve("SHA256SUMS").bufferedWriter().use { writer ->
-            releaseRoot.walkTopDown()
-                .filter { it.isFile && it.name != "SHA256SUMS" }
-                .sortedBy { it.relativeTo(releaseRoot).invariantSeparatorsPath }
-                .forEach { file ->
-                    writer.append(sha256(file))
-                        .append("  ")
-                        .append(file.relativeTo(releaseRoot).invariantSeparatorsPath)
-                        .appendLine()
+            cliInstaller.copyTo(installersRoot.resolve(cliInstaller.name), overwrite = true)
+            uiInstaller.copyTo(installersRoot.resolve(uiInstaller.name), overwrite = true)
+            if (minecraft == activeMinecraft) {
+                offlineInstaller.copyTo(
+                    installersRoot.resolve("NowsInstaller-offline-$nows-mc-$minecraft.jar"),
+                    overwrite = true
+                )
+                modsRoot.mkdirs()
+                apiMod.copyTo(modsRoot.resolve(apiMod.name), overwrite = true)
+            }
+            gradlePlugin.copyTo(toolingRoot.resolve(gradlePlugin.name), overwrite = true)
+
+            val template = java.util.Properties()
+            file("repos/NowsInstaller/install.properties.template").inputStream().use(template::load)
+            template["nows.version"] = nows
+            template["minecraft.version"] = minecraft
+            val releaseBaseUrl = "${nowsReleaseBaseUrl.get()}/$nows/$minecraft"
+            template["releaseBaseUrl"] = releaseBaseUrl
+            moduleArtifacts.forEach { (projectPath, relativePath) ->
+                val index = publishedModuleArtifactIndex(projectPath, minecraft) ?: return@forEach
+                val artifactId = publishedModuleArtifactId(projectPath, minecraft)
+                template["artifact.$index.coordinate"] = "space.nows.mcnows:$artifactId:$nows"
+                template["artifact.$index.path"] = relativePath
+            }
+            val count = template.getProperty("artifact.count").toInt()
+            for (index in 0 until count) {
+                val prefix = "artifact.$index."
+                val source = template.getProperty(prefix + "source", "internet")
+                if (source == "embedded") {
+                    continue
                 }
+                val relativePath = template.getProperty(prefix + "path")
+                val artifactFile = artifactFiles[relativePath]
+                    ?: throw GradleException("No staged artifact for $relativePath")
+                template[prefix + "url"] = "$releaseBaseUrl/libraries/$relativePath"
+                template[prefix + "sha256"] = sha256(artifactFile)
+            }
+
+            releaseRoot.resolve("install.properties").bufferedWriter().use { writer ->
+                writer.appendLine("# Generated by ./gradlew publishLayout")
+                writer.appendLine("# Upload this directory to $releaseBaseUrl")
+                template.stringPropertyNames().sortedWith(compareBy<String> {
+                    it.substringBefore('.')
+                }.thenBy { key ->
+                    key.split('.').getOrNull(1)?.toIntOrNull() ?: -1
+                }.thenBy { it }).forEach { key ->
+                    writer.append(key).append('=').append(template.getProperty(key)).appendLine()
+                }
+            }
+
+            releaseRoot.resolve("SHA256SUMS").bufferedWriter().use { writer ->
+                releaseRoot.walkTopDown()
+                    .filter { it.isFile && it.name != "SHA256SUMS" }
+                    .sortedBy { it.relativeTo(releaseRoot).invariantSeparatorsPath }
+                    .forEach { file ->
+                        writer.append(sha256(file))
+                            .append("  ")
+                            .append(file.relativeTo(releaseRoot).invariantSeparatorsPath)
+                            .appendLine()
+                    }
+            }
         }
     }
 }
