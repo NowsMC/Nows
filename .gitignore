@@ -10,3 +10,4 @@ build/
 # Never commit GitHub Packages credentials or copied release payloads.
 local.properties
 repos/NowsInstaller/vendor/
+.aider*
