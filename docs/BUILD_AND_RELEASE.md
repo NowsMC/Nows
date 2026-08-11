@@ -52,10 +52,28 @@ Build the user-facing UI installer, CLI installer and offline installer:
 ./gradlew :repos:NowsInstaller:assemble
 ```
 
-Build the same upload layout inside Docker:
+Build distribution artifacts and the web surface inside Docker. This uses one Gradle worker by default and stores Gradle, npm and Minecraft caches in Docker volumes:
 
 ```bash
 docker compose run --rm nows-build
+```
+
+Build the signed upload layout inside Docker. This service mounts `${HOME}/.gnupg` so `publishMavenLayout` can use the normal GPG signing key:
+
+```bash
+docker compose run --rm nows-release
+```
+
+Open a container shell with the same toolchain and caches:
+
+```bash
+docker compose run --rm nows-shell
+```
+
+Run NowsWeb through Vite:
+
+```bash
+docker compose up nows-web
 ```
 
 ## Version management

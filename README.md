@@ -74,6 +74,24 @@ Stage release files for the default Minecraft target:
 ./gradlew publishLayout
 ```
 
+Docker build, with Gradle/npm/Minecraft caches kept in Docker volumes:
+
+```bash
+docker compose run --rm nows-build
+```
+
+For the signed release upload layout, use:
+
+```bash
+docker compose run --rm nows-release
+```
+
+Run the web surface locally in Docker:
+
+```bash
+docker compose up nows-web
+```
+
 Build/test the Gradle plugin:
 
 ```bash

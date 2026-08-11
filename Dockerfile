@@ -1,12 +1,31 @@
+FROM node:24-bookworm-slim AS node
+
 FROM eclipse-temurin:25-jdk
 
 RUN apt-get update \
-    && apt-get install -y --no-install-recommends git openssh-client ca-certificates bash \
+    && apt-get install -y --no-install-recommends \
+        bash \
+        ca-certificates \
+        curl \
+        dirmngr \
+        git \
+        gnupg \
+        openssh-client \
+        unzip \
+        zip \
     && rm -rf /var/lib/apt/lists/*
+
+COPY --from=node /usr/local/bin/node /usr/local/bin/node
+COPY --from=node /usr/local/bin/npm /usr/local/bin/npm
+COPY --from=node /usr/local/bin/npx /usr/local/bin/npx
+COPY --from=node /usr/local/bin/corepack /usr/local/bin/corepack
+COPY --from=node /usr/local/lib/node_modules /usr/local/lib/node_modules
 
 WORKDIR /workspace
 
 ENV GRADLE_USER_HOME=/workspace/.gradle-docker
+ENV npm_config_cache=/workspace/.npm
+ENV CI=true
 
 COPY gradlew gradlew.bat settings.gradle.kts build.gradle.kts gradle.properties ./
 COPY gradle ./gradle
@@ -15,4 +34,4 @@ RUN chmod +x ./gradlew
 
 COPY . .
 
-CMD ["./gradlew", "publishLayout"]
+CMD ["./gradlew", "--no-parallel", "--max-workers=1", "dist", "buildNowsWeb"]

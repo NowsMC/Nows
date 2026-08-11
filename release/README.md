@@ -9,6 +9,12 @@ Before publishing, fill SHA-256 fields for every artifact. `com.github.kdl-org:k
 
 Use `./gradlew publishLayout` to build `.publishing/releases/nows/<nows-version>/<minecraft-version>/` and `.publishing/maven/`.
 
+Docker release build:
+
+```bash
+docker compose run --rm nows-release
+```
+
 For a fresh clone intended for local testing, use the broader setup task:
 
 ```bash

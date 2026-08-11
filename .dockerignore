@@ -1,8 +1,10 @@
 .git/
 .gradle/
 .gradle-docker/
+.npm/
 .nows/
 .publishing/
+.gnupg-docker/
 **/build/
 repos/NowsWeb/node_modules/
 repos/NowsWeb/dist/
