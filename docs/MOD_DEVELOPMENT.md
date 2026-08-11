@@ -183,6 +183,58 @@ dataGen.writeJson(dataGen.recipePath("my_mod:widget"), Map.class, Map.of(
 ));
 ```
 
+## Config screens
+
+Nows includes a small config screen layer for mods that only need common settings UI instead of depending directly on Cloth Config or a loader-specific mod menu integration.
+
+Register a config screen factory during initialization:
+
+```java
+MinecraftApi.configUi(context).register("my_mod", parent ->
+        MinecraftApi.configUi(context)
+                .screen(parent, Component.literal("My Mod Settings"))
+                .category(Component.literal("General"))
+                .booleanOption(
+                        Component.literal("Enable Feature"),
+                        MyConfig.enabled(),
+                        true,
+                        Component.literal("Turn the main feature on or off."),
+                        MyConfig::setEnabled)
+                .intOption(
+                        Component.literal("Cooldown"),
+                        MyConfig.cooldown(),
+                        1000,
+                        0,
+                        60000,
+                        Component.literal("Cooldown in milliseconds."),
+                        MyConfig::setCooldown)
+                .done()
+                .saving(MyConfig::save)
+                .build());
+```
+
+The built-in Nows mod list opens registered config screens from its Configure button. This covers the small, common Cloth Config pattern: category, boolean toggle, integer field, default/reset and save callback. More complex screens can still be custom Minecraft `Screen` classes returned by the registered factory.
+
+## Game events
+
+Version adapters expose lightweight game callbacks for common Fabric/Forge event patterns:
+
+```java
+MinecraftApi.events(context).clientTick(minecraft -> {
+    // Poll keybinds or update client-only helpers.
+});
+
+MinecraftApi.events(context).serverTick(server -> {
+    // Run server-wide maintenance.
+});
+
+MinecraftApi.events(context).serverLevelTick((server, level) -> {
+    // Run per-level managers such as spell effects or delayed block changes.
+});
+```
+
+This is intentionally small. Use it for simple tick-driven managers like cooldown cleanup, gradual world effects or floating projectile state. Detailed player interaction and networking still belong in the dedicated API surfaces as they grow.
+
 ## Client UI and player helpers
 
 Client UI helpers cover common cases: opening a screen, making a simple screen, adding title-screen buttons and drawing small overlays. Raw Minecraft UI objects remain exposed for deeper behavior.

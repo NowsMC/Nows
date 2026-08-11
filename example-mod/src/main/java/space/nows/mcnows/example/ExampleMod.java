@@ -2,6 +2,7 @@ package space.nows.mcnows.example;
 
 import foo.zaaarf.geb.GEB;
 import net.minecraft.client.Minecraft;
+import net.minecraft.network.chat.Component;
 import reactor.util.Logger;
 import space.nows.mcnows.api.ModInitializer;
 import space.nows.mcnows.api.NowsContext;
@@ -12,6 +13,8 @@ import space.nows.mcnows.mc.api.MinecraftApi;
 
 public final class ExampleMod implements ModInitializer {
     private static final Logger LOG = NowsLog.get(ExampleMod.class);
+    private static boolean exampleFeatureEnabled = true;
+    private static int exampleCooldown = 1000;
 
     @Override
     public void onInitialize(NowsContext context) {
@@ -25,6 +28,33 @@ public final class ExampleMod implements ModInitializer {
                 MinecraftApi.registries(context).getClass().getName());
         LOG.info("Nows Example: Nows pack directory = {}",
                 MinecraftApi.dataPacks(context).nowsPackDirectory());
+        MinecraftApi.configUi(context).register("nows_example", parent ->
+                MinecraftApi.configUi(context)
+                        .screen(parent, Component.literal("Nows Example Settings"))
+                        .category(Component.literal("General"))
+                        .booleanOption(
+                                Component.literal("Example Feature"),
+                                exampleFeatureEnabled,
+                                true,
+                                Component.literal("Toggle a sample mod setting."),
+                                value -> exampleFeatureEnabled = value)
+                        .intOption(
+                                Component.literal("Example Cooldown"),
+                                exampleCooldown,
+                                1000,
+                                0,
+                                60000,
+                                Component.literal("Sample cooldown in milliseconds."),
+                                value -> exampleCooldown = value)
+                        .done()
+                        .saving(() -> LOG.info("Nows Example: saved config feature={} cooldown={}",
+                                exampleFeatureEnabled, exampleCooldown))
+                        .build());
+        MinecraftApi.events(context).serverLevelTick((server, level) -> {
+            if (level.getGameTime() % 6000L == 0L) {
+                LOG.debug("Nows Example: server-level tick callback on {}", level.dimension());
+            }
+        });
         NowsNetworking networking = NowsNetworking.service(context);
         networking.registerHandler("nows_example:main", NetworkDirection.CLIENTBOUND, (packetContext, payload) ->
                 LOG.info("Nows Example: network packet {} bytes on {}",

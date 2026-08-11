@@ -3,8 +3,11 @@
   "minVersion": "0.8",
   "package": "space.nows.mcnows.mc.internal.mixin",
   "compatibilityLevel": "JAVA_21",
-  "mixins": [],
+  "mixins": [
+    "MinecraftServerMixin"
+  ],
   "client": [
+    "MinecraftClientMixin",
     "PackRepositoryMixin",
     "TitleScreenMixin"
   ],

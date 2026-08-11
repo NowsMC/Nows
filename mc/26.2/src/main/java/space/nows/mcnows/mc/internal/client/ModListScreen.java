@@ -16,6 +16,7 @@ import space.nows.mcnows.api.NowsContext;
 import space.nows.mcnows.core.mod.ModContainer;
 import space.nows.mcnows.core.mod.ModDependency;
 import space.nows.mcnows.core.mod.ModDescriptor;
+import space.nows.mcnows.mc.api.client.config.ConfigUi;
 
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -69,6 +70,9 @@ public final class ModListScreen extends Screen {
 
         addRenderableWidget(modList);
         addRenderableWidget(detailsPanel);
+        addRenderableWidget(Button.builder(Component.literal("Configure"), button -> openSelectedConfig())
+                .bounds(width / 2 - 250, height - 26, 120, 20)
+                .build());
         addRenderableWidget(Button.builder(Component.literal("Done"), button -> onClose())
                 .bounds((width - 120) / 2, height - 26, 120, 20)
                 .build());
@@ -95,6 +99,16 @@ public final class ModListScreen extends Screen {
     private void select(ModEntry entry) {
         modList.setSelected(entry);
         detailsPanel.setMod(entry.mod);
+    }
+
+    private void openSelectedConfig() {
+        ModContainer selected = modList == null ? null : modList.selectedMod();
+        if (selected == null) {
+            return;
+        }
+        context.service(ConfigUi.class)
+                .create(selected.descriptor().id(), this)
+                .ifPresent(screen -> minecraft.setScreenAndShow(screen));
     }
 
     private final class ModList extends ObjectSelectionList<ModEntry> {

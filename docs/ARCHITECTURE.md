@@ -282,9 +282,11 @@ Each supported adapter should expose the same stable mc adapter API names, for e
 
 Runtime installs the version adapter by reflecting `space.nows.mcnows.mc.internal.MinecraftIntegration` and registering its services into `NowsServices`. That reflection is a composition boundary only; mod code should use the typed API from the selected `nows-mc-<version>` artifact. If no adapter is present, runtime should continue to launch with a clear INFO log and without those optional services.
 
-Client UI helpers also live in `mc/<version>`. `Ui` is a small convenience layer for opening screens, creating simple screens, adding title-screen buttons and drawing small overlay text. It should expose raw Minecraft `Screen`, widget and graphics objects where useful instead of trying to wrap the entire Minecraft GUI framework.
+Client UI helpers also live in `mc/<version>`. `Ui` is a small convenience layer for opening screens, creating simple screens, adding title-screen buttons and drawing small overlay text. `ConfigUi` is a Cloth Config-inspired middle layer for common boolean/integer settings screens and built-in Nows mod-list integration. These APIs should expose raw Minecraft `Screen`, widget and graphics objects where useful instead of trying to wrap the entire Minecraft GUI framework.
 
 Client player helpers live beside UI helpers because their concrete type is Minecraft-version-specific. `PlayerApi` may expose raw `LocalPlayer`, `ItemStack` and `Vec3` for practical mod code, but should keep common reads and edits available through stable methods. Player edits are client-side conveniences; server-authoritative multiplayer state can override them.
+
+`GameEvents` owns small Minecraft tick callbacks such as client tick, server tick and per-level server tick. It exists for mods that otherwise need Fabric/Forge event buses just to run lightweight managers, cleanup tasks or gradual world effects. More specific game interaction surfaces should be added deliberately instead of turning `GameEvents` into a second full event bus.
 
 Datapack and command management are intentionally source registries first. Mods can declare or collect `RepositorySource` instances and command dispatcher consumers; later game hooks may feed those sources into Minecraft's live pack repositories and command dispatchers at the correct lifecycle point for each version. Generated data helpers write JSON under `.minecraft/nows/generated` and are developer convenience, not a replacement for Minecraft's full data generator.
 

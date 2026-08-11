@@ -1,11 +1,13 @@
 package space.nows.mcnows.mc.api;
 
 import space.nows.mcnows.api.NowsContext;
+import space.nows.mcnows.mc.api.client.config.ConfigUi;
 import space.nows.mcnows.mc.api.client.player.PlayerApi;
 import space.nows.mcnows.mc.api.client.ui.Ui;
 import space.nows.mcnows.mc.api.command.CommandApi;
 import space.nows.mcnows.mc.api.datapack.DataPacks;
 import space.nows.mcnows.mc.api.datagen.DataGen;
+import space.nows.mcnows.mc.api.event.GameEvents;
 import space.nows.mcnows.mc.api.registry.RegistryApi;
 
 /** Entry point for Minecraft-version-backed Nows APIs. */
@@ -30,6 +32,14 @@ public final class MinecraftApi {
 
     public static Ui ui(NowsContext context) {
         return context.service(Ui.class);
+    }
+
+    public static ConfigUi configUi(NowsContext context) {
+        return context.service(ConfigUi.class);
+    }
+
+    public static GameEvents events(NowsContext context) {
+        return context.service(GameEvents.class);
     }
 
     public static PlayerApi players(NowsContext context) {
