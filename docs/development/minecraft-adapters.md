@@ -7,6 +7,7 @@ Mods can use the same Nows API class names across supported versions while each 
 ```java
 RegistryApi registries = MinecraftApi.registries(context);
 TextApi text = MinecraftApi.text(context);
+NbtApi nbt = MinecraftApi.nbt(context);
 
 Item raw = registries.register(BuiltInRegistries.ITEM, "my_mod:raw_widget", new Item(new Item.Properties()));
 Item item = registries.registerItem("my_mod:widget", props -> props.stacksTo(16));
@@ -131,6 +132,27 @@ Text helpers cover the common literal, translation and keybind component constru
 Component title = text.translatable("screen.my_mod.settings");
 Component help = text.literal("Hold ").append(text.keybind("key.sneak"));
 ```
+
+NBT helpers cover common compound/list reads and writes with explicit fallbacks. The returned values are still Minecraft's real NBT classes, so mods can drop down to direct APIs when needed:
+
+```java
+CompoundTag data = nbt.compound();
+nbt.putString(data, "owner", "my_mod");
+nbt.putInt(data, "heat", 7);
+
+CompoundTag machine = nbt.putCompound(data, "machine");
+nbt.putBoolean(machine, "active", true);
+
+ListTag history = nbt.putList(data, "history");
+nbt.addString(history, "created");
+nbt.addCompound(history, nbt.copy(machine));
+
+int heat = nbt.getInt(data, "heat", 0);
+boolean active = nbt.getBoolean(nbt.getCompound(data, "machine"), "active", false);
+String firstHistoryEntry = nbt.getString(nbt.getList(data, "history"), 0, "");
+```
+
+This layer intentionally avoids item-stack custom data for now. Minecraft 1.20.5+ moved much of that surface toward data components, so stack data helpers should be designed separately.
 
 For simple behavior, mods can attach small logic hooks:
 

@@ -282,9 +282,9 @@ Until a concrete Minecraft transport is installed, `NowsNetworking.send(...)` re
 
 ## Minecraft API adapter policy
 
-`mc/<minecraft version>/` owns the basic developer-facing API layer that must directly reference Minecraft classes. Common mod tasks such as resource ids/keys/tags, text/translation components, registering `Item`, `Block`, `BlockItem`, food, simple weapons, armor, creative tabs, command registration collectors, generated JSON data and datapack/resource-pack repository sources belong there, not in `core`, `minecraft`, `runtime` or generic integrations.
+`mc/<minecraft version>/` owns the basic developer-facing API layer that must directly reference Minecraft classes. Common mod tasks such as resource ids/keys/tags, text/translation components, NBT compound/list helpers, registering `Item`, `Block`, `BlockItem`, food, simple weapons, armor, creative tabs, command registration collectors, generated JSON data and datapack/resource-pack repository sources belong there, not in `core`, `minecraft`, `runtime` or generic integrations.
 
-Each supported adapter should expose the same stable mc adapter API names, for example `space.nows.mcnows.mc.api.MinecraftApi`, `RegistryApi`, `TextApi` and `DataPacks`, while using that Minecraft version's real classes internally. This lets 26.2 use `Identifier` and `Component.literal` setup while 1.20.1 uses `ResourceLocation` and older adapters can use `TextComponent`, without forcing mods to rewrite their Nows-facing calls.
+Each supported adapter should expose the same stable mc adapter API names, for example `space.nows.mcnows.mc.api.MinecraftApi`, `RegistryApi`, `TextApi`, `NbtApi` and `DataPacks`, while using that Minecraft version's real classes internally. This lets 26.2 use `Identifier` and newer optional-returning NBT getters while 1.20.1 uses `ResourceLocation` and older adapters can use `TextComponent` plus legacy NBT getters, without forcing mods to rewrite their Nows-facing calls.
 
 Runtime installs the version adapter by reflecting `space.nows.mcnows.mc.internal.MinecraftIntegration` and registering its services into `NowsServices`. That reflection is a composition boundary only; mod code should use the typed API from the selected `nows-mc-<version>` artifact. If no adapter is present, runtime should continue to launch with a clear INFO log and without those optional services.
 

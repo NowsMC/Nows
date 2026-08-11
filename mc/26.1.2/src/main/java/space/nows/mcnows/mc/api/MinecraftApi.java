@@ -8,6 +8,7 @@ import space.nows.mcnows.mc.api.command.CommandApi;
 import space.nows.mcnows.mc.api.datapack.DataPacks;
 import space.nows.mcnows.mc.api.datagen.DataGen;
 import space.nows.mcnows.mc.api.event.GameEvents;
+import space.nows.mcnows.mc.api.nbt.NbtApi;
 import space.nows.mcnows.mc.api.registry.RegistryApi;
 import space.nows.mcnows.mc.api.text.TextApi;
 
@@ -33,6 +34,10 @@ public final class MinecraftApi {
 
     public static TextApi text(NowsContext context) {
         return context.service(TextApi.class);
+    }
+
+    public static NbtApi nbt(NowsContext context) {
+        return context.service(NbtApi.class);
     }
 
     public static Ui ui(NowsContext context) {
