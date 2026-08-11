@@ -22,7 +22,7 @@ import java.util.Map;
 import java.util.StringJoiner;
 
 public final class NowsModListScreen extends Screen {
-    private static final ResourceLocation FALLBACK_ICON = ResourceLocation.tryParse("nows_api_mod:textures/gui/mod_menu_icon.png");
+    private static final ResourceLocation FALLBACK_ICON = ResourceLocation.tryParse("nows:textures/gui/mod_menu_icon.png");
     private static final int TOP = 36;
     private static final int BOTTOM = 34;
     private static final int GAP = 8;
@@ -79,7 +79,8 @@ public final class NowsModListScreen extends Screen {
         graphics.drawCenteredString(font, getTitle(), width / 2, 10, 0xFFFFFFFF);
         graphics.drawCenteredString(font,
                 Component.literal("Minecraft " + context.minecraftVersion()
-                        + " / API " + context.requireModDescriptor("nows_api_mod").version()),
+                        + " / " + context.mods().size() + " Nows mod"
+                        + (context.mods().size() == 1 ? "" : "s")),
                 width / 2,
                 21,
                 0xFFB8B8C8);

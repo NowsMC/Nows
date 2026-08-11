@@ -142,6 +142,8 @@ public final class NowsLauncher {
 
                 NowsContext context = new NowsContext(
                         launch.minecraftVersion(), RUNTIME_SIDE, launch.gameDirectory(), mods, gameLoader, services);
+                phase("Install built-in Minecraft UI", () ->
+                        installBuiltInMinecraftUi(gameLoader, context, launch.minecraftVersion()));
                 NowsNetworking networking = NowsNetworking.service(context);
                 int networkChannelCount = phase("Register network channels", () ->
                         networking.registerDeclaredChannels(mods));
@@ -231,6 +233,26 @@ public final class NowsLauncher {
             LOG.info("Minecraft API adapter installed from {}", integrationClassName);
         } catch (ClassNotFoundException ignored) {
             LOG.info("No Minecraft API adapter available for {}", minecraftVersion);
+        }
+    }
+
+    private static void installBuiltInMinecraftUi(
+            ClassLoader loader,
+            NowsContext context,
+            String minecraftVersion
+    ) throws Exception {
+        String integrationClassName = "space.nows.mcnows.mc.internal.NowsMinecraftIntegration";
+        try {
+            Class<?> integrationClass = Class.forName(integrationClassName, true, loader);
+            try {
+                Method installBuiltInUi = integrationClass.getMethod("installBuiltInUi", NowsContext.class);
+                installBuiltInUi.invoke(null, context);
+                LOG.info("Built-in Minecraft UI installed from {}", integrationClassName);
+            } catch (NoSuchMethodException ignored) {
+                LOG.info("Minecraft API adapter for {} has no built-in UI hook", minecraftVersion);
+            }
+        } catch (ClassNotFoundException ignored) {
+            LOG.info("No Minecraft API adapter available for built-in UI on {}", minecraftVersion);
         }
     }
 

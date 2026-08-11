@@ -54,8 +54,7 @@ class KdlModMetadataReaderTest {
 
                     features {
                         api-feature "client-ui"
-                        api-feature "modmenu"
-                        modmenu "space.nows.mod.api.client.NowsApiModMenu"
+                        future-feature "space.nows.example.FutureFeature"
                     }
                 }
                 """;
@@ -86,8 +85,8 @@ class KdlModMetadataReaderTest {
         assertEquals("after", descriptor.dependencies().get(4).kind());
         assertEquals("cloth-config", descriptor.dependencies().get(4).id());
         assertEquals("before", descriptor.dependencies().get(5).kind());
-        assertEquals(List.of("client-ui", "modmenu"), descriptor.declarations("api-feature"));
+        assertEquals(List.of("client-ui"), descriptor.declarations("api-feature"));
         assertEquals("client-ui", descriptor.declaration("api-feature").orElseThrow());
-        assertEquals(List.of("space.nows.mod.api.client.NowsApiModMenu"), descriptor.declarations("modmenu"));
+        assertEquals(List.of("space.nows.example.FutureFeature"), descriptor.declarations("future-feature"));
     }
 }

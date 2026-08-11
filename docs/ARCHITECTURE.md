@@ -142,7 +142,7 @@ Launcher version profiles should inherit from the target vanilla Minecraft profi
 
 Nows launcher profiles should inherit the launcher's normal game folder by default by omitting `gameDir` from `launcher_profiles.json`. This matches other loaders and makes `.minecraft/mods` the normal user mod folder. A profile-local game folder under `.minecraft/nows/profiles/<profile-id>/` is available only when the installer is run with `--profileGameDir` or the UI option is selected. Runtime always also scans `.minecraft/nows/profiles/<profile-id>/mods` as an optional Nows-only overlay for testing or per-profile extras. The game folder is scanned first; duplicate Nows mod ids across both folders are invalid.
 
-The title-screen Nows badge and mod-count display are required loader proof-of-life, so they belong to `mc/<minecraft version>` rather than `repos/NowsApiMod/`. Each supported `mc/<version>` adapter can declare built-in Mixin configs through `runtime.builtinMixinConfigs` in `nows-minecraft.properties`; runtime registers those configs before mod-declared configs and passes the Nows version, Minecraft version and discovered mod count into the version adapter's client hook.
+The title-screen Nows badge, mod-count display and built-in mod list/menu are required loader proof-of-life, so they belong to `mc/<minecraft version>` rather than `repos/NowsApiMod/`. Each supported `mc/<version>` adapter can declare built-in Mixin configs through `runtime.builtinMixinConfigs` in `nows-minecraft.properties`; runtime registers those configs before mod-declared configs and passes the Nows version, Minecraft version and discovered mod count into the version adapter's client hook.
 
 `repos/NowsApiMod/` builds a normal optional companion mod JAR. It is published as an optional artifact, but the default installer manifest does not install it by default and the loader runtime must not require it.
 
@@ -387,7 +387,7 @@ Nows follows the inherited Launcher-profile style: inherit the vanilla version p
 
 ## Companion API mod
 
-`repos/NowsApiMod/` exists for useful features that should not be required by the loader itself. Examples include higher-level helper APIs, UI conveniences, mod-menu-style integration, test blocks/items and other user-facing helpers.
+`repos/NowsApiMod/` exists for useful features that should not be required by the loader itself. Examples include higher-level helper APIs, optional UI conveniences, test blocks/items and other user-facing helpers.
 
 Rules for `NowsApiMod`:
 

@@ -1,6 +1,7 @@
 package space.nows.mcnows.mc.internal;
 
 import space.nows.mcnows.api.NowsServices;
+import space.nows.mcnows.api.NowsContext;
 import space.nows.mcnows.mc.api.client.player.NowsPlayerApi;
 import space.nows.mcnows.mc.api.client.ui.NowsUi;
 import space.nows.mcnows.mc.api.command.NowsCommands;
@@ -8,6 +9,7 @@ import space.nows.mcnows.mc.api.datapack.NowsDataPacks;
 import space.nows.mcnows.mc.api.datagen.NowsDataGen;
 import space.nows.mcnows.mc.api.registry.NowsRegistryApi;
 import space.nows.mcnows.mc.internal.client.player.NowsPlayerApiImpl;
+import space.nows.mcnows.mc.internal.client.NowsLoaderMenu;
 import space.nows.mcnows.mc.internal.client.NowsUiImpl;
 import space.nows.mcnows.mc.internal.command.NowsCommandsImpl;
 import space.nows.mcnows.mc.internal.datapack.NowsDataPacksImpl;
@@ -27,5 +29,9 @@ public final class NowsMinecraftIntegration {
         services.register(NowsDataGen.class, new NowsDataGenImpl(gameDirectory.resolve("nows").resolve("generated")));
         services.register(NowsUi.class, NowsUiImpl.INSTANCE);
         services.register(NowsPlayerApi.class, new NowsPlayerApiImpl());
+    }
+
+    public static void installBuiltInUi(NowsContext context) {
+        NowsLoaderMenu.install(context);
     }
 }
