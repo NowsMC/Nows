@@ -1,19 +1,18 @@
 # Client UI And Player Helpers
 
-Client UI helpers cover common cases: opening a screen, making a simple screen, adding title-screen buttons and drawing small overlays. Raw Minecraft UI objects remain exposed for deeper behavior.
+Client UI helpers cover common title-screen cases: adding buttons, opening a simple screen from that button and drawing small overlays. Raw Minecraft UI objects remain exposed for deeper behavior.
 
 ```java
 Ui ui = MinecraftApi.ui(context);
-ui.titleScreen().addButton(title -> title.button(
+ui.titleScreen().addButton(title -> title.addButton(
         title.centerX(98), title.height() / 4 + 120, 98, 20,
-        Component.literal("My Mod"),
-        button -> ui.show(ui.simpleScreen(
-                Component.literal("My Mod"),
+        "My Mod",
+        () -> title.showSimpleScreen(
+                "My Mod",
                 screen -> screen.addButton(screen.centerX(120), screen.height() - 40, 120, 20,
-                        Component.literal("Done"), done -> ui.close()),
-                render -> render.centeredText(Component.literal("Hello from Nows UI"),
-                        render.width() / 2, 40, 0xFFFFFFFF)
-        ))
+                        "Done", screen::close),
+                render -> render.centeredText("Hello from Nows UI",
+                        render.width() / 2, 40, 0xFFFFFFFF))
 ));
 
 ui.titleScreen().render(render ->
