@@ -26,9 +26,11 @@ public final class ModPackSource implements RepositorySource {
             FeatureFlagSet.of());
 
     private final List<ModContainer> mods;
+    private final Path loaderResources;
 
-    private ModPackSource(List<ModContainer> mods) {
+    private ModPackSource(List<ModContainer> mods, Path loaderResources) {
         this.mods = mods;
+        this.loaderResources = loaderResources;
     }
 
     public static Set<RepositorySource> appendClientSource(
@@ -36,37 +38,46 @@ public final class ModPackSource implements RepositorySource {
             RepositorySource[] originalSources,
             List<ModContainer> mods) {
         int resourceMods = countResourceMods(mods);
-        if (resourceMods == 0 || !isClientResourceRepository(originalSources)) {
+        Path loaderResources = ownJar();
+        boolean hasLoaderResources = loaderResources != null && hasResources(loaderResources);
+        if ((resourceMods == 0 && !hasLoaderResources) || !isClientResourceRepository(originalSources)) {
             return sources;
         }
         if (sources.stream().anyMatch(ModPackSource.class::isInstance)) {
             return sources;
         }
         LinkedHashSet<RepositorySource> updated = new LinkedHashSet<>(sources);
-        updated.add(new ModPackSource(List.copyOf(mods)));
-        System.out.println("[Nows] Added mod resource pack source for " + resourceMods + " mod(s)");
+        updated.add(new ModPackSource(List.copyOf(mods), loaderResources));
+        System.out.println("[Nows] Added resource pack source for loader resources and " + resourceMods + " mod(s)");
         return Collections.unmodifiableSet(updated);
     }
 
     @Override
     public void loadPacks(Consumer<Pack> output) {
+        if (loaderResources != null && hasResources(loaderResources)) {
+            output.accept(pack("nows/loader", Component.literal("Nows loader resources"), loaderResources));
+        }
         for (ModContainer mod : mods) {
             if (!hasResources(mod.path())) {
                 continue;
             }
             String id = "nows/" + mod.descriptor().id();
             System.out.println("[Nows] Loading mod resource pack: " + mod.descriptor().id());
-            output.accept(Pack.create(
-                    id,
-                    Component.literal(mod.descriptor().name()),
-                    true,
-                    packId -> open(packId, mod.path()),
-                    INFO,
-                    PackType.CLIENT_RESOURCES,
-                    Pack.Position.TOP,
-                    true,
-                    PackSource.BUILT_IN));
+            output.accept(pack(id, Component.literal(mod.descriptor().name()), mod.path()));
         }
+    }
+
+    private static Pack pack(String id, Component title, Path jar) {
+        return Pack.create(
+                id,
+                title,
+                true,
+                packId -> open(packId, jar),
+                INFO,
+                PackType.CLIENT_RESOURCES,
+                Pack.Position.TOP,
+                true,
+                PackSource.BUILT_IN);
     }
 
     private static int countResourceMods(List<ModContainer> mods) {
@@ -93,6 +104,16 @@ public final class ModPackSource implements RepositorySource {
             return new ModPackResources(id, jar);
         } catch (IOException e) {
             throw new IllegalStateException("Failed to open Nows mod resource pack " + jar, e);
+        }
+    }
+
+    private static Path ownJar() {
+        try {
+            return Path.of(ModPackSource.class.getProtectionDomain().getCodeSource().getLocation().toURI())
+                    .toAbsolutePath()
+                    .normalize();
+        } catch (Exception e) {
+            return null;
         }
     }
 
