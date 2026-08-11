@@ -10,6 +10,7 @@ import space.nows.mcnows.mc.api.datapack.DataPacks;
 import space.nows.mcnows.mc.api.datagen.DataGen;
 import space.nows.mcnows.mc.api.event.GameEvents;
 import space.nows.mcnows.mc.api.registry.RegistryApi;
+import space.nows.mcnows.mc.api.text.TextApi;
 import space.nows.mcnows.mc.internal.client.config.ConfigUiImpl;
 import space.nows.mcnows.mc.internal.client.player.PlayerApiImpl;
 import space.nows.mcnows.mc.internal.client.LoaderMenu;
@@ -19,6 +20,7 @@ import space.nows.mcnows.mc.internal.datapack.DataPacksImpl;
 import space.nows.mcnows.mc.internal.datagen.DataGenImpl;
 import space.nows.mcnows.mc.internal.event.GameEventsImpl;
 import space.nows.mcnows.mc.internal.registry.RegistryApiImpl;
+import space.nows.mcnows.mc.internal.text.TextApiImpl;
 
 import java.nio.file.Path;
 
@@ -31,6 +33,7 @@ public final class MinecraftIntegration {
         services.register(DataPacks.class, new DataPacksImpl(gameDirectory));
         services.register(CommandApi.class, new CommandApiImpl());
         services.register(DataGen.class, new DataGenImpl(gameDirectory.resolve("nows").resolve("generated")));
+        services.register(TextApi.class, TextApiImpl.INSTANCE);
         services.register(Ui.class, UiImpl.INSTANCE);
         services.register(ConfigUi.class, new ConfigUiImpl());
         services.register(GameEvents.class, GameEventsImpl.INSTANCE);

@@ -32,6 +32,10 @@ import java.util.function.Supplier;
 public interface RegistryApi {
     ResourceLocation id(String id);
 
+    default ResourceLocation resourceLocation(String id) {
+        return id(id);
+    }
+
     <T> ResourceKey<T> key(ResourceKey<? extends Registry<T>> registry, String id);
 
     <T> TagKey<T> tag(ResourceKey<? extends Registry<T>> registry, String id);

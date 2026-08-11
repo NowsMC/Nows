@@ -9,6 +9,7 @@ import space.nows.mcnows.mc.api.datapack.DataPacks;
 import space.nows.mcnows.mc.api.datagen.DataGen;
 import space.nows.mcnows.mc.api.event.GameEvents;
 import space.nows.mcnows.mc.api.registry.RegistryApi;
+import space.nows.mcnows.mc.api.text.TextApi;
 
 /** Entry point for Minecraft-version-backed Nows APIs. */
 public final class MinecraftApi {
@@ -28,6 +29,10 @@ public final class MinecraftApi {
 
     public static DataGen dataGen(NowsContext context) {
         return context.service(DataGen.class);
+    }
+
+    public static TextApi text(NowsContext context) {
+        return context.service(TextApi.class);
     }
 
     public static Ui ui(NowsContext context) {

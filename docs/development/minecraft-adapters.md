@@ -6,6 +6,7 @@ Mods can use the same Nows API class names across supported versions while each 
 
 ```java
 RegistryApi registries = MinecraftApi.registries(context);
+TextApi text = MinecraftApi.text(context);
 
 Item raw = registries.register(BuiltInRegistries.ITEM, "my_mod:raw_widget", new Item(new Item.Properties()));
 Item item = registries.registerItem("my_mod:widget", props -> props.stacksTo(16));
@@ -68,7 +69,7 @@ for (FoodEntry entry : FoodEntries.ALL) {
 
 registries.registerCreativeTab(
         "my_mod:foods",
-        Component.translatable("itemGroup.my_mod.foods"),
+        text.translatable("itemGroup.my_mod.foods"),
         () -> new ItemStack(foods.get("complete_breakfast")),
         (parameters, output) -> foods.values().forEach(output::accept));
 ```
@@ -114,11 +115,21 @@ Block stove = registries.registerCustomBlock("my_mod:stove",
 Existing registry entries can be queried with Optional-returning methods or fail-fast getters:
 
 ```java
+var widgetId = registries.resourceLocation("my_mod:widget");
 ResourceKey<Item> widgetKey = registries.itemKey("my_mod:widget");
 TagKey<Block> machineBlocks = registries.blockTag("my_mod:machines");
 registries.item("minecraft:diamond").ifPresent(stackItem -> {});
 Item diamond = registries.getItem("minecraft:diamond");
 Block stone = registries.getBlock("minecraft:stone");
+```
+
+Use `registries.id(...)` or `registries.resourceLocation(...)` for the selected adapter's real resource-id type. Newer adapters return `Identifier`; older adapters return `ResourceLocation`. `registries.key(...)`, `itemKey(...)`, `blockKey(...)`, `tag(...)`, `itemTag(...)` and `blockTag(...)` cover the common registry key/tag cases when the target Minecraft version exposes those classes.
+
+Text helpers cover the common literal, translation and keybind component constructors without making mods remember when Minecraft renamed those factories:
+
+```java
+Component title = text.translatable("screen.my_mod.settings");
+Component help = text.literal("Hold ").append(text.keybind("key.sneak"));
 ```
 
 For simple behavior, mods can attach small logic hooks:
