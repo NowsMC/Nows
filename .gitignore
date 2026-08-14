@@ -11,3 +11,4 @@ build/
 local.properties
 repos/NowsInstaller/vendor/
 .aider*
+.outsource/
