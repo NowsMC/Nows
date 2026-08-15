@@ -4,8 +4,13 @@ import space.nows.mcnows.api.ClassTransformer;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.JarURLConnection;
 import java.net.URL;
 import java.net.URLClassLoader;
+import java.net.URISyntaxException;
+import java.security.CodeSource;
+import java.security.cert.Certificate;
+import java.nio.file.Path;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
@@ -67,14 +72,19 @@ public final class NowsClassLoader extends URLClassLoader {
     @Override
     protected Class<?> findClass(String name) throws ClassNotFoundException {
         try {
-            byte[] bytes = getOwnClassBytes(name);
+            ClassData classData = getOwnClassData(name);
+            byte[] bytes = classData == null ? null : classData.bytes();
             if (bytes == null && classGenerator != null) bytes = classGenerator.generate(name);
             if (bytes == null) throw new ClassNotFoundException(name);
             for (ClassTransformer transformer : List.copyOf(transformers)) {
                 bytes = transformer.transform(name, bytes);
                 if (bytes == null) throw new ClassNotFoundException("Transformer returned null for " + name);
             }
-            return defineClass(name, bytes, 0, bytes.length);
+            if (classData == null) {
+                return defineClass(name, bytes, 0, bytes.length);
+            }
+            CodeSource codeSource = new CodeSource(classData.codeSource(), (Certificate[]) null);
+            return defineClass(name, bytes, 0, bytes.length, codeSource);
         } catch (ClassNotFoundException e) {
             throw e;
         } catch (Throwable t) {
@@ -82,12 +92,34 @@ public final class NowsClassLoader extends URLClassLoader {
         }
     }
 
-    private byte[] getOwnClassBytes(String className) throws IOException {
+    private ClassData getOwnClassData(String className) throws IOException {
         String resource = className.replace('.', '/') + ".class";
         URL url = findResource(resource);
         if (url == null) return null;
-        try (InputStream input = url.openStream()) { return input.readAllBytes(); }
+        try (InputStream input = url.openStream()) {
+            return new ClassData(input.readAllBytes(), codeSource(url, resource));
+        }
     }
+
+    private static URL codeSource(URL classResource, String resourcePath) throws IOException {
+        if (classResource.openConnection() instanceof JarURLConnection jarConnection) {
+            return jarConnection.getJarFileURL();
+        }
+        if ("file".equals(classResource.getProtocol())) {
+            try {
+                Path root = Path.of(classResource.toURI());
+                for (int i = 0; i < resourcePath.split("/").length; i++) {
+                    root = root.getParent();
+                }
+                return root.toUri().toURL();
+            } catch (URISyntaxException e) {
+                throw new IOException("Invalid class resource URL: " + classResource, e);
+            }
+        }
+        return classResource;
+    }
+
+    private record ClassData(byte[] bytes, URL codeSource) { }
 
     private boolean isParentFirst(String name) {
         for (String prefix : childFirstPrefixes) if (name.startsWith(prefix)) return false;
