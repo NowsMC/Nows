@@ -60,12 +60,19 @@ fun publicArtifactId(projectPath: String): String = when (projectPath) {
     ":integrations:mixin" -> "nows-integration-mixin"
     ":runtime" -> "nows-runtime"
     ":repos:NowsGradlePlugin" -> "nows-gradle-plugin"
+    ":repos:NowsApiMod" -> "nows-api-mod"
     else -> if (projectPath.startsWith(":mc:")) {
         "nows-mc-" + projectPath.removePrefix(":mc:")
     } else {
         throw GradleException("No public artifact id registered for $projectPath")
     }
 }
+
+fun minecraftTaskSuffix(minecraft: String): String =
+    "Mc" + minecraft.replace('.', '_')
+
+fun apiModJarTaskName(minecraft: String): String =
+    "apiMod${minecraftTaskSuffix(minecraft)}Jar"
 
 fun MavenPublication.configureNowsPom(projectPath: String) {
     pom {
@@ -209,6 +216,42 @@ project(":repos:NowsGradlePlugin") {
     }
 }
 
+project(":repos:NowsApiMod") {
+    pluginManager.apply("maven-publish")
+    pluginManager.apply("signing")
+    afterEvaluate {
+        extensions.configure<PublishingExtension> {
+            publications {
+                create<MavenPublication>("apiMod") {
+                    artifactId = publicArtifactId(project.path)
+                    publishedMinecraftVersions.forEach { minecraft ->
+                        artifact(tasks.named<Jar>(apiModJarTaskName(minecraft))) {
+                            classifier = "mc-$minecraft"
+                        }
+                    }
+                    configureNowsPom(project.path)
+                }
+            }
+            repositories {
+                maven {
+                    name = "PublishingMaven"
+                    url = rootProject.uri(publishingMavenDir.asFile)
+                }
+            }
+        }
+        tasks.withType<PublishToMavenRepository>().configureEach {
+            if (name.endsWith("ToPublishingMavenRepository")) {
+                dependsOn(rootProject.tasks.named("cleanPublishingMavenLayout"))
+            }
+        }
+        extensions.configure<SigningExtension> {
+            isRequired = true
+            useGpgCmd()
+            sign(extensions.getByType(PublishingExtension::class.java).publications)
+        }
+    }
+}
+
 tasks.register("dist") {
     group = "nows"
     description = "Builds all modular Nows artifacts, the installer, Gradle plugin and example mod."
@@ -226,7 +269,7 @@ tasks.register("dist") {
         ":repos:NowsInstaller:guiJar",
         ":repos:NowsInstaller:offlineJar",
         ":repos:NowsGradlePlugin:jar",
-        ":repos:NowsApiMod:jar",
+        ":repos:NowsApiMod:allApiModJars",
         ":example-mod:jar"
     )
 }
@@ -423,7 +466,7 @@ val publishLayout by tasks.registering {
         ":repos:NowsInstaller:guiJar",
         ":repos:NowsInstaller:offlineJar",
         ":repos:NowsGradlePlugin:jar",
-        ":repos:NowsApiMod:jar"
+        ":repos:NowsApiMod:allApiModJars"
     )
 
     inputs.file("repos/NowsInstaller/install.properties.template")
@@ -445,7 +488,9 @@ val publishLayout by tasks.registering {
             installerProject.tasks.named<Jar>("jar").get().archiveFile.get().asFile,
             installerProject.tasks.named<Jar>("guiJar").get().archiveFile.get().asFile,
             installerProject.tasks.named<Jar>("offlineJar").get().archiveFile.get().asFile,
-            project(":repos:NowsApiMod").tasks.named<Jar>("jar").get().archiveFile.get().asFile,
+            *publishedMinecraftVersions.map { minecraft ->
+                project(":repos:NowsApiMod").tasks.named<Jar>(apiModJarTaskName(minecraft)).get().archiveFile.get().asFile
+            }.toTypedArray(),
             project(":repos:NowsGradlePlugin").tasks.named<Jar>("jar").get().archiveFile.get().asFile
         )
     })
@@ -462,7 +507,9 @@ val publishLayout by tasks.registering {
         val cliInstaller = installerProject.tasks.named<Jar>("jar").get().archiveFile.get().asFile
         val uiInstaller = installerProject.tasks.named<Jar>("guiJar").get().archiveFile.get().asFile
         val offlineInstaller = installerProject.tasks.named<Jar>("offlineJar").get().archiveFile.get().asFile
-        val apiMod = project(":repos:NowsApiMod").tasks.named<Jar>("jar").get().archiveFile.get().asFile
+        val apiMods = publishedMinecraftVersions.associateWith { minecraft ->
+            project(":repos:NowsApiMod").tasks.named<Jar>(apiModJarTaskName(minecraft)).get().archiveFile.get().asFile
+        }
         val gradlePlugin = project(":repos:NowsGradlePlugin").tasks.named<Jar>("jar").get().archiveFile.get().asFile
 
         publishedMinecraftVersions.forEach { minecraft ->
@@ -503,9 +550,10 @@ val publishLayout by tasks.registering {
                     installersRoot.resolve("NowsInstaller-offline-$nows-mc-$minecraft.jar"),
                     overwrite = true
                 )
-                modsRoot.mkdirs()
-                apiMod.copyTo(modsRoot.resolve(apiMod.name), overwrite = true)
             }
+            modsRoot.mkdirs()
+            val apiMod = apiMods[minecraft] ?: throw GradleException("No NowsApiMod jar registered for $minecraft")
+            apiMod.copyTo(modsRoot.resolve(apiMod.name), overwrite = true)
             gradlePlugin.copyTo(toolingRoot.resolve(gradlePlugin.name), overwrite = true)
 
             val template = java.util.Properties()
@@ -566,6 +614,7 @@ tasks.register("publishMavenLayout") {
     description = "Publishes developer-facing Maven artifacts into .publishing/maven."
     dependsOn(mavenPublishedProjectPaths.map { "$it:publishAllPublicationsToPublishingMavenRepository" })
     dependsOn(":repos:NowsGradlePlugin:publishAllPublicationsToPublishingMavenRepository")
+    dependsOn(":repos:NowsApiMod:publishApiModPublicationToPublishingMavenRepository")
 }
 
 tasks.register("prepareWorkspace") {
