@@ -1,96 +1,76 @@
 # Nows
 
-Nows is an experimental Minecraft Java mod loader for developers who want one more option for building mods across Minecraft versions.
+Nows is a small, experimental Minecraft Java mod loader.
 
-It is not intended to replace Minecraft, Mojang's APIs, or every existing loader ecosystem. Nows is a layer between a mod and Minecraft: it keeps a small loader kernel stable, then puts version-sensitive Minecraft behavior behind `mc/<version>` adapters so mod developers can reuse more of their own code when moving between supported game versions.
+The loader keeps its kernel in `core/` and puts Minecraft-specific behavior behind
+`mc/<version>` adapters. Code that depends on metadata formats, event buses, logging,
+Mixin, installers or Gradle tooling lives outside the kernel.
 
-This portability layer is still incomplete. Nows does not cover 100% of Minecraft APIs, and advanced mod behavior should still use Minecraft's own classes, events, mixins, or version-specific hooks directly when needed.
+Nows is still incomplete. It is useful for experimenting with a stable loader surface
+across supported Minecraft versions, but mods can still use Minecraft classes, mixins
+and version-specific hooks directly when that is the simpler choice.
 
-- Website/domain: **https://nows.space**
-- Java/Maven namespace: **`space.nows.mcnows`**
-- Current source version: **0.4.0**
-- Current target: **Minecraft Java 26.2**
-- Development names: **official Mojang mappings**
-- Runtime style: no Java agent, `premain`, or `java.lang.instrument`
+## Project Facts
 
-## Support policy
+- Website/domain: <https://nows.space>
+- Java/Maven namespace: `space.nows.mcnows`
+- Development mappings: official Mojang mappings
+- Runtime style: no Java agent, `premain` or `java.lang.instrument`
 
-Nows releases support for Minecraft **major versions only**. Patch/minor compatibility can improve inside an adapter when practical, but the release target is the selected major Minecraft version rather than every point release.
+The current Nows version and default Minecraft target are defined in
+[`gradle.properties`](gradle.properties). Supported adapters are the directories under
+[`mc/`](mc/).
 
-Current supported adapter directories live under [`mc/`](mc/):
+Nows releases target Minecraft major versions. Patch/minor compatibility can improve
+inside an adapter, but the project does not try to promise every point release.
 
-- `mc/26.2`
-- `mc/1.20.1`
-
-## Project shape
+## Repository Layout
 
 ```text
-Nows/
-├─ core/                         stable loader kernel, no external runtime stack
-├─ minecraft/                    Minecraft launch/version policy
-├─ mc/<version>/                 version-specific Minecraft API adapters
-├─ integrations/
-│  ├─ kdl/                       nows.mod.kdl metadata parser
-│  ├─ geb/                       GEB event integration
-│  ├─ logging/                   logging bridge and async logging support
-│  ├─ network/                   Nows network channels and transport facade
-│  └─ mixin/                     SpongePowered Mixin service integration
-├─ runtime/                      composition root and launcher entrypoint
-├─ repos/
-│  ├─ NowsInstaller/             installer
-│  ├─ NowsGradlePlugin/          mod development Gradle plugin
-│  ├─ NowsApiMod/                optional companion/API mod
-│  └─ NowsWeb/                   optional private website submodule
-└─ example-mod/                  local example mod
+core/                         stable loader kernel
+minecraft/                    Minecraft launch/version policy
+mc/<version>/                 version-specific Minecraft adapters
+integrations/kdl/             nows.mod.kdl metadata parser
+integrations/geb/             GEB event integration
+integrations/logging/         logging bridge and async logging
+integrations/network/         loader network channels
+integrations/mixin/           SpongePowered Mixin integration
+runtime/                      launcher entrypoint and composition root
+repos/NowsInstaller/          installer
+repos/NowsGradlePlugin/       mod development Gradle plugin
+repos/NowsApiMod/             optional companion/API mod
+repos/NowsWeb/                optional website submodule
+example-mod/                  local example mod
 ```
 
-The core rule is simple: `nows-core` should contain only contracts that can survive loader policy changes. Minecraft code, metadata formats, event buses, logging, Mixin, installer behavior and Gradle tooling live outside core.
+The main boundary is:
 
-Read more:
+- `core/` owns contracts that should survive loader policy changes.
+- `mc/<version>/` may reference `net.minecraft.*` directly.
+- `runtime/` wires the selected pieces together.
+- `repos/*` contains tooling, distribution and companion surfaces.
 
-- [Architecture](docs/ARCHITECTURE.md)
-- [Dependency ownership](docs/DEPENDENCY_OWNERSHIP.md)
-- [Mod development guide](docs/MOD_DEVELOPMENT.md)
-- [Build and release notes](docs/BUILD_AND_RELEASE.md)
-- [Minecraft version adapters](mc/README.md)
+For the full ownership rules, see [Architecture](docs/ARCHITECTURE.md) and
+[Dependency ownership](docs/DEPENDENCY_OWNERSHIP.md).
 
-## Quick build
+## Build
 
-Fresh clone setup and full local validation:
+Prepare a fresh clone and run the broad local validation path:
 
 ```bash
 ./gradlew prepareWorkspace
 ```
 
-Build normal distribution artifacts:
+Build distribution artifacts:
 
 ```bash
 ./gradlew dist
 ```
 
-Stage release files for the default Minecraft target:
+Stage release files:
 
 ```bash
 ./gradlew publishLayout
-```
-
-Docker build, with Gradle/npm/Minecraft caches kept in Docker volumes:
-
-```bash
-docker compose run --rm nows-build
-```
-
-For the signed release upload layout, use:
-
-```bash
-docker compose run --rm nows-release
-```
-
-Run the web surface locally in Docker:
-
-```bash
-git submodule update --init repos/NowsWeb
-docker compose up nows-web
 ```
 
 Build/test the Gradle plugin:
@@ -99,40 +79,33 @@ Build/test the Gradle plugin:
 ./gradlew :repos:NowsGradlePlugin:build
 ```
 
-## Mod metadata
+Docker can be used as a reproducible build shell:
 
-Nows currently recommends `nows.mod.kdl` for human-facing mod metadata. KDL is an integration, not a core dependency: `nows-core` sees only generic `ModDescriptor` data.
-
-Minimal example:
-
-```kdl
-mod id="my_mod" name="My Mod" version="1.0.0" minecraft="26.2" side="client" {
-    runtime {
-        entrypoint "com.example.MyMod"
-        mixin "my_mod.mixins.json"
-    }
-}
+```bash
+docker compose run --rm nows-build
 ```
 
-See [Mod development guide](docs/MOD_DEVELOPMENT.md) for dependency metadata, lifecycle listeners, registry helpers, networking, UI and config examples.
+Signed release layout:
 
-## Gradle plugin
-
-External mod projects can use the Nows Gradle plugin once the developer Maven layout is published to `https://files.nows.space/maven/`:
-
-```kotlin
-plugins {
-    id("space.nows.mcnows") version "0.4.0"
-}
-
-nows {
-    minecraftVersion.set("26.2")
-    nowsVersion.set("0.4.0")
-}
+```bash
+docker compose run --rm nows-release
 ```
 
-The plugin applies Gradle's Java plugin and owns Minecraft development setup, official Mojang mappings, the matching Minecraft adapter, common Nows integrations and `nows.mod.kdl` resource expansion. Those policies do not belong in `nows-core`.
+Website submodule:
+
+```bash
+git submodule update --init repos/NowsWeb
+docker compose up nows-web
+```
+
+## Development Docs
+
+- [Architecture](docs/ARCHITECTURE.md)
+- [Dependency ownership](docs/DEPENDENCY_OWNERSHIP.md)
+- [Mod development guide](docs/MOD_DEVELOPMENT.md)
+- [Build and release notes](docs/BUILD_AND_RELEASE.md)
+- [Minecraft version adapters](mc/README.md)
 
 ## License
 
-Nows is licensed under the Apache License, Version 2.0. Earlier private development commits may have carried MIT license text; those commits were kept in a private development repository and were not public releases of Nows. The project license for Nows source, documentation and release artifacts is Apache License 2.0 from this point forward.
+Apache License 2.0. See [LICENSE](LICENSE).
