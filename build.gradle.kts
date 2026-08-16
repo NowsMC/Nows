@@ -464,6 +464,7 @@ val publishLayout by tasks.registering {
         ":repos:NowsGradlePlugin:jar",
         ":repos:NowsApiMod:allApiModJars"
     )
+    dependsOn(publishedMinecraftVersions.map { ":mc:$it:nowsPrepareMinecraft" })
 
     inputs.file("repos/NowsInstaller/install.properties.template")
     inputs.property("nowsVersion", nowsVersion)
@@ -491,6 +492,13 @@ val publishLayout by tasks.registering {
     inputs.files(provider {
         project(":repos:NowsInstaller").configurations.getByName("offlineMavenArtifacts").resolve()
     })
+    inputs.files(provider {
+        publishedMinecraftVersions.map { minecraft ->
+            project(":mc:$minecraft").tasks.named("nowsPrepareMinecraft").get()
+                .outputs.files.files
+                .single { it.name == "client-dev.jar" }
+        }
+    })
     outputs.dir(publishLayoutDir)
 
     doLast {
@@ -517,6 +525,7 @@ val publishLayout by tasks.registering {
             val librariesRoot = releaseRoot.resolve("libraries")
             val modsRoot = releaseRoot.resolve("mods")
             val toolingRoot = releaseRoot.resolve("tooling")
+            val clientRoot = releaseRoot.resolve("client")
             val artifactFiles = linkedMapOf<String, File>()
 
             delete(releaseRoot)
@@ -546,12 +555,23 @@ val publishLayout by tasks.registering {
             apiMod.copyTo(modsRoot.resolve(apiMod.name), overwrite = true)
             gradlePlugin.copyTo(toolingRoot.resolve(gradlePlugin.name), overwrite = true)
 
+            clientRoot.mkdirs()
+            val preparedClientJar = project(":mc:$minecraft").tasks.named("nowsPrepareMinecraft").get()
+                .outputs.files.files
+                .single { it.name == "client-dev.jar" }
+            val stagedClientJar = clientRoot.resolve("client-dev.jar")
+            preparedClientJar.copyTo(stagedClientJar, overwrite = true)
+
             val template = java.util.Properties()
             file("repos/NowsInstaller/install.properties.template").inputStream().use(template::load)
             template["nows.version"] = nows
             template["minecraft.version"] = minecraft
             val releaseBaseUrl = "${nowsReleaseBaseUrl.get()}/$nows/$minecraft"
             template["releaseBaseUrl"] = releaseBaseUrl
+            template["clientJar.path"] = "client/client-dev.jar"
+            template["clientJar.file"] = "../client/client-dev.jar"
+            template["clientJar.url"] = "$releaseBaseUrl/client/client-dev.jar"
+            template["clientJar.sha256"] = sha256(stagedClientJar)
             moduleArtifacts.forEach { (projectPath, relativePath) ->
                 val index = publishedModuleArtifactIndex(projectPath, minecraft) ?: return@forEach
                 val artifactId = publishedModuleArtifactId(projectPath, minecraft)

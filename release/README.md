@@ -1,10 +1,10 @@
 # Nows release layout
 
-Nows 0.4.x installs modularly. Upload the module JARs and `install.properties` to:
+Nows 0.4.x installs modularly. Upload the module JARs, prepared client JAR and `install.properties` to:
 
 `https://files.nows.space/releases/nows/<nows-version>/<minecraft-version>/`
 
-`repos/NowsInstaller/install.properties.template` documents the internet install protocol.
+`repos/NowsInstaller/install.properties.template` documents the internet install protocol. Release layout generation stages the Mojang-named client jar at `client/client-dev.jar`; keep that file beside `libraries/` when uploading a Minecraft-version release.
 Before publishing, fill SHA-256 fields for every artifact. `com.github.kdl-org:kdl4j` is intentionally **not** downloaded by the end user: its original JAR is resolved from JitPack first, embedded in `NowsInstaller-<version>.jar` at build time, and extracted to the normal Minecraft library path.
 
 Use `./gradlew publishLayout` to build `.publishing/releases/nows/<nows-version>/<minecraft-version>/` and `.publishing/maven/`.

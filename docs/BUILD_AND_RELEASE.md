@@ -139,7 +139,7 @@ Nows also scans this optional profile overlay:
 .publishing/releases/nows/<nows-version>/<minecraft-version>/
 ```
 
-Each staged Minecraft version contains libraries, a processed `install.properties`, `SHA256SUMS`, and `mods/nows-api-mod-<nows-version>-mc-<minecraft-version>.jar` as an optional companion mod artifact.
+Each staged Minecraft version contains libraries, a processed `install.properties`, `SHA256SUMS`, `client/client-dev.jar`, and `mods/nows-api-mod-<nows-version>-mc-<minecraft-version>.jar` as an optional companion mod artifact. The client JAR is the prepared Mojang-named jar used by the installer for versions whose vanilla runtime jar is obfuscated.
 
 Expected output:
 
