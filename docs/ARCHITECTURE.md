@@ -115,7 +115,7 @@ core + mc/<minecraft version> + Gradle plugin + KDL + GEB + Network + Mixin
 
 The default install is modular. Minecraft Launcher libraries contain separate Nows module JARs plus only the third-party runtime libraries that Minecraft does not already provide.
 
-`repos/NowsInstaller/` owns the Official Launcher install protocol. The UI installer is the normal public entrypoint; the CLI remains available for scripting and local development. Both read an install manifest, install each declared artifact under `.minecraft/libraries`, then write an inherited Launcher version profile whose `mainClass` is `space.nows.mcnows.runtime.NowsLauncher`.
+`repos/NowsInstaller/` owns the Official Launcher install protocol. The shared UI installer is the normal public entrypoint; the CLI class remains available for scripting and local development from the same JAR. Both read an install manifest, install each declared artifact under `.minecraft/libraries`, then write an inherited Launcher version profile whose `mainClass` is `space.nows.mcnows.runtime.NowsLauncher`.
 
 Normal installer artifact resolution is:
 
@@ -124,15 +124,13 @@ Normal installer artifact resolution is:
 3. If that URL is missing or fails, fall back to `artifact.<n>.mavenUrl` or `mavenBaseUrl + artifact.<n>.path`.
 4. For local/offline development, copy from local paths when `--offline`, `--artifactDir` or `source=local` is used.
 
-`NowsInstaller-offline` is a separate Java 8-compatible installer JAR that embeds the install manifest and all manifest artifacts needed by Nows, then copies those embedded payloads into the Minecraft libraries directory without network access. Its Nows module payloads come from the workspace's Gradle project JAR tasks when built locally, so the same offline installer covers local-development installation for the selected `minecraft_version`.
-
-The normal UI/CLI installers are generic installer entrypoints. They choose the target release manifest from `--minecraft`, `--nows` or their Gradle defaults and download from:
+The normal installer is a generic Java 8-compatible entrypoint. It chooses the target release manifest from the UI version list, `--minecraft`, `--nows` or its Gradle defaults and downloads from:
 
 ```text
 https://files.nows.space/releases/nows/<nows-version>/<minecraft-version>/install.properties
 ```
 
-The published offline installer is intentionally per Minecraft version because it embeds the version-specific `nows-mc-<minecraft-version>` adapter and a processed manifest for exactly one game version. Publish it with a versioned filename such as `NowsInstaller-offline-<nows-version>-mc-<minecraft-version>.jar`.
+For local/offline development, the CLI class can still install from a local manifest and artifact directory. The public release no longer publishes a separate per-Minecraft offline installer JAR.
 
 Installer-embedded dependencies, currently KDL4J, may be embedded into installer artifacts and copied into the Minecraft libraries directory when necessary. KDL4J resolves from JitPack first, with GitHub Packages kept as a release fallback. Normal Nows users must not need GitHub credentials just to install or run Nows.
 
@@ -194,16 +192,16 @@ Use this to inspect the coordinated version state:
 ./gradlew versionReport
 ```
 
-After `publishLayout`, the generic UI/CLI installers and processed `install.properties` are staged for every supported version. The offline installer remains tied to the active `minecraft_version` because it embeds one processed manifest and one `nows-mc-<minecraft-version>` adapter. For the selected release it is expected at:
+After `publishLayout`, processed `install.properties` files are staged for every supported Minecraft version and one shared installer is staged for the Nows version:
 
 ```text
-.publishing/releases/nows/<nows-version>/<minecraft-version>/installers/NowsInstaller-offline-<nows-version>-mc-<minecraft-version>.jar
+.publishing/releases/nows/<nows-version>/installers/NowsInstaller-<nows-version>.jar
 ```
 
 The normal public installer link should point to:
 
 ```text
-.publishing/releases/nows/<nows-version>/<minecraft-version>/installers/NowsInstaller-ui-<nows-version>.jar
+.publishing/releases/nows/<nows-version>/installers/NowsInstaller-<nows-version>.jar
 ```
 
 ## Gradle and mappings policy

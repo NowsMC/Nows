@@ -266,8 +266,6 @@ tasks.register("dist") {
         ":integrations:mixin:jar",
         ":runtime:jar",
         ":repos:NowsInstaller:jar",
-        ":repos:NowsInstaller:guiJar",
-        ":repos:NowsInstaller:offlineJar",
         ":repos:NowsGradlePlugin:jar",
         ":repos:NowsApiMod:allApiModJars",
         ":example-mod:jar"
@@ -463,8 +461,6 @@ val publishLayout by tasks.registering {
     dependsOn(
         "publishMavenLayout",
         ":repos:NowsInstaller:jar",
-        ":repos:NowsInstaller:guiJar",
-        ":repos:NowsInstaller:offlineJar",
         ":repos:NowsGradlePlugin:jar",
         ":repos:NowsApiMod:allApiModJars"
     )
@@ -486,8 +482,6 @@ val publishLayout by tasks.registering {
         val installerProject = project(":repos:NowsInstaller")
         listOf(
             installerProject.tasks.named<Jar>("jar").get().archiveFile.get().asFile,
-            installerProject.tasks.named<Jar>("guiJar").get().archiveFile.get().asFile,
-            installerProject.tasks.named<Jar>("offlineJar").get().archiveFile.get().asFile,
             *publishedMinecraftVersions.map { minecraft ->
                 project(":repos:NowsApiMod").tasks.named<Jar>(apiModJarTaskName(minecraft)).get().archiveFile.get().asFile
             }.toTypedArray(),
@@ -501,28 +495,32 @@ val publishLayout by tasks.registering {
 
     doLast {
         val nows = nowsVersion.get()
-        val activeMinecraft = minecraftVersion.get()
         val installerProject = project(":repos:NowsInstaller")
         val offlineMavenArtifacts = installerProject.configurations.getByName("offlineMavenArtifacts").resolve()
-        val cliInstaller = installerProject.tasks.named<Jar>("jar").get().archiveFile.get().asFile
-        val uiInstaller = installerProject.tasks.named<Jar>("guiJar").get().archiveFile.get().asFile
-        val offlineInstaller = installerProject.tasks.named<Jar>("offlineJar").get().archiveFile.get().asFile
+        val installer = installerProject.tasks.named<Jar>("jar").get().archiveFile.get().asFile
         val apiMods = publishedMinecraftVersions.associateWith { minecraft ->
             project(":repos:NowsApiMod").tasks.named<Jar>(apiModJarTaskName(minecraft)).get().archiveFile.get().asFile
         }
         val gradlePlugin = project(":repos:NowsGradlePlugin").tasks.named<Jar>("jar").get().archiveFile.get().asFile
+        val releaseVersionRoot = publishLayoutDir.dir("releases/nows/$nows").asFile
+        val sharedInstallersRoot = releaseVersionRoot.resolve("installers")
+
+        delete(releaseVersionRoot)
+        sharedInstallersRoot.mkdirs()
+        installer.copyTo(sharedInstallersRoot.resolve(installer.name), overwrite = true)
+        sharedInstallersRoot.resolve("SHA256SUMS").writeText(
+            sha256(installer) + "  " + installer.name + System.lineSeparator()
+        )
 
         publishedMinecraftVersions.forEach { minecraft ->
             val releaseRoot = publishLayoutDir.dir("releases/nows/$nows/$minecraft").asFile
             val librariesRoot = releaseRoot.resolve("libraries")
-            val installersRoot = releaseRoot.resolve("installers")
             val modsRoot = releaseRoot.resolve("mods")
             val toolingRoot = releaseRoot.resolve("tooling")
             val artifactFiles = linkedMapOf<String, File>()
 
             delete(releaseRoot)
             librariesRoot.mkdirs()
-            installersRoot.mkdirs()
             toolingRoot.mkdirs()
 
             val moduleArtifacts = publishedModuleArtifactsFor(minecraft)
@@ -543,14 +541,6 @@ val publishLayout by tasks.registering {
                 artifactFiles[relativePath] = target
             }
 
-            cliInstaller.copyTo(installersRoot.resolve(cliInstaller.name), overwrite = true)
-            uiInstaller.copyTo(installersRoot.resolve(uiInstaller.name), overwrite = true)
-            if (minecraft == activeMinecraft) {
-                offlineInstaller.copyTo(
-                    installersRoot.resolve("NowsInstaller-offline-$nows-mc-$minecraft.jar"),
-                    overwrite = true
-                )
-            }
             modsRoot.mkdirs()
             val apiMod = apiMods[minecraft] ?: throw GradleException("No NowsApiMod jar registered for $minecraft")
             apiMod.copyTo(modsRoot.resolve(apiMod.name), overwrite = true)

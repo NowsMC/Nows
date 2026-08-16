@@ -46,7 +46,7 @@ Build/test the Gradle plugin:
 ./gradlew :repos:NowsGradlePlugin:build
 ```
 
-Build the user-facing UI installer, CLI installer and offline installer:
+Build the user-facing installer:
 
 ```bash
 ./gradlew :repos:NowsInstaller:assemble
@@ -131,7 +131,7 @@ Nows also scans this optional profile overlay:
 .minecraft/nows/profiles/nows-<nows-version>-<minecraft-version>/mods
 ```
 
-## Offline installer
+## Installer
 
 `publishLayout` stages release folders for every supported `mc/<minecraft-version>` adapter:
 
@@ -139,34 +139,30 @@ Nows also scans this optional profile overlay:
 .publishing/releases/nows/<nows-version>/<minecraft-version>/
 ```
 
-Each staged version contains the generic UI/CLI installers, libraries, a processed `install.properties`, `SHA256SUMS`, and `mods/nows-api-mod-<nows-version>-mc-<minecraft-version>.jar` as an optional companion mod artifact.
-
-The published offline installer is still version-specific because it embeds `install.properties`, Nows modules and `nows-mc-<minecraft-version>` for one Minecraft version. The normal `publishLayout` run copies the offline installer only for the active `minecraft_version` from `gradle.properties`.
+Each staged Minecraft version contains libraries, a processed `install.properties`, `SHA256SUMS`, and `mods/nows-api-mod-<nows-version>-mc-<minecraft-version>.jar` as an optional companion mod artifact.
 
 Expected output:
 
 ```text
-.publishing/releases/nows/<nows-version>/<minecraft-version>/installers/NowsInstaller-offline-<nows-version>-mc-<minecraft-version>.jar
+.publishing/releases/nows/<nows-version>/installers/NowsInstaller-<nows-version>.jar
 ```
 
-Local installer outputs:
+Local installer output:
 
 ```text
-repos/NowsInstaller/build/libs/NowsInstaller-cli-<version>.jar
-repos/NowsInstaller/build/libs/NowsInstaller-ui-<version>.jar
-repos/NowsInstaller/build/libs/NowsInstaller-offline-<version>.jar
+repos/NowsInstaller/build/libs/NowsInstaller-<version>.jar
 ```
 
 For local testing without downloads:
 
 ```bash
-java -jar NowsInstaller-cli-<version>.jar --offline --manifest <local install.properties> --artifactDir <local library root>
+java -cp NowsInstaller-<version>.jar space.nows.mcnows.installer.NowsInstaller --offline --manifest <local install.properties> --artifactDir <local library root>
 ```
 
-The normal public download should point to the UI installer:
+The normal public download should point to the shared installer:
 
 ```text
-.publishing/releases/nows/<nows-version>/<minecraft-version>/installers/NowsInstaller-ui-<nows-version>.jar
+.publishing/releases/nows/<nows-version>/installers/NowsInstaller-<nows-version>.jar
 ```
 
 ## KDL4J resolution rule
