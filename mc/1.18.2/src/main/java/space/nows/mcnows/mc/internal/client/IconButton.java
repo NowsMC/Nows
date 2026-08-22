@@ -5,13 +5,14 @@ import com.mojang.blaze3d.systems.RenderSystem;
 import net.minecraft.client.gui.GuiComponent;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.TextComponent;
 import net.minecraft.resources.ResourceLocation;
 
 public final class IconButton extends Button {
     private final ResourceLocation icon;
 
     public IconButton(int x, int y, int width, int height, ResourceLocation icon, Component message, Runnable onPress) {
-        super(x, y, width, height, message, button -> onPress.run());
+        super(x, y, width, height, new TextComponent(""), button -> onPress.run());
         this.icon = icon;
     }
 

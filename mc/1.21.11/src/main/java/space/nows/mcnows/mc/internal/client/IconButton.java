@@ -10,13 +10,12 @@ public final class IconButton extends Button {
     private final Identifier icon;
 
     public IconButton(int x, int y, int width, int height, Identifier icon, Component message, Runnable onPress) {
-        super(x, y, width, height, message, button -> onPress.run(), DEFAULT_NARRATION);
+        super(x, y, width, height, Component.empty(), button -> onPress.run(), DEFAULT_NARRATION);
         this.icon = icon;
     }
 
     @Override
     protected void renderContents(GuiGraphics graphics, int mouseX, int mouseY, float delta) {
-        renderDefaultLabel(graphics.textRendererForWidget(this, GuiGraphics.HoveredTextEffects.TOOLTIP_AND_CURSOR));
         int size = Math.min(16, Math.min(getWidth(), getHeight()) - 4);
         int x = getX() + (getWidth() - size) / 2;
         int y = getY() + (getHeight() - size) / 2;

@@ -9,7 +9,7 @@ public final class IconButton extends Button {
     private final ResourceLocation icon;
 
     public IconButton(int x, int y, int width, int height, ResourceLocation icon, Component message, Runnable onPress) {
-        super(x, y, width, height, message, button -> onPress.run(), DEFAULT_NARRATION);
+        super(x, y, width, height, Component.empty(), button -> onPress.run(), DEFAULT_NARRATION);
         this.icon = icon;
     }
 
