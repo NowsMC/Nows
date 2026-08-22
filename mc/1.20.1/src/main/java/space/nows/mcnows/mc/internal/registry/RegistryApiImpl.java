@@ -27,8 +27,10 @@ import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockBehaviour;
 import space.nows.mcnows.mc.api.registry.BlockEntry;
+import space.nows.mcnows.mc.api.registry.BlockSpec;
 import space.nows.mcnows.mc.api.registry.BlockEntityFactory;
 import space.nows.mcnows.mc.api.registry.BlockLogic;
+import space.nows.mcnows.mc.api.registry.ItemSpec;
 import space.nows.mcnows.mc.api.registry.ItemLogic;
 import space.nows.mcnows.mc.api.registry.MenuFactory;
 import space.nows.mcnows.mc.api.registry.RegistryApi;
@@ -68,6 +70,11 @@ public final class RegistryApiImpl implements RegistryApi {
     @Override
     public Item registerItem(String id) {
         return registerItem(id, Function.identity());
+    }
+
+    @Override
+    public Item registerItem(ItemSpec spec) {
+        return registerItem(spec.id(), properties -> applyItemSpec(properties, spec));
     }
 
     @Override
@@ -138,6 +145,11 @@ public final class RegistryApiImpl implements RegistryApi {
     }
 
     @Override
+    public Block registerBlock(BlockSpec spec) {
+        return registerCustomBlock(spec.id(), properties -> new Block(applyBlockSpec(blockProperties(spec), spec)));
+    }
+
+    @Override
     public Block registerBlock(String id, BlockLogic logic) {
         return registerBlock(id, Function.identity(), logic);
     }
@@ -174,6 +186,13 @@ public final class RegistryApiImpl implements RegistryApi {
     @Override
     public BlockEntry registerBlockWithItem(String id) {
         return registerBlockWithItem(id, Function.identity(), Function.identity());
+    }
+
+    @Override
+    public BlockEntry registerBlockWithItem(BlockSpec spec) {
+        Block block = registerBlock(spec);
+        ItemSpec itemSpec = spec.item() == null ? ItemSpec.builder(spec.id()).build() : spec.item();
+        return new BlockEntry(block, registerBlockItem(itemSpec.id(), block, properties -> applyItemSpec(properties, itemSpec)));
     }
 
     @Override
@@ -324,6 +343,29 @@ public final class RegistryApiImpl implements RegistryApi {
             case "equals" -> proxy == args[0];
             default -> null;
         };
+    }
+
+    private static Item.Properties applyItemSpec(Item.Properties properties, ItemSpec spec) {
+        Item.Properties configured = properties.stacksTo(spec.maxStackSize());
+        if (spec.fireResistant()) {
+            configured = configured.fireResistant();
+        }
+        return configured;
+    }
+
+    private static BlockBehaviour.Properties blockProperties(BlockSpec spec) {
+        return BlockBehaviour.Properties.of();
+    }
+
+    private static BlockBehaviour.Properties applyBlockSpec(BlockBehaviour.Properties properties, BlockSpec spec) {
+        BlockBehaviour.Properties configured = properties.strength(spec.destroyTime(), spec.explosionResistance());
+        if (spec.requiresCorrectTool()) {
+            configured = configured.requiresCorrectToolForDrops();
+        }
+        if (spec.noOcclusion()) {
+            configured = configured.noOcclusion();
+        }
+        return configured;
     }
 
     private static <T> T apply(Function<T, T> configure, T value) {
