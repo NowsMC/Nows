@@ -2,9 +2,13 @@ package space.nows.mcnows.mc.internal.client.config;
 
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.KeybindComponent;
+import net.minecraft.network.chat.TextComponent;
+import net.minecraft.network.chat.TranslatableComponent;
 import space.nows.mcnows.mc.api.client.config.ConfigScreenBuilder;
 import space.nows.mcnows.mc.api.client.config.ConfigScreenFactory;
 import space.nows.mcnows.mc.api.client.config.ConfigUi;
+import space.nows.mcnows.mc.api.text.McText;
 
 import java.util.Map;
 import java.util.Optional;
@@ -16,6 +20,23 @@ public final class ConfigUiImpl implements ConfigUi {
     @Override
     public ConfigScreenBuilder screen(Screen parent, Component title) {
         return new ConfigScreenBuilder(parent, title, spec -> new SimpleConfigScreen(spec.parent(), spec));
+    }
+
+
+
+    public ConfigScreenBuilder screen(McText title) {
+        return screen(null, component(title));
+    }
+
+    private static Component component(McText text) {
+        if (text == null) {
+            return new TextComponent("");
+        }
+        return switch (text.type()) {
+            case LITERAL -> new TextComponent(text.value());
+            case TRANSLATABLE -> new TranslatableComponent(text.value(), text.args());
+            case KEYBIND -> new KeybindComponent(text.value());
+        };
     }
 
     @Override
