@@ -139,7 +139,7 @@ Nows also scans this optional profile overlay:
 .publishing/releases/nows/<nows-version>/<minecraft-version>/
 ```
 
-Each staged Minecraft version contains libraries, a processed `install.properties`, `SHA256SUMS`, `client/client-dev.jar`, and `mods/nows-api-mod-<nows-version>-mc-<minecraft-version>.jar` as an optional companion mod artifact. The client JAR is the prepared Mojang-named jar used by the installer for versions whose vanilla runtime jar is obfuscated.
+Each staged Minecraft version contains libraries, a processed `install.properties`, `SHA256SUMS`, and `mods/nows-api-mod-<nows-version>-mc-<minecraft-version>.jar` as an optional companion mod artifact. Minecraft client JARs are not staged or uploaded by Nows; the installer prepares the local profile client from the user's vanilla install or Mojang's official services.
 
 Expected output:
 
@@ -229,15 +229,15 @@ Plugin id:
 
 ```kotlin
 plugins {
-    id("space.nows.mcnows") version "0.4.0"
+    id("space.nows.mcnows") version "0.5.0"
 }
 
 nows {
     minecraftVersion.set("26.2")
-    nowsVersion.set("0.4.0")
+    nowsVersion.set("0.5.0")
 }
 ```
 
-The plugin owns Minecraft development setup rather than loader core. `nowsPrepareMinecraft` downloads the official client artifact and official `client_mappings` metadata. For modern unobfuscated Minecraft it detects Mojang-named classes and skips remapping. For older obfuscated versions it reads Mojang's ProGuard mapping file with Nows' own parser and remaps obfuscated names to official Mojang names with the Nows ASM remapper.
+The plugin owns Minecraft development setup rather than loader core. `nowsPrepareMinecraft` downloads the official client artifact and official `client_mappings` metadata. For modern unobfuscated Minecraft it detects Mojang-named classes and skips remapping. For older obfuscated versions it uses `repos/NowsRemapper` to read Mojang's ProGuard mapping file and remap obfuscated names to official Mojang names locally.
 
 It applies Gradle's Java plugin, wires the prepared development client JAR into `compileOnly`, makes Java compilation depend on preparation, adds `nows-core`, the matching `nows-mc-<minecraft-version>` adapter, default KDL/logging/GEB/network/Mixin compile-time tooling, common Minecraft-owned compile libraries, and expands `${nowsVersion}` plus `${minecraftVersion}` in `nows.mod.kdl`.

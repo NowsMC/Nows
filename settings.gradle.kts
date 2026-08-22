@@ -30,6 +30,7 @@ include(
     "integrations:network",
     "integrations:mixin",
     "runtime",
+    "repos:NowsRemapper",
     "repos:NowsInstaller",
     "repos:NowsGradlePlugin",
     "repos:NowsApiMod",

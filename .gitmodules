@@ -11,6 +11,9 @@
 [submodule "repos/NowsInstaller"]
 	path = repos/NowsInstaller
 	url = git@github.com:NowsMC/NowsInstaller.git
+[submodule "repos/NowsRemapper"]
+	path = repos/NowsRemapper
+	url = git@github.com:NowsMC/NowsRemapper.git
 [submodule "example-mod"]
 	path = example-mod
 	url = git@github.com:NowsMC/example-mod.git

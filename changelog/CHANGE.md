@@ -1,3 +1,13 @@
+## 0.5.0
+
+- Added `repos/NowsRemapper` as the shared local remapping library for installer and Gradle tooling.
+- Installer now prepares the profile client jar locally from the user's vanilla Minecraft client jar or Mojang's official downloads.
+- Legacy obfuscated Minecraft clients are remapped locally with Mojang's official client mappings during install instead of being redistributed by Nows.
+
+## 0.4.3
+
+- Removed prepared Minecraft `client-dev.jar` artifacts from the hosted release layout and offline installer payload.
+
 ## 0.4.2
 
 - Split the installer into a normal internet-first installer and a separate offline installer JAR.

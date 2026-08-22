@@ -52,6 +52,7 @@ The installer should create and log both directories. Runtime logs should show `
 | `integrations/network/` | loader-level network channels, packet handler registry and transport abstraction | medium/high |
 | `integrations/mixin/` | Mixin host/service details | high |
 | `runtime/` | composition root that selects and connects core, Minecraft support and integrations | medium |
+| `repos/NowsRemapper/` | shared local Minecraft JAR remapping library used by installer and developer tooling | high |
 | `repos/NowsInstaller/` | user-facing launcher installation/update tooling and dependency delivery | high |
 | `repos/NowsGradlePlugin/` | developer tooling, Minecraft dependency preparation, Mojang mappings, remapping when needed and Gradle integration | high |
 | `repos/NowsApiMod/` | optional companion mod and fixture for Gradle plugin, KDL metadata, Mixin and version-specific API adapters; separate repository/submodule | high |
@@ -136,7 +137,7 @@ Installer-embedded dependencies, currently KDL4J, may be embedded into installer
 
 The optional `:runtime:allJar` task is the assembly point for a later monolithic distribution. It merges Nows modules and Nows-owned third-party runtime libraries while intentionally omitting Minecraft-owned Log4j2, SLF4J, Gson, Guava and JSpecify. Moshi is a Nows-owned runtime library and is installed with its Okio/Kotlin runtime dependencies so loader APIs can expose one JSON stack consistently.
 
-Launcher version profiles should inherit from the target vanilla Minecraft profile. When the vanilla client JAR already exists locally, the installer may copy it to the Nows version directory as a profile-local version JAR. That copy is an alias of Mojang's vanilla client JAR, not a bundled Nows library and not a redistributed loader dependency. If the vanilla JAR is missing, the version JSON may use the inherited `jar` field so the launcher can resolve the parent version.
+Launcher version profiles should inherit from the target vanilla Minecraft profile. The installer must not publish or embed Minecraft client JARs. When preparing the local profile JAR, it may copy the user's existing Mojang-named vanilla client, download the official client from Mojang, or remap an obfuscated local client with Mojang's official client mappings on the user's machine through `repos/NowsRemapper`. That profile JAR is local install output, not a bundled Nows library and not a redistributed loader dependency. If a compatible local profile JAR cannot be prepared, the version JSON may use the inherited `jar` field so the launcher can resolve the parent version.
 
 Nows launcher profiles should inherit the launcher's normal game folder by default by omitting `gameDir` from `launcher_profiles.json`. This matches other loaders and makes `.minecraft/mods` the normal user mod folder. A profile-local game folder under `.minecraft/nows/profiles/<profile-id>/` is available only when the installer is run with `--profileGameDir` or the UI option is selected. Runtime always also scans `.minecraft/nows/profiles/<profile-id>/mods` as an optional Nows-only overlay for testing or per-profile extras. The game folder is scanned first; duplicate Nows mod ids across both folders are invalid.
 
@@ -218,7 +219,7 @@ Official Mojang mappings are the canonical development namespace. For modern Min
 
 Mapping/remapping logic should not leak into the runtime loader unless runtime remapping is actually required.
 
-Nows owns its development remapper. The Gradle plugin reads Mojang's official ProGuard mapping file directly and remaps class, field and method references through ASM. Do not depend on Tiny Remapper, Mapping IO or Fabric tooling for this path.
+Nows owns its development remapper as `repos/NowsRemapper`. The Gradle plugin and installer both use that shared library to read Mojang's official ProGuard mapping file directly and remap class, field and method references through ASM. Do not depend on Tiny Remapper, Mapping IO or Fabric tooling for this path.
 
 The Gradle plugin must be usable both from a published plugin artifact and as an included build inside this monorepo. Local fixtures such as `repos/NowsApiMod/` should exercise the same plugin path that an external mod project would use.
 
