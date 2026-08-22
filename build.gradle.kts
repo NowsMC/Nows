@@ -4,6 +4,7 @@ import org.gradle.api.services.BuildService
 import org.gradle.api.services.BuildServiceParameters
 import org.gradle.api.publish.PublishingExtension
 import org.gradle.api.publish.maven.MavenPublication
+import org.gradle.api.tasks.SourceSetContainer
 import org.gradle.api.publish.maven.tasks.PublishToMavenRepository
 import org.gradle.plugins.signing.Sign
 import org.gradle.plugins.signing.SigningExtension
@@ -192,6 +193,32 @@ subprojects {
                     isRequired = true
                     useGpgCmd()
                     sign(extensions.getByType(PublishingExtension::class.java).publications)
+                }
+            }
+        }
+
+        plugins.withId("java-library") {
+            if (path.startsWith(":mc:")) {
+                val minecraftDevJar = layout.buildDirectory.file("nows/minecraft/${project.name}/client-dev.jar")
+                extensions.configure<SourceSetContainer> {
+                    named("main") {
+                        java.srcDir(rootProject.layout.projectDirectory.dir("mc/shared-main/src/main/java"))
+                    }
+                    named("test") {
+                        java.srcDir(rootProject.layout.projectDirectory.dir("mc/shared-test/src/test/java"))
+                        compileClasspath += named("main").get().compileClasspath
+                        runtimeClasspath += named("main").get().compileClasspath
+                    }
+                }
+                dependencies.add("testImplementation", dependencies.platform("org.junit:junit-bom:5.12.2"))
+                dependencies.add("testImplementation", "org.junit.jupiter:junit-jupiter")
+                dependencies.add("testRuntimeOnly", "org.junit.platform:junit-platform-launcher")
+                dependencies.add("testCompileOnly", files(minecraftDevJar))
+                dependencies.add("testRuntimeOnly", files(minecraftDevJar))
+                tasks.withType<Test>().configureEach {
+                    dependsOn(tasks.named("nowsPrepareMinecraft"))
+                    classpath = files(minecraftDevJar) + classpath
+                    useJUnitPlatform()
                 }
             }
         }
