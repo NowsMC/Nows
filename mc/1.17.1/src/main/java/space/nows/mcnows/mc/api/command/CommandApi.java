@@ -10,6 +10,9 @@ import java.util.function.Consumer;
 public interface CommandApi {
     void register(Consumer<CommandDispatcher<CommandSourceStack>> registration);
 
+    void register(CommandSpec spec);
+
+
     List<Consumer<CommandDispatcher<CommandSourceStack>>> registrations();
 
     void applyTo(CommandDispatcher<CommandSourceStack> dispatcher);

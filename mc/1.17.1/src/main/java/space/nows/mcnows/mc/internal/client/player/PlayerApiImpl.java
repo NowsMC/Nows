@@ -7,8 +7,11 @@ import net.minecraft.world.entity.player.Abilities;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.phys.Vec3;
+import space.nows.mcnows.mc.api.McVec3;
 import space.nows.mcnows.mc.api.client.player.PlayerApi;
 import space.nows.mcnows.mc.api.client.player.PlayerSnapshot;
+import space.nows.mcnows.mc.api.registry.ItemStackSpec;
+import space.nows.mcnows.mc.internal.registry.RegistryApiImpl;
 
 import java.util.Optional;
 
@@ -25,8 +28,8 @@ public final class PlayerApiImpl implements PlayerApi {
         return new PlayerSnapshot(
                 player.getUUID(),
                 player.getScoreboardName(),
-                player.position(),
-                player.getDeltaMovement(),
+                vector(player.position()),
+                vector(player.getDeltaMovement()),
                 player.getYRot(),
                 player.getXRot(),
                 player.getHealth(),
@@ -196,9 +199,19 @@ public final class PlayerApiImpl implements PlayerApi {
         return requireCurrent().getInventory().add(item);
     }
 
+
+    public boolean addItem(ItemStackSpec item) {
+        return addItem(itemStack(item));
+    }
+
     @Override
     public void setInventoryItem(int slot, ItemStack item) {
         requireCurrent().getInventory().setItem(slot, item);
+    }
+
+
+    public void setInventoryItem(int slot, ItemStackSpec item) {
+        setInventoryItem(slot, itemStack(item));
     }
 
     @Override
@@ -216,5 +229,13 @@ public final class PlayerApiImpl implements PlayerApi {
     @Override
     public void sendOverlayMessage(Component message) {
         requireCurrent().displayClientMessage(message, true);
+    }
+
+    private static McVec3 vector(Vec3 vector) {
+        return McVec3.of(vector.x(), vector.y(), vector.z());
+    }
+
+    private static ItemStack itemStack(ItemStackSpec spec) {
+        return new ItemStack(new RegistryApiImpl().getItem(spec.itemId()), spec.count());
     }
 }
