@@ -11,6 +11,9 @@ import net.minecraft.nbt.ShortTag;
 import net.minecraft.nbt.StringTag;
 import net.minecraft.nbt.Tag;
 import space.nows.mcnows.mc.api.nbt.NbtApi;
+import space.nows.mcnows.mc.api.nbt.NbtCompound;
+import space.nows.mcnows.mc.api.nbt.NbtList;
+import space.nows.mcnows.mc.api.nbt.NbtValue;
 
 public enum NbtApiImpl implements NbtApi {
     INSTANCE;
@@ -23,6 +26,43 @@ public enum NbtApiImpl implements NbtApi {
     @Override
     public ListTag list() {
         return new ListTag();
+    }
+
+
+    public CompoundTag compound(NbtCompound value) {
+        CompoundTag tag = compound();
+        for (var entry : value.values().entrySet()) {
+            put(tag, entry.getKey(), tag(entry.getValue()));
+        }
+        return tag;
+    }
+
+
+    public ListTag list(NbtList value) {
+        ListTag tag = list();
+        for (NbtValue child : value.values()) {
+            add(tag, tag(child));
+        }
+        return tag;
+    }
+
+
+    public Tag tag(NbtValue value) {
+        if (value == null) {
+            return stringTag("");
+        }
+        return switch (value.type()) {
+            case END -> stringTag("");
+            case BYTE -> byteTag((Byte) value.value());
+            case SHORT -> shortTag((Short) value.value());
+            case INT -> intTag((Integer) value.value());
+            case LONG -> longTag((Long) value.value());
+            case FLOAT -> floatTag((Float) value.value());
+            case DOUBLE -> doubleTag((Double) value.value());
+            case STRING -> stringTag((String) value.value());
+            case LIST -> list((NbtList) value.value());
+            case COMPOUND -> compound((NbtCompound) value.value());
+        };
     }
 
     @Override

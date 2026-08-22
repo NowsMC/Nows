@@ -1,6 +1,10 @@
 package space.nows.mcnows.mc.api.client.config;
 
 import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.KeybindComponent;
+import net.minecraft.network.chat.TextComponent;
+import net.minecraft.network.chat.TranslatableComponent;
+import space.nows.mcnows.mc.api.text.McText;
 
 import java.util.function.Consumer;
 import java.util.function.IntConsumer;
@@ -60,6 +64,26 @@ public final class ConfigOptionSpec {
                 saveConsumer, null);
     }
 
+    public static ConfigOptionSpec bool(
+            McText label,
+            boolean value,
+            boolean defaultValue,
+            McText tooltip,
+            Consumer<Boolean> saveConsumer
+    ) {
+        return bool(component(label), value, defaultValue, component(tooltip), saveConsumer);
+    }
+
+    public static ConfigOptionSpec bool(
+            String label,
+            boolean value,
+            boolean defaultValue,
+            String tooltip,
+            Consumer<Boolean> saveConsumer
+    ) {
+        return bool(McText.literal(label), value, defaultValue, McText.literal(tooltip), saveConsumer);
+    }
+
     public static ConfigOptionSpec integer(
             Component label,
             int value,
@@ -73,7 +97,43 @@ public final class ConfigOptionSpec {
                 null, saveConsumer);
     }
 
+    public static ConfigOptionSpec integer(
+            McText label,
+            int value,
+            int defaultValue,
+            int min,
+            int max,
+            McText tooltip,
+            IntConsumer saveConsumer
+    ) {
+        return integer(component(label), value, defaultValue, min, max, component(tooltip), saveConsumer);
+    }
+
+    public static ConfigOptionSpec integer(
+            String label,
+            int value,
+            int defaultValue,
+            int min,
+            int max,
+            String tooltip,
+            IntConsumer saveConsumer
+    ) {
+        return integer(McText.literal(label), value, defaultValue, min, max, McText.literal(tooltip), saveConsumer);
+    }
+
+    private static Component component(McText text) {
+        if (text == null) {
+            return new TextComponent("");
+        }
+        return switch (text.type()) {
+            case LITERAL -> new TextComponent(text.value());
+            case TRANSLATABLE -> new TranslatableComponent(text.value(), text.args());
+            case KEYBIND -> new KeybindComponent(text.value());
+        };
+    }
+
     public Type type() {
+
         return type;
     }
 
