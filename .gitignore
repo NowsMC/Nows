@@ -12,3 +12,4 @@ local.properties
 repos/NowsInstaller/vendor/
 .aider*
 .outsource/
+logs/
