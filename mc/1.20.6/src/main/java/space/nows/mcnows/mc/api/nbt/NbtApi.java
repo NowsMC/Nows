@@ -10,6 +10,9 @@ import net.minecraft.nbt.LongTag;
 import net.minecraft.nbt.ShortTag;
 import net.minecraft.nbt.StringTag;
 import net.minecraft.nbt.Tag;
+import space.nows.mcnows.mc.api.nbt.NbtCompound;
+import space.nows.mcnows.mc.api.nbt.NbtList;
+import space.nows.mcnows.mc.api.nbt.NbtValue;
 
 /** Version-backed helpers for common NBT reads and writes. */
 public interface NbtApi {
@@ -29,7 +32,23 @@ public interface NbtApi {
 
     CompoundTag compound();
 
+    default NbtCompound stableCompound() {
+        return new NbtCompound();
+    }
+
+    CompoundTag compound(NbtCompound value);
+
+
     ListTag list();
+
+    default NbtList stableList() {
+        return new NbtList();
+    }
+
+    ListTag list(NbtList value);
+
+    Tag tag(NbtValue value);
+
 
     ByteTag byteTag(byte value);
 
