@@ -49,6 +49,8 @@ public interface RegistryApi {
 
     Item registerItem(String id);
 
+    Item registerItem(ItemSpec spec);
+
     Item registerItem(String id, ItemLogic logic);
 
     Item registerItem(String id, Function<Item.Properties, Item.Properties> configure);
@@ -82,6 +84,8 @@ public interface RegistryApi {
 
     Block registerBlock(String id);
 
+    Block registerBlock(BlockSpec spec);
+
     Block registerBlock(String id, BlockLogic logic);
 
     Block registerBlock(String id, Function<BlockBehaviour.Properties, BlockBehaviour.Properties> configure);
@@ -95,6 +99,8 @@ public interface RegistryApi {
     BlockItem registerBlockItem(String id, Block block, Function<Item.Properties, Item.Properties> configure);
 
     BlockEntry registerBlockWithItem(String id);
+
+    BlockEntry registerBlockWithItem(BlockSpec spec);
 
     BlockEntry registerBlockWithItem(
             String id,
