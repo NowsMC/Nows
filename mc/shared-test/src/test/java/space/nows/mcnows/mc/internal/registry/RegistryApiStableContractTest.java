@@ -59,6 +59,8 @@ class RegistryApiStableContractTest {
     void publicAndInternalApisExposeStableWrapperMethods() {
         assertDoesNotThrow(() -> ConfigUi.class.getMethod("screen", McText.class));
         assertDoesNotThrow(() -> ConfigUiImpl.class.getMethod("screen", McText.class));
+        assertDoesNotThrow(() -> ConfigUi.class.getMethod("screen", net.minecraft.client.gui.screens.Screen.class, McText.class));
+        assertDoesNotThrow(() -> ConfigUiImpl.class.getMethod("screen", net.minecraft.client.gui.screens.Screen.class, McText.class));
         assertDoesNotThrow(() -> KeybindApi.class.getMethod("registerKeyboard", String.class, String.class, int.class));
         assertDoesNotThrow(() -> KeybindApiImpl.class.getMethod("registerKeyboard", String.class, String.class, int.class));
         assertDoesNotThrow(() -> KeybindRegistration.class.getMethod("keyMapping"));
@@ -116,6 +118,7 @@ class RegistryApiStableContractTest {
                 .intOption("Amount", 4, 4, 0, 16, "Numeric value", value -> {})
                 .done()
                 .saving(() -> {});
+        ConfigScreenBuilder parentScreen = config.screen(null, McText.literal("Options"));
         KeybindRegistration keybind = keybinds.registerKeyboard("key.nows.contract", "key.categories.nows", 65);
         Object nativeKeybind = keybind.keyMapping();
         McVec3 position = player.stablePosition();

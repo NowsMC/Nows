@@ -9,10 +9,16 @@ import java.util.Optional;
 public interface ConfigUi {
     ConfigScreenBuilder screen(Screen parent, Component title);
 
+    ConfigScreenBuilder screen(Screen parent, McText title);
+
     ConfigScreenBuilder screen(McText title);
 
     default ConfigScreenBuilder screen(String title) {
         return screen(McText.literal(title));
+    }
+
+    default ConfigScreenBuilder screen(Screen parent, String title) {
+        return screen(parent, McText.literal(title));
     }
 
 

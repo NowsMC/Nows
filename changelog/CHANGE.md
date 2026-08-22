@@ -4,6 +4,7 @@
 - Added `BlockMaterial` so mods can describe block material intent without depending on Minecraft's version-specific material APIs.
 - Added stable Nows-owned wrapper values for text, vectors, item stacks, commands, datapack targets and NBT payloads.
 - Extended config, keybind, player, UI text, command, datapack, event, NBT and registry APIs so mods can keep calling Nows MC the same way across Minecraft versions.
+- Added a parent-aware `McText` config screen overload for registered config screen factories.
 - Updated every published Minecraft adapter to translate stable registry specs into that version's registry, item property and block property APIs.
 - Added shared JUnit contract coverage for the stable registry API surface across all supported Minecraft adapter modules.
 

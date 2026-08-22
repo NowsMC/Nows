@@ -20,9 +20,13 @@ public final class ConfigUiImpl implements ConfigUi {
     }
 
 
+    public ConfigScreenBuilder screen(Screen parent, McText title) {
+        return screen(parent, component(title));
+    }
+
 
     public ConfigScreenBuilder screen(McText title) {
-        return screen(null, component(title));
+        return screen(null, title);
     }
 
     private static Component component(McText text) {
