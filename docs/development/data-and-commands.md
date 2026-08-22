@@ -5,16 +5,18 @@ Datapack and resource-pack sources are exposed through the version adapter:
 ```java
 DataPacks packs = MinecraftApi.dataPacks(context);
 Path modPackDir = packs.modPackDirectory("my_mod");
-packs.registerSource(PackType.SERVER_DATA, repositoryConsumer -> {
-    // Create or forward Minecraft RepositorySource packs for this version.
-});
+Path dataDir = packs.modDataDirectory("my_mod");
+Path assetsDir = packs.modAssetsDirectory("my_mod");
+List<Object> serverSources = packs.sources(PackTarget.SERVER_DATA);
 ```
 
 Commands and generated JSON data are collected through the adapter as well:
 
 ```java
-MinecraftApi.commands(context).register(dispatcher ->
-        dispatcher.register(Commands.literal("my_mod").executes(command -> 1)));
+MinecraftApi.commands(context).register(CommandSpec.literal("my_mod")
+        .executes(MyCommands::run)
+        .result(1)
+        .build());
 
 DataGen dataGen = MinecraftApi.dataGen(context);
 dataGen.writeJson(dataGen.recipePath("my_mod:widget"), Map.class, Map.of(
@@ -23,3 +25,5 @@ dataGen.writeJson(dataGen.recipePath("my_mod:widget"), Map.class, Map.of(
         "result", Map.of("id", "my_mod:widget", "count", 1)
 ));
 ```
+
+Use `PackTarget.SERVER_DATA` for data packs and `PackTarget.CLIENT_RESOURCES` for assets. `CommandSpec` covers simple literal commands through a stable Nows-owned value; the lower-level Brigadier dispatcher callback remains available for commands that need arguments, permissions or native source details.

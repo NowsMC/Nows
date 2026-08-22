@@ -25,9 +25,13 @@ Client player helpers expose both nullable and fail-fast player access. On multi
 PlayerApi player = MinecraftApi.player(context);
 player.current().ifPresent(local -> {
     PlayerSnapshot snapshot = player.snapshot();
-    player.sendOverlayMessage(Component.literal("Hello " + snapshot.name()));
+    player.sendOverlayMessage(McText.literal("Hello " + snapshot.name()));
+    player.setPosition(McVec3.of(0.5D, snapshot.position().y(), 0.5D));
+    player.addItem(ItemStackSpec.of("minecraft:stone", 1));
     player.setHealth(Math.min(snapshot.maxHealth(), snapshot.health() + 2.0F));
     player.setFood(20);
     player.setSelectedHotbarSlot(0);
 });
 ```
+
+`PlayerSnapshot.position()` and `velocity()` now use `McVec3`, so common player code does not need to know whether the selected adapter uses one vector class or another internally.

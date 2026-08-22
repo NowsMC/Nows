@@ -1,6 +1,6 @@
 # Minecraft Adapter APIs
 
-`mc/<version>` exposes small Minecraft-facing API helpers for the selected game version. These helpers are meant to reduce common porting work, not hide every Minecraft class.
+`mc/<version>` exposes Minecraft-facing API helpers for the selected game version. In 0.6.0 the stable path is Nows-owned input values first, then adapter translation into the real Minecraft API for that version.
 
 Mods can use the same Nows API class names across supported versions while each adapter handles common version details:
 
@@ -9,19 +9,20 @@ RegistryApi registries = MinecraftApi.registries(context);
 TextApi text = MinecraftApi.text(context);
 NbtApi nbt = MinecraftApi.nbt(context);
 
-Item raw = registries.register(BuiltInRegistries.ITEM, "my_mod:raw_widget", new Item(new Item.Properties()));
-Item item = registries.registerItem("my_mod:widget", props -> props.stacksTo(16));
-Item food = registries.registerFood("my_mod:berry", new FoodProperties.Builder()
-        .nutrition(4)
-        .saturationModifier(0.3F)
+Item item = registries.registerItem(ItemSpec.builder("my_mod:widget")
+        .maxStackSize(16)
         .build());
-Item sword = registries.registerSword("my_mod:blade", ToolMaterial.IRON, 3.0F, -2.4F);
-Item helmet = registries.registerArmor("my_mod:helmet", ArmorMaterials.IRON, ArmorType.HELMET);
 BlockEntry block = registries.registerBlockWithItem(
-        "my_mod:machine",
-        props -> props.strength(2.0F, 6.0F),
-        props -> props);
+        BlockSpec.builder("my_mod:machine")
+                .material(BlockMaterial.METAL)
+                .strength(2.0F, 6.0F)
+                .requiresCorrectTool()
+                .item(ItemSpec.builder("my_mod:machine").maxStackSize(32).build())
+                .build());
+ItemStack stone = registries.itemStack(ItemStackSpec.of("minecraft:stone", 2));
 ```
+
+The older native escape hatches still exist for advanced code, such as custom item/block factories and raw registry registration. Prefer the stable specs when the mod only needs common item, block, stack or material intent.
 
 ## Content Mods
 
@@ -129,9 +130,11 @@ Use `registries.id(...)` or `registries.resourceLocation(...)` for the selected 
 Text helpers cover the common literal, translation and keybind component constructors without making mods remember when Minecraft renamed those factories:
 
 ```java
-Component title = text.translatable("screen.my_mod.settings");
-Component help = text.literal("Hold ").append(text.keybind("key.sneak"));
+Component title = text.component(McText.translatable("screen.my_mod.settings"));
+Component help = text.component(McText.keybind("key.my_mod.open_oven"));
 ```
+
+`McText` is the stable public value. Each adapter maps it to `TextComponent`, `Component.literal`, `Component.translatable` or the matching Minecraft text API for that version.
 
 ## Keybinds
 
@@ -166,26 +169,19 @@ MinecraftApi.events(context).clientTick(client -> {
 
 The default category is `key.categories.nows`. Key ids and categories should be translation keys so Minecraft's Controls screen can show localized names.
 
-NBT helpers cover common compound/list reads and writes with explicit fallbacks. The returned values are still Minecraft's real NBT classes, so mods can drop down to direct APIs when needed:
+NBT helpers cover common compound/list reads and writes with explicit fallbacks. 0.6.0 also adds stable Nows NBT payloads that adapters convert to the real Minecraft tag classes:
 
 ```java
-CompoundTag data = nbt.compound();
-nbt.putString(data, "owner", "my_mod");
-nbt.putInt(data, "heat", 7);
+NbtCompound data = nbt.stableCompound()
+        .putString("owner", "my_mod")
+        .putInt("heat", 7)
+        .putBoolean("active", true);
 
-CompoundTag machine = nbt.putCompound(data, "machine");
-nbt.putBoolean(machine, "active", true);
-
-ListTag history = nbt.putList(data, "history");
-nbt.addString(history, "created");
-nbt.addCompound(history, nbt.copy(machine));
-
-int heat = nbt.getInt(data, "heat", 0);
-boolean active = nbt.getBoolean(nbt.getCompound(data, "machine"), "active", false);
-String firstHistoryEntry = nbt.getString(nbt.getList(data, "history"), 0, "");
+CompoundTag nativeData = nbt.compound(data);
+Tag nativeValue = nbt.tag(NbtValue.compound(data));
 ```
 
-This layer intentionally avoids item-stack custom data for now. Minecraft 1.20.5+ moved much of that surface toward data components, so stack data helpers should be designed separately.
+The native helpers remain available for direct reads/writes on Minecraft `CompoundTag` and `ListTag`. Item-stack custom data is still deliberately separate because Minecraft 1.20.5+ moved much of that surface toward data components.
 
 ## Recipe Viewer Porting
 

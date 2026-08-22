@@ -1,12 +1,12 @@
 # Nows MC
 
-Nows MC is a small Minecraft Java mod loader and portability layer for mod
-authors who want thinner version adapter code.
+Nows MC is a Minecraft Java mod loader and stable wrapper layer for mod authors
+who want the same Nows MC calls across supported game versions.
 
-It sits between a mod and Minecraft so common loader and adapter code can change
-less when the same mod moves across supported game versions. The layer is meant to
-stay thin: use Nows for repeated setup work, then use Minecraft's own APIs directly
-whenever that is clearer.
+It sits between a mod and Minecraft so common mod-facing calls stay stable while
+each `mc/<version>` adapter maps those calls onto that version's real game API.
+Use Minecraft's own APIs directly whenever that is clearer; use Nows when the
+wrapper boundary can remove repeated version glue.
 
 Nows is experimental. It does not promise automatic porting, full API coverage or a
 replacement for Minecraft APIs. The goal is practical portability: fewer repeated
@@ -17,10 +17,10 @@ files, smaller adapter changes and helpers that come from real mod development n
 Good fits for Nows:
 
 - metadata and lifecycle setup
-- registry helpers for common content
+- stable registry specs for common content
 - config screens, keybinds, tick callbacks and small client conveniences
-- text, NBT, generated data, resources, recipe display metadata and networking
-  surfaces
+- text, vectors, item stacks, commands, datapack targets, NBT, generated data,
+  resources, recipe display metadata and networking surfaces
 
 Use Minecraft classes, mixins or version-specific hooks directly when they are the
 clearest tool.
