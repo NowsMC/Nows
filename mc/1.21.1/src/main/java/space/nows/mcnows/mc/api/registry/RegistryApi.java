@@ -114,6 +114,9 @@ public interface RegistryApi {
 
     BlockEntry registerBlockWithItem(BlockSpec spec);
 
+    ItemStack itemStack(ItemStackSpec spec);
+
+
     BlockEntry registerBlockWithItem(
             String id,
             Function<BlockBehaviour.Properties, BlockBehaviour.Properties> blockConfigure,
