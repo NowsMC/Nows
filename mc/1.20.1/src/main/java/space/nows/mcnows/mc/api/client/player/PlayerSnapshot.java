@@ -1,14 +1,14 @@
 package space.nows.mcnows.mc.api.client.player;
 
-import net.minecraft.world.phys.Vec3;
+import space.nows.mcnows.mc.api.McVec3;
 
 import java.util.UUID;
 
 public record PlayerSnapshot(
         UUID id,
         String name,
-        Vec3 position,
-        Vec3 velocity,
+        McVec3 position,
+        McVec3 velocity,
         float yaw,
         float pitch,
         float health,

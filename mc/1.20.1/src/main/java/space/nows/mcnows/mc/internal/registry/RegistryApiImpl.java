@@ -31,6 +31,7 @@ import space.nows.mcnows.mc.api.registry.BlockSpec;
 import space.nows.mcnows.mc.api.registry.BlockEntityFactory;
 import space.nows.mcnows.mc.api.registry.BlockLogic;
 import space.nows.mcnows.mc.api.registry.ItemSpec;
+import space.nows.mcnows.mc.api.registry.ItemStackSpec;
 import space.nows.mcnows.mc.api.registry.ItemLogic;
 import space.nows.mcnows.mc.api.registry.MenuFactory;
 import space.nows.mcnows.mc.api.registry.RegistryApi;
@@ -193,6 +194,11 @@ public final class RegistryApiImpl implements RegistryApi {
         Block block = registerBlock(spec);
         ItemSpec itemSpec = spec.item() == null ? ItemSpec.builder(spec.id()).build() : spec.item();
         return new BlockEntry(block, registerBlockItem(itemSpec.id(), block, properties -> applyItemSpec(properties, itemSpec)));
+    }
+
+
+    public ItemStack itemStack(ItemStackSpec spec) {
+        return new ItemStack(getItem(spec.itemId()), spec.count());
     }
 
     @Override
