@@ -1,11 +1,16 @@
 import java.security.MessageDigest
 import java.lang.ProcessBuilder.Redirect
+import org.gradle.api.services.BuildService
+import org.gradle.api.services.BuildServiceParameters
 import org.gradle.api.publish.PublishingExtension
 import org.gradle.api.publish.maven.MavenPublication
 import org.gradle.api.publish.maven.tasks.PublishToMavenRepository
+import org.gradle.plugins.signing.Sign
 import org.gradle.plugins.signing.SigningExtension
 
 plugins { base }
+
+abstract class GpgSigningService : BuildService<BuildServiceParameters.None>
 
 val nowsVersion = providers.gradleProperty("nows_version")
 val minecraftVersion = providers.gradleProperty("minecraft_version")
@@ -18,6 +23,9 @@ val githubPackageToken = providers.gradleProperty("gpr.token")
 val publishLayoutDir = layout.projectDirectory.dir(".publishing")
 val publishingMavenDir = publishLayoutDir.dir("maven")
 val nowsWebDir = layout.projectDirectory.dir("repos/NowsWeb")
+val gpgSigningService = gradle.sharedServices.registerIfAbsent("gpgSigningService", GpgSigningService::class) {
+    maxParallelUsages.set(1)
+}
 
 val cleanPublishingMavenLayout by tasks.registering(Delete::class) {
     delete(publishingMavenDir)
@@ -111,6 +119,10 @@ fun MavenPublication.configureNowsPom(projectPath: String) {
 allprojects {
     group = "space.nows.mcnows"
     version = nowsVersion.get()
+
+    tasks.withType<Sign>().configureEach {
+        usesService(gpgSigningService)
+    }
 
     repositories {
         mavenCentral()
