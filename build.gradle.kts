@@ -461,6 +461,7 @@ val publishLayout by tasks.registering {
     dependsOn(
         "publishMavenLayout",
         ":repos:NowsInstaller:jar",
+        ":repos:NowsInstaller:offlineJar",
         ":repos:NowsGradlePlugin:jar",
         ":repos:NowsApiMod:allApiModJars"
     )
@@ -483,6 +484,7 @@ val publishLayout by tasks.registering {
         val installerProject = project(":repos:NowsInstaller")
         listOf(
             installerProject.tasks.named<Jar>("jar").get().archiveFile.get().asFile,
+            installerProject.tasks.named<Jar>("offlineJar").get().archiveFile.get().asFile,
             *publishedMinecraftVersions.map { minecraft ->
                 project(":repos:NowsApiMod").tasks.named<Jar>(apiModJarTaskName(minecraft)).get().archiveFile.get().asFile
             }.toTypedArray(),
@@ -506,6 +508,7 @@ val publishLayout by tasks.registering {
         val installerProject = project(":repos:NowsInstaller")
         val offlineMavenArtifacts = installerProject.configurations.getByName("offlineMavenArtifacts").resolve()
         val installer = installerProject.tasks.named<Jar>("jar").get().archiveFile.get().asFile
+        val offlineInstaller = installerProject.tasks.named<Jar>("offlineJar").get().archiveFile.get().asFile
         val apiMods = publishedMinecraftVersions.associateWith { minecraft ->
             project(":repos:NowsApiMod").tasks.named<Jar>(apiModJarTaskName(minecraft)).get().archiveFile.get().asFile
         }
@@ -516,8 +519,11 @@ val publishLayout by tasks.registering {
         delete(releaseVersionRoot)
         sharedInstallersRoot.mkdirs()
         installer.copyTo(sharedInstallersRoot.resolve(installer.name), overwrite = true)
+        offlineInstaller.copyTo(sharedInstallersRoot.resolve(offlineInstaller.name), overwrite = true)
         sharedInstallersRoot.resolve("SHA256SUMS").writeText(
-            sha256(installer) + "  " + installer.name + System.lineSeparator()
+            listOf(installer, offlineInstaller).joinToString(System.lineSeparator(), postfix = System.lineSeparator()) {
+                sha256(it) + "  " + it.name
+            }
         )
 
         publishedMinecraftVersions.forEach { minecraft ->
