@@ -1,3 +1,10 @@
+## 0.6.0
+
+- Added stable Nows-owned registry specs for item and block registration across Minecraft versions.
+- Added `BlockMaterial` so mods can describe block material intent without depending on Minecraft's version-specific material APIs.
+- Updated every published Minecraft adapter to translate stable registry specs into that version's registry, item property and block property APIs.
+- Added shared JUnit contract coverage for the stable registry API surface across all supported Minecraft adapter modules.
+
 ## 0.5.0
 
 - Added `repos/NowsRemapper` as the shared local remapping library for installer and Gradle tooling.
