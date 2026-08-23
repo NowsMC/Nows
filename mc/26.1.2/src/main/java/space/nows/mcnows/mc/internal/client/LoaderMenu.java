@@ -1,7 +1,6 @@
 package space.nows.mcnows.mc.internal.client;
 
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.screens.TitleScreen;
 import space.nows.mcnows.api.NowsContext;
 import space.nows.mcnows.mc.api.MinecraftApi;
 import space.nows.mcnows.mc.api.client.ui.Ui;
@@ -18,7 +17,10 @@ public final class LoaderMenu {
                 title.width() - 24, 4, 20, 20,
                 ICON,
                 "Nows Mods",
-                () -> Minecraft.getInstance().setScreenAndShow(new ModListScreen(new TitleScreen(), context))
+                () -> {
+                    Minecraft minecraft = Minecraft.getInstance();
+                    minecraft.setScreenAndShow(new ModListScreen(minecraft.screen, context));
+                }
         ));
     }
 }
