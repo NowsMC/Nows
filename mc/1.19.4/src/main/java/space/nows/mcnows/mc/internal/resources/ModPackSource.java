@@ -3,6 +3,7 @@ package space.nows.mcnows.mc.internal.resources;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.packs.PackResources;
 import net.minecraft.server.packs.PackType;
+import net.minecraft.server.packs.metadata.pack.PackMetadataSection;
 import net.minecraft.server.packs.repository.Pack;
 import net.minecraft.server.packs.repository.PackSource;
 import net.minecraft.server.packs.repository.RepositorySource;
@@ -19,11 +20,14 @@ import java.util.function.Consumer;
 import java.util.zip.ZipFile;
 
 public final class ModPackSource implements RepositorySource {
-    private static final int RESOURCE_PACK_FORMAT_1_20_1 = 15;
+    private static final int RESOURCE_PACK_FORMAT_1_19_4 = 13;
     private static final Pack.Info INFO = new Pack.Info(
             Component.literal("Nows mod resources"),
-            RESOURCE_PACK_FORMAT_1_20_1,
+            RESOURCE_PACK_FORMAT_1_19_4,
             FeatureFlagSet.of());
+    private static final PackMetadataSection METADATA = new PackMetadataSection(
+            Component.literal("Nows mod resources"),
+            RESOURCE_PACK_FORMAT_1_19_4);
 
     private final List<ModContainer> mods;
     private final Path loaderResources;
@@ -78,6 +82,10 @@ public final class ModPackSource implements RepositorySource {
                 Pack.Position.TOP,
                 true,
                 PackSource.BUILT_IN);
+    }
+
+    static PackMetadataSection metadata() {
+        return METADATA;
     }
 
     private static int countResourceMods(List<ModContainer> mods) {

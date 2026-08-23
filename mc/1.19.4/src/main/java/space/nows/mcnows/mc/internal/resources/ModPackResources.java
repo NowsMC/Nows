@@ -72,7 +72,11 @@ final class ModPackResources implements PackResources {
     }
 
     @Override
+    @SuppressWarnings("unchecked")
     public <T> T getMetadataSection(MetadataSectionSerializer<T> serializer) {
+        if ("pack".equals(serializer.getMetadataSectionName())) {
+            return (T) ModPackSource.metadata();
+        }
         return null;
     }
 

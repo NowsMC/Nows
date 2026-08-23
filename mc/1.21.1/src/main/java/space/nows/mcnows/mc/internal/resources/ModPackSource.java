@@ -4,6 +4,7 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.server.packs.PackLocationInfo;
 import net.minecraft.server.packs.PackResources;
 import net.minecraft.server.packs.PackSelectionConfig;
+import net.minecraft.server.packs.metadata.pack.PackMetadataSection;
 import net.minecraft.server.packs.repository.Pack;
 import net.minecraft.server.packs.repository.PackCompatibility;
 import net.minecraft.server.packs.repository.PackSource;
@@ -21,6 +22,11 @@ import java.util.function.Consumer;
 import java.util.zip.ZipFile;
 
 public final class ModPackSource implements RepositorySource {
+    private static final int RESOURCE_PACK_FORMAT_1_21_1 = 34;
+    private static final PackMetadataSection PACK_METADATA = new PackMetadataSection(
+            Component.literal("Nows mod resources"),
+            RESOURCE_PACK_FORMAT_1_21_1,
+            java.util.Optional.empty());
     private static final Pack.Metadata METADATA = new Pack.Metadata(
             Component.literal("Nows mod resources"),
             PackCompatibility.COMPATIBLE,
@@ -87,6 +93,10 @@ public final class ModPackSource implements RepositorySource {
             }
         };
         return new Pack(location, resources, METADATA, SELECTION);
+    }
+
+    static PackMetadataSection metadata() {
+        return PACK_METADATA;
     }
 
     private static int countResourceMods(List<ModContainer> mods) {

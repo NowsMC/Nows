@@ -19,10 +19,10 @@ import java.util.function.Consumer;
 import java.util.zip.ZipFile;
 
 public final class ModPackSource implements RepositorySource {
-    private static final int RESOURCE_PACK_FORMAT_1_20_1 = 15;
+    private static final int RESOURCE_PACK_FORMAT_1_19 = 9;
     private static final PackMetadataSection METADATA = new PackMetadataSection(
             Component.literal("Nows mod resources"),
-            RESOURCE_PACK_FORMAT_1_20_1);
+            RESOURCE_PACK_FORMAT_1_19);
 
     private final List<ModContainer> mods;
     private final Path loaderResources;
@@ -74,6 +74,10 @@ public final class ModPackSource implements RepositorySource {
                 constructor,
                 Pack.Position.TOP,
                 PackSource.BUILT_IN);
+    }
+
+    static PackMetadataSection metadata() {
+        return METADATA;
     }
 
     private static int countResourceMods(List<ModContainer> mods) {
