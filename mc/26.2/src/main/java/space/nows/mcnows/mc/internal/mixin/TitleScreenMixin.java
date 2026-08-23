@@ -16,6 +16,7 @@ import space.nows.mcnows.mc.api.client.ui.ButtonSink;
 import space.nows.mcnows.mc.api.client.ui.ScreenContext;
 import space.nows.mcnows.mc.internal.ClientHooks;
 import space.nows.mcnows.mc.internal.client.IconButton;
+import space.nows.mcnows.mc.internal.client.LoaderMenu;
 import space.nows.mcnows.mc.internal.client.UiImpl;
 
 @Mixin(value = TitleScreen.class, remap = false)
@@ -34,7 +35,8 @@ public abstract class TitleScreenMixin extends Screen {
                         new ButtonSink() {
                             @Override
                             public void addButton(int x, int y, int width, int height, String message, Runnable onPress) {
-                                addRenderableWidget(Button.builder(Component.literal(message), button -> onPress.run())
+                                addRenderableWidget(Button.builder(Component.literal(message),
+                                                button -> LoaderMenu.withTitleParent(screen, onPress))
                                         .bounds(x, y, width, height)
                                         .build());
                             }
@@ -56,7 +58,7 @@ public abstract class TitleScreenMixin extends Screen {
                                         height,
                                         Identifier.parse(icon),
                                         Component.literal(message),
-                                        onPress));
+                                        () -> LoaderMenu.withTitleParent(screen, onPress)));
                             }
                         },
                         (title, initializer, renderer) -> Minecraft.getInstance().setScreenAndShow(
