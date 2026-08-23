@@ -21,11 +21,15 @@ import space.nows.platform.api.NowsContext;
 import space.nows.platform.api.NowsSide;
 import space.nows.platform.api.NowsServices;
 import space.nows.integration.geb.event.NowsEntrypointsCompletedEvent;
+import space.nows.platform.core.mod.ModContainer;
+import space.nows.platform.core.mod.ModDescriptor;
 
 import java.nio.file.Path;
 import java.util.List;
+import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 class GebIntegrationTest {
     @Test
@@ -46,6 +50,38 @@ class GebIntegrationTest {
         events.post(new NowsEntrypointsCompletedEvent(context, 3));
 
         assertEquals(3, listener.entrypoints);
+    }
+
+    @Test
+    void rejectsInvalidFacadeInputs() {
+        NowsServices services = new NowsServices();
+        GebIntegration.install(services, getClass().getClassLoader());
+        NowsEvents events = services.require(NowsEvents.class);
+
+        assertThrows(NullPointerException.class, () -> new NowsEvents(null));
+        assertThrows(NullPointerException.class, () -> events.post(null));
+        assertThrows(NullPointerException.class, () -> events.register(null));
+        assertThrows(NullPointerException.class, () -> events.unregister(null));
+        assertThrows(NullPointerException.class, () -> events.isRegistered(null));
+    }
+
+    @Test
+    void reportsModIdForDeclaredNonListenerClasses() {
+        NowsServices services = new NowsServices();
+        GebIntegration.install(services, getClass().getClassLoader());
+        ModContainer mod = new ModContainer(
+                Path.of("mods/bad-listener.jar"),
+                new ModDescriptor(
+                        "bad_listener",
+                        "Bad Listener",
+                        "1.0.0",
+                        "26.2",
+                        Map.of("listener", List.of(String.class.getName()))));
+
+        assertThrows(IllegalStateException.class, () -> GebIntegration.registerDeclaredListeners(
+                services.require(NowsEvents.class),
+                getClass().getClassLoader(),
+                List.of(mod)));
     }
 
     private static final class CountingLifecycleListener implements NowsLifecycleListener {

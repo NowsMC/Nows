@@ -21,6 +21,7 @@ import foo.zaaarf.geb.api.IEventDispatcher;
 import foo.zaaarf.geb.api.IListener;
 
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.function.BiConsumer;
 
@@ -29,8 +30,8 @@ final class NowsLifecycleDispatcher<T extends IEvent> implements IEventDispatche
     private final BiConsumer<NowsLifecycleListener, T> callback;
 
     NowsLifecycleDispatcher(Class<T> eventType, BiConsumer<NowsLifecycleListener, T> callback) {
-        this.eventType = eventType;
-        this.callback = callback;
+        this.eventType = Objects.requireNonNull(eventType, "eventType");
+        this.callback = Objects.requireNonNull(callback, "callback");
     }
 
     @Override

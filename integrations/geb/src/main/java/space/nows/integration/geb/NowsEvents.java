@@ -21,12 +21,14 @@ import foo.zaaarf.geb.api.IBus;
 import foo.zaaarf.geb.api.IEvent;
 import foo.zaaarf.geb.api.IListener;
 
+import java.util.Objects;
+
 /** Small Nows-facing facade over GEB's event bus. */
 public final class NowsEvents {
     private final GEB bus;
 
     public NowsEvents(GEB bus) {
-        this.bus = bus;
+        this.bus = Objects.requireNonNull(bus, "bus");
     }
 
     public GEB bus() {
@@ -34,26 +36,26 @@ public final class NowsEvents {
     }
 
     public boolean post(IEvent event) {
-        return bus.handleEvent(event);
+        return bus.handleEvent(Objects.requireNonNull(event, "event"));
     }
 
     public void register(IListener listener) {
-        bus.registerListener(listener);
+        bus.registerListener(Objects.requireNonNull(listener, "listener"));
     }
 
     public void unregister(IListener listener) {
-        bus.unregisterListener(listener);
+        bus.unregisterListener(Objects.requireNonNull(listener, "listener"));
     }
 
     public boolean isRegistered(IListener listener) {
-        return bus.isRegistered(listener);
+        return bus.isRegistered(Objects.requireNonNull(listener, "listener"));
     }
 
     public void registerSubBus(IBus subBus, int priority) {
-        bus.registerSubBus(subBus, priority);
+        bus.registerSubBus(Objects.requireNonNull(subBus, "subBus"), priority);
     }
 
     public void unregisterSubBus(IBus subBus) {
-        bus.unregisterSubBus(subBus);
+        bus.unregisterSubBus(Objects.requireNonNull(subBus, "subBus"));
     }
 }

@@ -30,11 +30,14 @@ import space.nows.integration.geb.event.NowsModEntrypointStartingEvent;
 import space.nows.integration.geb.event.NowsRegisterEvent;
 
 import java.util.List;
+import java.util.Objects;
 
 public final class GebIntegration {
     private GebIntegration() {}
 
     public static GEB install(NowsServices services, ClassLoader gameLoader) {
+        Objects.requireNonNull(services, "services");
+        Objects.requireNonNull(gameLoader, "gameLoader");
         GEB bus = new GEB();
         bus.loadAndRegisterDispatchers(gameLoader);
         registerNowsLifecycleDispatchers(bus);
@@ -44,10 +47,12 @@ public final class GebIntegration {
     }
 
     public static GEB eventBus(NowsContext context) {
+        Objects.requireNonNull(context, "context");
         return context.service(GEB.class);
     }
 
     public static NowsEvents events(NowsContext context) {
+        Objects.requireNonNull(context, "context");
         return context.service(NowsEvents.class);
     }
 
@@ -56,26 +61,38 @@ public final class GebIntegration {
     }
 
     public static int registerDeclaredListeners(NowsEvents events, ClassLoader loader, List<ModContainer> mods) throws Exception {
+        Objects.requireNonNull(events, "events");
+        Objects.requireNonNull(loader, "loader");
+        Objects.requireNonNull(mods, "mods");
         int count = 0;
         for (ModContainer mod : mods) {
             for (String className : mod.descriptor().declarations("listener")) {
-                registerListener(events, loader, className);
+                registerListener(events, loader, mod, className);
                 count++;
             }
             for (String className : mod.descriptor().declarations("geb-listener")) {
-                registerListener(events, loader, className);
+                registerListener(events, loader, mod, className);
                 count++;
             }
         }
         return count;
     }
 
-    private static void registerListener(NowsEvents events, ClassLoader loader, String className) throws Exception {
-        Object instance = Class.forName(className, true, loader).getDeclaredConstructor().newInstance();
+    private static void registerListener(NowsEvents events, ClassLoader loader, ModContainer mod, String className) throws Exception {
+        String listenerClass = validateListenerClassName(mod, className);
+        Object instance = Class.forName(listenerClass, true, loader).getDeclaredConstructor().newInstance();
         if (!(instance instanceof IListener listener)) {
-            throw new IllegalStateException(className + " does not implement " + IListener.class.getName());
+            throw new IllegalStateException("Mod " + mod.descriptor().id() + " declares listener "
+                    + listenerClass + " but it does not implement " + IListener.class.getName());
         }
         events.register(listener);
+    }
+
+    private static String validateListenerClassName(ModContainer mod, String className) {
+        if (className == null || className.isBlank()) {
+            throw new IllegalArgumentException("Mod " + mod.descriptor().id() + " declares a blank GEB listener");
+        }
+        return className.trim();
     }
 
     private static void registerNowsLifecycleDispatchers(GEB bus) {
