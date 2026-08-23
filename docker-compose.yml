@@ -10,8 +10,11 @@ x-nows-common: &nows-common
   image: nows/build:local
   working_dir: /workspace
   environment:
+    CI: "true"
     GRADLE_USER_HOME: /workspace/.gradle-docker
     npm_config_cache: /workspace/.npm
+    NPM_CONFIG_AUDIT: "false"
+    NPM_CONFIG_FUND: "false"
     GITHUB_ACTOR: ${GITHUB_ACTOR:-}
     GITHUB_TOKEN: ${GITHUB_TOKEN:-}
 
@@ -21,6 +24,16 @@ services:
     volumes: *nows-volumes
     command: ["./gradlew", "--no-parallel", "--max-workers=1", "dist"]
 
+  nows-test:
+    <<: *nows-common
+    volumes: *nows-volumes
+    command: ["./gradlew", "--no-parallel", "--max-workers=1", "test"]
+
+  nows-setup:
+    <<: *nows-common
+    volumes: *nows-volumes
+    command: ["./gradlew", "--no-parallel", "--max-workers=1", "prepareWorkspace"]
+
   nows-release:
     <<: *nows-common
     volumes:
@@ -28,7 +41,7 @@ services:
       - nows-gradle-cache:/workspace/.gradle-docker
       - nows-minecraft-cache:/workspace/.nows
       - nows-npm-cache:/workspace/.npm
-      - ${HOME}/.gnupg:/root/.gnupg
+      - ${GNUPGHOME:-${HOME}/.gnupg}:/root/.gnupg:ro
     command: ["./gradlew", "--no-parallel", "--max-workers=1", "publishLayout"]
 
   nows-shell:
@@ -40,14 +53,15 @@ services:
 
   nows-web:
     <<: *nows-common
+    profiles: ["web"]
     working_dir: /workspace/repos/NowsWeb
     volumes:
       - .:/workspace
       - nows-npm-cache:/workspace/.npm
       - nows-web-node-modules:/workspace/repos/NowsWeb/node_modules
     ports:
-      - "5173:5173"
-    command: ["bash", "-lc", "npm ci && npm run dev -- --host 0.0.0.0"]
+      - "${NOWS_WEB_PORT:-3000}:3000"
+    command: ["bash", "-lc", "npm ci && npm run dev -- --hostname 0.0.0.0 --port 3000"]
 
 volumes:
   nows-gradle-cache:

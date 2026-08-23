@@ -11,6 +11,7 @@ RUN apt-get update \
         git \
         gnupg \
         openssh-client \
+        procps \
         unzip \
         zip \
     && rm -rf /var/lib/apt/lists/*
@@ -26,12 +27,16 @@ WORKDIR /workspace
 ENV GRADLE_USER_HOME=/workspace/.gradle-docker
 ENV npm_config_cache=/workspace/.npm
 ENV CI=true
+ENV NPM_CONFIG_FUND=false
+ENV NPM_CONFIG_AUDIT=false
 
 COPY gradlew gradlew.bat settings.gradle.kts build.gradle.kts gradle.properties ./
 COPY gradle ./gradle
+COPY docker/nows-entrypoint.sh /usr/local/bin/nows-entrypoint
 
-RUN chmod +x ./gradlew
+RUN chmod +x ./gradlew /usr/local/bin/nows-entrypoint
 
 COPY . .
 
+ENTRYPOINT ["nows-entrypoint"]
 CMD ["./gradlew", "--no-parallel", "--max-workers=1", "dist"]

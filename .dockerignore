@@ -7,9 +7,13 @@
 .gnupg-docker/
 **/build/
 repos/NowsWeb/node_modules/
-repos/NowsWeb/dist/
+repos/NowsWeb/.next/
+repos/NowsWeb/out/
 repos/NowsWeb/.git/
 repos/NowsApiMod/.git/
+repos/NowsGradlePlugin/.git/
+repos/NowsInstaller/.git/
+repos/NowsRemapper/.git/
 local.properties
 *.iml
 .idea/

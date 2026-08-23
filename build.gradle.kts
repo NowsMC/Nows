@@ -423,7 +423,8 @@ val syncSubmodules by tasks.registering(Exec::class) {
         "--recursive",
         "repos/NowsInstaller",
         "repos/NowsGradlePlugin",
-        "repos/NowsApiMod"
+        "repos/NowsApiMod",
+        "repos/NowsRemapper"
     )
     inputs.file(layout.projectDirectory.file(".gitmodules"))
 }
