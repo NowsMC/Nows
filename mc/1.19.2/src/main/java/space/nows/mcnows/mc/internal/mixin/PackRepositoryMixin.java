@@ -1,6 +1,7 @@
 package space.nows.mcnows.mc.internal.mixin;
 
 import net.minecraft.server.packs.repository.PackRepository;
+import net.minecraft.server.packs.repository.Pack;
 import net.minecraft.server.packs.repository.RepositorySource;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
@@ -20,8 +21,16 @@ public abstract class PackRepositoryMixin {
     @Mutable
     private Set<RepositorySource> sources;
 
-    @Inject(method = "<init>", at = @At("TAIL"), remap = false)
-    private void nows$installModResourcePackSource(RepositorySource[] repositorySources, CallbackInfo ci) {
+    @Inject(
+            method = "<init>(Lnet/minecraft/server/packs/repository/Pack$PackConstructor;[Lnet/minecraft/server/packs/repository/RepositorySource;)V",
+            at = @At("TAIL"),
+            remap = false
+    )
+    private void nows$installModResourcePackSource(
+            Pack.PackConstructor constructor,
+            RepositorySource[] repositorySources,
+            CallbackInfo ci
+    ) {
         sources = ClientHooks.withModResourcePackSource(sources, repositorySources);
     }
 }
