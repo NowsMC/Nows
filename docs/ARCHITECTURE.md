@@ -343,7 +343,7 @@ For example:
 ```kdl
 mod id="example" name="Example Mod" version="1.0.0" minecraft="26.2" side="client" {
     info {
-        description "Small example mod."
+        description "Small starter mod."
         author "ExampleDev"
         license "Apache-2.0"
     }
