@@ -13,3 +13,4 @@ repos/NowsInstaller/vendor/
 .aider*
 .outsource/
 logs/
+*.log
