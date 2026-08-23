@@ -23,6 +23,7 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.jar.JarFile;
 
@@ -41,6 +42,7 @@ public final class KdlModMetadataReader implements ModMetadataReader {
 
     @Override
     public Optional<ModDescriptor> read(Path jarPath) throws IOException {
+        Objects.requireNonNull(jarPath, "jarPath");
         try (JarFile jar = new JarFile(jarPath.toFile())) {
             var entry = jar.getJarEntry(METADATA_PATH);
             if (entry == null) return Optional.empty();
@@ -53,12 +55,14 @@ public final class KdlModMetadataReader implements ModMetadataReader {
     }
 
     static ModDescriptor parse(KdlDocument document, Path source) throws IOException {
+        Objects.requireNonNull(document, "document");
+        Objects.requireNonNull(source, "source");
         KdlNode mod = document.nodes().stream().filter(n -> n.name().equals("mod")).findFirst()
                 .orElseThrow(() -> new IOException("Missing root 'mod' node in " + source));
-        String id = requiredProperty(mod, "id", source);
+        String id = requiredProperty(mod, "id", source).trim();
         if (!id.matches("[a-z][a-z0-9_-]{1,63}")) throw new IOException("Invalid Nows mod id '" + id + "' in " + source);
         String name = property(mod, "name", id);
-        String version = requiredProperty(mod, "version", source);
+        String version = requiredProperty(mod, "version", source).trim();
         String minecraft = property(mod, "minecraft", "*");
         NowsSide side;
         try {
@@ -141,13 +145,14 @@ public final class KdlModMetadataReader implements ModMetadataReader {
     }
 
     private static String property(KdlNode node, String key, String fallback) {
-        return node.<Object>getProperty(key).map(KdlValue::value).map(String::valueOf).orElse(fallback);
+        return node.<Object>getProperty(key).map(KdlValue::value).map(String::valueOf).map(String::trim).orElse(fallback);
     }
 
     private static List<String> propertyValues(KdlNode node, String key) {
         return node.properties().getValues(key).stream()
                 .map(KdlValue::value)
                 .map(String::valueOf)
+                .map(String::trim)
                 .filter(value -> !value.isBlank())
                 .toList();
     }
@@ -283,7 +288,7 @@ public final class KdlModMetadataReader implements ModMetadataReader {
 
     private static String valueToString(KdlValue<?> value) {
         Object raw = value.value();
-        return raw == null ? "" : String.valueOf(raw);
+        return raw == null ? "" : String.valueOf(raw).trim();
     }
 
     private static final class MetadataAccumulator {

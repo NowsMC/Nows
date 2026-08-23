@@ -105,4 +105,29 @@ class KdlModMetadataReaderTest {
         assertEquals("client-ui", descriptor.declaration("api-feature").orElseThrow());
         assertEquals(List.of("space.nows.example.FutureFeature"), descriptor.declarations("future-feature"));
     }
+
+    @Test
+    void trimsMetadataValuesBeforeBuildingDescriptor() throws Exception {
+        String metadata = """
+                mod id="trimmed_mod" name=" Trimmed Mod " version=" 1.0.0 " minecraft=" 26.2 " {
+                    info {
+                        author " Author "
+                    }
+
+                    runtime {
+                        entrypoint " example.TrimmedMod "
+                    }
+                }
+                """;
+
+        ModDescriptor descriptor = KdlModMetadataReader.parse(
+                KdlParser.v2().parse(new ByteArrayInputStream(metadata.getBytes(StandardCharsets.UTF_8))),
+                Path.of("nows.mod.kdl"));
+
+        assertEquals("Trimmed Mod", descriptor.name());
+        assertEquals("1.0.0", descriptor.version());
+        assertEquals("26.2", descriptor.minecraft());
+        assertEquals(List.of("Author"), descriptor.authors());
+        assertEquals(List.of("example.TrimmedMod"), descriptor.declarations("entrypoint"));
+    }
 }
