@@ -27,7 +27,7 @@ val prepareMinecraft by tasks.registering(JavaExec::class) {
     description = "Prepares the Mojang-named Minecraft JAR used by this monorepo."
     dependsOn(tasks.classes)
     classpath = sourceSets.main.get().runtimeClasspath
-    mainClass.set("space.nows.mcnows.minecraft.PrepareMinecraftCli")
+    mainClass.set("space.nows.minecraft.PrepareMinecraftCli")
     args(minecraftVersion.get(), monorepoDevJar.asFile.absolutePath)
     outputs.file(monorepoDevJar)
 }

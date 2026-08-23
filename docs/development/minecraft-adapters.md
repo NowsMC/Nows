@@ -100,8 +100,8 @@ MenuType<OvenMenu> ovenMenu = registries.registerMenu("my_mod:oven", OvenMenu::n
 Mods with simple facing machine blocks can reuse Nows base block classes instead of copying the same state boilerplate across versions:
 
 ```java
-import space.nows.mcnows.mc.api.registry.block.HorizontalBlock;
-import space.nows.mcnows.mc.api.registry.block.HorizontalLitBlock;
+import space.nows.mc.api.registry.block.HorizontalBlock;
+import space.nows.mc.api.registry.block.HorizontalLitBlock;
 
 Block pan = registries.registerCustomBlock("my_mod:pan",
         props -> new HorizontalBlock(props.strength(1.5F)));

@@ -10,11 +10,11 @@ Each version directory can contain:
 - Public API classes with stable Nows names, such as registry/datapack helpers, backed by that version's `net.minecraft.*` classes.
 - `nows-minecraft.properties`, packaged by the generic `minecraft` module into `META-INF/nows/mc/`, for small launch-policy facts.
 
-Prefer stable Nows-owned inputs in `space.nows.mcnows.mc.api` when Minecraft changes class names, enum names, packages or constructor/property requirements between versions. For example, `ItemSpec`, `BlockSpec` and `BlockMaterial` describe basic item/block registration once, while each `mc/<version>/internal` adapter maps those specs onto that version's item properties, block properties, material model and registry rules.
+Prefer stable Nows-owned inputs in `space.nows.mc.api` when Minecraft changes class names, enum names, packages or constructor/property requirements between versions. For example, `ItemSpec`, `BlockSpec` and `BlockMaterial` describe basic item/block registration once, while each `mc/<version>/internal` adapter maps those specs onto that version's item properties, block properties, material model and registry rules.
 
 Only one `nows-mc-<minecraft-version>` artifact should be installed for a launcher profile.
 
-Runtime installs `space.nows.mcnows.mc.internal.MinecraftIntegration` when it is present. Mods should normally reach the services through `MinecraftApi.registries(context)` and `MinecraftApi.dataPacks(context)` instead of depending on runtime reflection details.
+Runtime installs `space.nows.mc.internal.MinecraftIntegration` when it is present. Mods should normally reach the services through `MinecraftApi.registries(context)` and `MinecraftApi.dataPacks(context)` instead of depending on runtime reflection details.
 
 Minecraft versions that do not ship Mojang-named client jars, such as 1.20.1, need a remapped `.nows/minecraft/<version>/client-dev.jar` before their adapter module can compile.
 

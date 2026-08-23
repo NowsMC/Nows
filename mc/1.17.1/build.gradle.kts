@@ -1,6 +1,6 @@
 plugins {
     `java-library`
-    id("space.nows.mcnows")
+    id("space.nows.gradle")
 }
 
 val javaRelease = 17

@@ -1,3 +1,8 @@
+## 0.8.0
+
+- Renamed public Java packages into clearer Nows namespaces.
+- Bumped Nows release metadata to 0.8.0.
+
 ## 0.7.0
 
 - Published offline installer JARs for every supported Minecraft adapter so local release testing no longer depends on files being uploaded first.

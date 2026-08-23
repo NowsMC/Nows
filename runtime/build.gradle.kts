@@ -68,7 +68,7 @@ tasks.jar {
     archiveBaseName.set("nows-runtime")
     manifest {
         attributes(
-            "Main-Class" to "space.nows.mcnows.runtime.NowsLauncher",
+            "Main-Class" to "space.nows.loader.runtime.NowsLauncher",
             "Implementation-Title" to "Nows Runtime",
             "Implementation-Version" to project.version,
             "Implementation-Vendor" to "nows.space"
@@ -92,7 +92,7 @@ val allJar by tasks.registering(Jar::class) {
     archiveBaseName.set("nows")
     archiveClassifier.set("all")
     duplicatesStrategy = DuplicatesStrategy.EXCLUDE
-    manifest { attributes("Main-Class" to "space.nows.mcnows.runtime.NowsLauncher") }
+    manifest { attributes("Main-Class" to "space.nows.loader.runtime.NowsLauncher") }
 
     dependsOn(internalModules.map { project(it).tasks.named("classes") })
     from(sourceSets.main.get().output)

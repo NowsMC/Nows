@@ -82,7 +82,7 @@ docker compose up nows-web
 Update the coordinated project version:
 
 ```bash
-./gradlew setNowsVersion -Pnew_nows_version=0.7.0
+./gradlew setNowsVersion -Pnew_nows_version=0.8.0
 ```
 
 Inspect the coordinated version state:
@@ -103,7 +103,7 @@ Inspect the coordinated version state:
 https://files.nows.space/releases/nows/<nows-version>/<minecraft-version>/install.properties
 ```
 
-The installer writes Nows modules and libraries into the normal `.minecraft/libraries` tree, then generates an inherited Official Launcher version with `space.nows.mcnows.runtime.NowsLauncher` as the main class.
+The installer writes Nows modules and libraries into the normal `.minecraft/libraries` tree, then generates an inherited Official Launcher version with `space.nows.loader.runtime.NowsLauncher` as the main class.
 
 Existing launcher profiles are preserved and `launcher_profiles.json` is backed up before modification.
 
@@ -131,9 +131,9 @@ Nows also scans this optional profile overlay:
 .minecraft/nows/profiles/nows-<nows-version>-<minecraft-version>/mods
 ```
 
-For launcher-managed instances, pass `--launcher <modrinth|curseforge|prism|multimc|generic>` and `--instanceDir <path>`. Official installs update `launcher_profiles.json`. Prism and MultiMC installs write instance pack metadata (`mmc-pack.json` plus `patches/space.nows.mcnows.json`) so the launcher can run Nows directly. Modrinth, CurseForge and generic instance installs write mods into the selected instance game folder and write `nows/launcher-profile.properties` with the generated Nows version id; native app launch support still depends on that launcher accepting custom Minecraft version ids.
+For launcher-managed instances, pass `--launcher <modrinth|curseforge|prism|multimc|generic>` and `--instanceDir <path>`. Official installs update `launcher_profiles.json`. Prism and MultiMC installs write instance pack metadata (`mmc-pack.json` plus `patches/space.nows.json`) so the launcher can run Nows directly. Modrinth, CurseForge and generic instance installs write mods into the selected instance game folder and write `nows/launcher-profile.properties` with the generated Nows version id; native app launch support still depends on that launcher accepting custom Minecraft version ids.
 
-The generated launcher metadata keeps `space.nows.mcnows:nows-mc-*` adapters out of launcher-owned libraries and passes `-Dnows.minecraftAdapterPath=<adapter.jar>` instead. That adapter must be loaded by Nows' game classloader, not by the launcher classpath, because it imports `net.minecraft.*` classes directly.
+The generated launcher metadata keeps `space.nows:nows-mc-*` adapters out of launcher-owned libraries and passes `-Dnows.minecraftAdapterPath=<adapter.jar>` instead. That adapter must be loaded by Nows' game classloader, not by the launcher classpath, because it imports `net.minecraft.*` classes directly.
 
 ## Installer
 
@@ -162,7 +162,7 @@ repos/NowsInstaller/build/libs/NowsInstallerOffline-<version>-mc-<minecraft-vers
 For local testing without downloads:
 
 ```bash
-java -cp NowsInstaller-<version>.jar space.nows.mcnows.installer.NowsInstaller --offline --manifest <local install.properties> --artifactDir <local library root>
+java -cp NowsInstaller-<version>.jar space.nows.installer.NowsInstaller --offline --manifest <local install.properties> --artifactDir <local library root>
 ```
 
 The normal public download should point to the shared installer:
@@ -235,12 +235,12 @@ Plugin id:
 
 ```kotlin
 plugins {
-    id("space.nows.mcnows") version "0.7.0"
+    id("space.nows.gradle") version "0.8.0"
 }
 
 nows {
     minecraftVersion.set("26.2")
-    nowsVersion.set("0.7.0")
+    nowsVersion.set("0.8.0")
 }
 ```
 

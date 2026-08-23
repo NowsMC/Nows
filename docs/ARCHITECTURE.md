@@ -115,7 +115,7 @@ core + mc/<minecraft version> + Gradle plugin + KDL + GEB + Network + Mixin
 
 The default install is modular. Minecraft Launcher libraries contain separate Nows module JARs plus only the third-party runtime libraries that Minecraft does not already provide.
 
-`repos/NowsInstaller/` owns the Official Launcher install protocol. The shared UI installer is the normal public entrypoint; the CLI class remains available for scripting and local development from the same JAR. Both read an install manifest, install each declared artifact under `.minecraft/libraries`, then write an inherited Launcher version profile whose `mainClass` is `space.nows.mcnows.runtime.NowsLauncher`.
+`repos/NowsInstaller/` owns the Official Launcher install protocol. The shared UI installer is the normal public entrypoint; the CLI class remains available for scripting and local development from the same JAR. Both read an install manifest, install each declared artifact under `.minecraft/libraries`, then write an inherited Launcher version profile whose `mainClass` is `space.nows.loader.runtime.NowsLauncher`.
 
 Normal installer artifact resolution is:
 
@@ -132,7 +132,7 @@ https://files.nows.space/releases/nows/<nows-version>/<minecraft-version>/instal
 
 For local/offline development, the CLI class can still install from a local manifest and artifact directory. Public releases also publish separate per-Minecraft offline installer JARs so release testing can happen before files are uploaded to `files.nows.space`. Offline installer JARs use the same UI entrypoint as the normal installer and lock the Minecraft version to the bundled payload; scripted offline installs opt into CLI mode with `--cli`.
 
-Version-specific `space.nows.mcnows:nows-mc-*` adapters are installed as files but must not be added to launcher-owned libraries. The generated launcher profile or Prism/MultiMC patch passes `-Dnows.minecraftAdapterPath=<adapter.jar>` instead. Runtime then adds that adapter URL to `NowsClassLoader` beside the Minecraft client jar, keeping Minecraft-referencing adapter classes in the same loader as the game classes and avoiding duplicate `net.minecraft.*` type identity across parent and child classloaders.
+Version-specific `space.nows:nows-mc-*` adapters are installed as files but must not be added to launcher-owned libraries. The generated launcher profile or Prism/MultiMC patch passes `-Dnows.minecraftAdapterPath=<adapter.jar>` instead. Runtime then adds that adapter URL to `NowsClassLoader` beside the Minecraft client jar, keeping Minecraft-referencing adapter classes in the same loader as the game classes and avoiding duplicate `net.minecraft.*` type identity across parent and child classloaders.
 
 Installer-embedded dependencies, currently KDL4J, may be embedded into installer artifacts and copied into the Minecraft libraries directory when necessary. KDL4J resolves from JitPack first, with GitHub Packages kept as a release fallback. Normal Nows users must not need GitHub credentials just to install or run Nows.
 
@@ -152,7 +152,7 @@ Release files are staged locally under `.publishing/` by `publishLayout`. That d
 
 `.publishing/releases/nows/<nows-version>/<minecraft-version>/` is the player/install surface. It contains the installer manifest, checksums, installers and release artifacts used by NowsInstaller.
 
-`.publishing/maven/` is the developer surface. It is a complete local Maven repository intended to be uploaded to `https://files.nows.space/maven/` so mod developers can depend on Nows APIs and tooling. It publishes public Nows modules, version-specific `nows-mc-<minecraft-version>` adapters, integrations, runtime artifacts and the Gradle plugin marker under the `space.nows.mcnows` group.
+`.publishing/maven/` is the developer surface. It is a complete local Maven repository intended to be uploaded to `https://files.nows.space/maven/` so mod developers can depend on Nows APIs and tooling. It publishes public Nows modules, version-specific `nows-mc-<minecraft-version>` adapters, integrations, runtime artifacts and the Gradle plugin marker under the `space.nows` group.
 
 All Maven publications must be signed with local GPG every time, including local `.publishing/maven/` builds. Unsigned Maven artifacts are considered invalid release output. The build should fail if `gpg` or a usable signing key is unavailable.
 
@@ -285,9 +285,9 @@ Until a concrete Minecraft transport is installed, `NowsNetworking.send(...)` re
 
 `mc/<minecraft version>/` owns the developer-facing wrapper layer that must directly reference Minecraft classes. Common mod tasks such as resource ids/keys/tags, stable text values, stable vector values, item stack specs, NBT payloads, registering `Item`, `Block`, `BlockItem`, food, simple weapons, armor, creative tabs, keybinds, recipe display metadata, stable command specs, generated JSON data and datapack/resource-pack targets belong there, not in `core`, `minecraft`, `runtime` or generic integrations.
 
-Each supported adapter should expose the same stable mc adapter API names, for example `space.nows.mcnows.mc.api.MinecraftApi`, `RegistryApi`, `TextApi`, `NbtApi`, `KeybindApi`, `RecipeViewerApi` and `DataPacks`, while using that Minecraft version's real classes internally. Stable Nows values such as `McText`, `McVec3`, `ItemSpec`, `BlockSpec`, `ItemStackSpec`, `CommandSpec`, `PackTarget`, `NbtCompound`, `NbtList` and `NbtValue` are the preferred mod-facing contract. This lets 26.2 use `Identifier` and newer component/NBT APIs while 1.20.1 uses `ResourceLocation` and older adapters can use `TextComponent` plus legacy NBT getters, without forcing mods to rewrite their Nows-facing calls.
+Each supported adapter should expose the same stable mc adapter API names, for example `space.nows.mc.api.MinecraftApi`, `RegistryApi`, `TextApi`, `NbtApi`, `KeybindApi`, `RecipeViewerApi` and `DataPacks`, while using that Minecraft version's real classes internally. Stable Nows values such as `McText`, `McVec3`, `ItemSpec`, `BlockSpec`, `ItemStackSpec`, `CommandSpec`, `PackTarget`, `NbtCompound`, `NbtList` and `NbtValue` are the preferred mod-facing contract. This lets 26.2 use `Identifier` and newer component/NBT APIs while 1.20.1 uses `ResourceLocation` and older adapters can use `TextComponent` plus legacy NBT getters, without forcing mods to rewrite their Nows-facing calls.
 
-Runtime installs the version adapter by reflecting `space.nows.mcnows.mc.internal.MinecraftIntegration` and registering its services into `NowsServices`. That reflection is a composition boundary only; mod code should use the typed API from the selected `nows-mc-<version>` artifact. If no adapter is present, runtime should continue to launch with a clear INFO log and without those optional services.
+Runtime installs the version adapter by reflecting `space.nows.mc.internal.MinecraftIntegration` and registering its services into `NowsServices`. That reflection is a composition boundary only; mod code should use the typed API from the selected `nows-mc-<version>` artifact. If no adapter is present, runtime should continue to launch with a clear INFO log and without those optional services.
 
 Client UI helpers also live in `mc/<version>`. `Ui` is a small convenience layer for opening screens, creating simple screens, adding title-screen buttons and drawing small overlay text. `ConfigUi` is a Cloth Config-inspired middle layer for common boolean/integer settings screens and built-in Nows mod-list integration. These APIs should expose raw Minecraft `Screen`, widget and graphics objects where useful instead of trying to wrap the entire Minecraft GUI framework.
 
