@@ -295,7 +295,7 @@ project(":repos:NowsApiMod") {
 
 tasks.register("dist") {
     group = "nows"
-    description = "Builds all modular Nows artifacts, the installer, Gradle plugin and example mod."
+    description = "Builds all modular Nows artifacts, the installer, Gradle plugin and API mod variants."
     dependsOn(
         ":core:jar",
         ":minecraft:jar",
@@ -309,8 +309,7 @@ tasks.register("dist") {
         ":repos:NowsRemapper:jar",
         ":repos:NowsInstaller:jar",
         ":repos:NowsGradlePlugin:jar",
-        ":repos:NowsApiMod:allApiModJars",
-        ":example-mod:jar"
+        ":repos:NowsApiMod:allApiModJars"
     )
 }
 
@@ -417,8 +416,7 @@ val syncSubmodules by tasks.registering(Exec::class) {
         "--recursive",
         "repos/NowsInstaller",
         "repos/NowsGradlePlugin",
-        "repos/NowsApiMod",
-        "example-mod"
+        "repos/NowsApiMod"
     )
     inputs.file(layout.projectDirectory.file(".gitmodules"))
 }

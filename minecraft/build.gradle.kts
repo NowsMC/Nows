@@ -24,7 +24,7 @@ tasks.processResources {
 
 val prepareMinecraft by tasks.registering(JavaExec::class) {
     group = "nows"
-    description = "Prepares the Mojang-named Minecraft JAR used by this monorepo's example mod."
+    description = "Prepares the Mojang-named Minecraft JAR used by this monorepo."
     dependsOn(tasks.classes)
     classpath = sourceSets.main.get().runtimeClasspath
     mainClass.set("space.nows.mcnows.minecraft.PrepareMinecraftCli")
