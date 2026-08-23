@@ -20,6 +20,7 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
 
+import java.util.Optional;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 
@@ -30,6 +31,10 @@ public interface GameEvents {
         clientTick(ignored -> listener.run());
     }
 
+    default void stableClientTick(Consumer<ClientTickContext> listener) {
+        clientTick(() -> listener.accept(new ClientTickContext(Optional.empty())));
+    }
+
 
     void serverTick(Consumer<MinecraftServer> listener);
 
@@ -37,11 +42,19 @@ public interface GameEvents {
         serverTick(ignored -> listener.run());
     }
 
+    default void stableServerTick(Consumer<ServerTickContext> listener) {
+        serverTick(() -> listener.accept(new ServerTickContext(0, 0, 0L)));
+    }
+
 
     void serverLevelTick(BiConsumer<MinecraftServer, ServerLevel> listener);
 
     default void serverLevelTick(Runnable listener) {
         serverLevelTick((server, level) -> listener.run());
+    }
+
+    default void stableLevelTick(Consumer<LevelTickContext> listener) {
+        serverLevelTick(() -> listener.accept(new LevelTickContext(space.nows.mc.api.McWorldSnapshot.unknown(), 0)));
     }
 
 }

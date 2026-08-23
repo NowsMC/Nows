@@ -16,18 +16,27 @@
 
 package space.nows.mc.api.command;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Objects;
+import java.util.function.Function;
 
 /** Stable simple command registration translated to Brigadier by each Minecraft adapter. */
 public final class CommandSpec {
     private final String literal;
     private final Runnable executor;
+    private final Function<CommandExecutionContext, Integer> contextExecutor;
     private final int result;
+    private final int permissionLevel;
+    private final List<CommandArgumentSpec> arguments;
 
     private CommandSpec(Builder builder) {
         this.literal = requireLiteral(builder.literal);
         this.executor = builder.executor == null ? () -> {} : builder.executor;
+        this.contextExecutor = builder.contextExecutor;
         this.result = builder.result;
+        this.permissionLevel = builder.permissionLevel;
+        this.arguments = List.copyOf(builder.arguments);
     }
 
     public static Builder literal(String literal) {
@@ -42,8 +51,20 @@ public final class CommandSpec {
         return executor;
     }
 
+    public Function<CommandExecutionContext, Integer> contextExecutor() {
+        return contextExecutor;
+    }
+
     public int result() {
         return result;
+    }
+
+    public int permissionLevel() {
+        return permissionLevel;
+    }
+
+    public List<CommandArgumentSpec> arguments() {
+        return arguments;
     }
 
     private static String requireLiteral(String literal) {
@@ -57,7 +78,10 @@ public final class CommandSpec {
     public static final class Builder {
         private final String literal;
         private Runnable executor;
+        private Function<CommandExecutionContext, Integer> contextExecutor;
         private int result = 1;
+        private int permissionLevel;
+        private final List<CommandArgumentSpec> arguments = new ArrayList<>();
 
         private Builder(String literal) {
             this.literal = literal;
@@ -68,8 +92,23 @@ public final class CommandSpec {
             return this;
         }
 
+        public Builder executes(Function<CommandExecutionContext, Integer> executor) {
+            this.contextExecutor = executor;
+            return this;
+        }
+
         public Builder result(int result) {
             this.result = result;
+            return this;
+        }
+
+        public Builder requiresPermission(int permissionLevel) {
+            this.permissionLevel = permissionLevel;
+            return this;
+        }
+
+        public Builder argument(CommandArgumentSpec argument) {
+            this.arguments.add(argument);
             return this;
         }
 

@@ -372,6 +372,18 @@ public final class RegistryApiImpl implements RegistryApi {
         if (spec.fireResistant()) {
             configured = configured.fireResistant();
         }
+        if (spec.durability() > 0) {
+            configured = applyProperty(configured, "durability", new Class<?>[] { int.class }, spec.durability());
+        }
+        if (spec.rarity() != null) {
+            configured = applyEnumProperty(configured, "rarity", "net.minecraft.world.item.Rarity", spec.rarity().name());
+        }
+        if (spec.food() != null) {
+            FoodProperties food = foodProperties(spec.food());
+            if (food != null) {
+                configured = applyProperty(configured, "food", new Class<?>[] { FoodProperties.class }, food);
+            }
+        }
         return configured;
     }
 
@@ -399,7 +411,82 @@ public final class RegistryApiImpl implements RegistryApi {
         if (spec.noOcclusion()) {
             configured = configured.noOcclusion();
         }
+        if (spec.sound() != null) {
+            configured = applyStaticFieldProperty(configured, "sound", "net.minecraft.world.level.block.SoundType", spec.sound().name());
+        }
+        if (spec.light() != null && spec.light().emission() > 0) {
+            configured = applyProperty(configured, "lightLevel",
+                    new Class<?>[] { java.util.function.ToIntFunction.class },
+                    (java.util.function.ToIntFunction<Object>) ignored -> spec.light().emission());
+        }
+        if (spec.shape() == space.nows.mc.api.registry.BlockShapeSpec.EMPTY) {
+            configured = applyNoArgProperty(configured, "noCollission");
+        }
+        configured = applyProperty(configured, "friction", new Class<?>[] { float.class }, spec.friction());
+        configured = applyProperty(configured, "speedFactor", new Class<?>[] { float.class }, spec.speedFactor());
+        configured = applyProperty(configured, "jumpFactor", new Class<?>[] { float.class }, spec.jumpFactor());
         return configured;
+    }
+
+    @SuppressWarnings("unchecked")
+    private static <T> T applyProperty(T target, String methodName, Class<?>[] parameterTypes, Object... args) {
+        try {
+            Object configured = target.getClass().getMethod(methodName, parameterTypes).invoke(target, args);
+            return configured == null ? target : (T) configured;
+        }
+        catch (ReflectiveOperationException exception) {
+            return target;
+        }
+    }
+
+    private static <T> T applyNoArgProperty(T target, String methodName) {
+        return applyProperty(target, methodName, new Class<?>[0]);
+    }
+
+    @SuppressWarnings({"unchecked", "rawtypes"})
+    private static <T> T applyEnumProperty(T target, String methodName, String enumClassName, String enumName) {
+        try {
+            Class<? extends Enum> enumClass = (Class<? extends Enum>) Class.forName(enumClassName);
+            Object value = Enum.valueOf(enumClass, enumName);
+            return applyProperty(target, methodName, new Class<?>[] { enumClass }, value);
+        }
+        catch (ReflectiveOperationException | IllegalArgumentException exception) {
+            return target;
+        }
+    }
+
+    @SuppressWarnings("unchecked")
+    private static <T> T applyStaticFieldProperty(T target, String methodName, String className, String fieldName) {
+        try {
+            Class<?> type = Class.forName(className);
+            Object value = type.getField(fieldName).get(null);
+            return applyProperty(target, methodName, new Class<?>[] { type }, value);
+        }
+        catch (ReflectiveOperationException exception) {
+            return target;
+        }
+    }
+
+    private static FoodProperties foodProperties(space.nows.mc.api.registry.FoodSpec spec) {
+        try {
+            Class<?> builderClass = Class.forName(FoodProperties.class.getName() + "$Builder");
+            Object builder = builderClass.getDeclaredConstructor().newInstance();
+            builder = applyProperty(builder, "nutrition", new Class<?>[] { int.class }, spec.nutrition());
+            builder = applyProperty(builder, "saturationModifier", new Class<?>[] { float.class }, spec.saturationModifier());
+            if (spec.alwaysEdible()) {
+                builder = applyNoArgProperty(builder, "alwaysEdible");
+            }
+            if (spec.fast()) {
+                builder = applyNoArgProperty(applyNoArgProperty(builder, "fast"), "eatFast");
+            }
+            if (spec.meat()) {
+                builder = applyNoArgProperty(builder, "meat");
+            }
+            return (FoodProperties) builderClass.getMethod("build").invoke(builder);
+        }
+        catch (ReflectiveOperationException exception) {
+            return null;
+        }
     }
 
     private static <T> T apply(Function<T, T> configure, T value) {

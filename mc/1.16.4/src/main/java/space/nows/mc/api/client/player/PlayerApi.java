@@ -25,6 +25,7 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.phys.Vec3;
 import space.nows.mc.api.McVec3;
 import space.nows.mc.api.registry.ItemStackSpec;
+import space.nows.mc.api.registry.McItemStack;
 import space.nows.mc.api.text.McText;
 
 import java.util.Optional;
@@ -121,9 +122,17 @@ public interface PlayerApi {
 
     boolean addItem(ItemStackSpec item);
 
+    default boolean addItem(McItemStack item) {
+        return addItem(item.toSpec());
+    }
+
     void setInventoryItem(int slot, ItemStack item);
 
     void setInventoryItem(int slot, ItemStackSpec item);
+
+    default void setInventoryItem(int slot, McItemStack item) {
+        setInventoryItem(slot, item.toSpec());
+    }
 
     void setSelectedHotbarSlot(int slot);
 

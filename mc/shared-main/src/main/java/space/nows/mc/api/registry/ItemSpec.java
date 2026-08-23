@@ -23,13 +23,26 @@ public final class ItemSpec {
     private final String id;
     private final int maxStackSize;
     private final boolean fireResistant;
+    private final FoodSpec food;
+    private final ToolSpec tool;
+    private final ArmorSpec armor;
+    private final ItemRarity rarity;
+    private final int durability;
 
     private ItemSpec(Builder builder) {
         this.id = requireId(builder.id);
         this.maxStackSize = builder.maxStackSize;
         this.fireResistant = builder.fireResistant;
+        this.food = builder.food;
+        this.tool = builder.tool;
+        this.armor = builder.armor;
+        this.rarity = builder.rarity;
+        this.durability = builder.durability;
         if (maxStackSize < 1 || maxStackSize > 99) {
             throw new IllegalArgumentException("maxStackSize must be between 1 and 99");
+        }
+        if (durability < 0) {
+            throw new IllegalArgumentException("durability must be >= 0");
         }
     }
 
@@ -49,7 +62,27 @@ public final class ItemSpec {
         return fireResistant;
     }
 
-    static String requireId(String id) {
+    public FoodSpec food() {
+        return food;
+    }
+
+    public ToolSpec tool() {
+        return tool;
+    }
+
+    public ArmorSpec armor() {
+        return armor;
+    }
+
+    public ItemRarity rarity() {
+        return rarity;
+    }
+
+    public int durability() {
+        return durability;
+    }
+
+    public static String requireId(String id) {
         Objects.requireNonNull(id, "id");
         if (id.isBlank()) {
             throw new IllegalArgumentException("id must not be blank");
@@ -61,6 +94,11 @@ public final class ItemSpec {
         private final String id;
         private int maxStackSize = 64;
         private boolean fireResistant;
+        private FoodSpec food;
+        private ToolSpec tool;
+        private ArmorSpec armor;
+        private ItemRarity rarity;
+        private int durability;
 
         private Builder(String id) {
             this.id = id;
@@ -73,6 +111,31 @@ public final class ItemSpec {
 
         public Builder fireResistant() {
             this.fireResistant = true;
+            return this;
+        }
+
+        public Builder food(FoodSpec food) {
+            this.food = food;
+            return this;
+        }
+
+        public Builder tool(ToolSpec tool) {
+            this.tool = tool;
+            return this;
+        }
+
+        public Builder armor(ArmorSpec armor) {
+            this.armor = armor;
+            return this;
+        }
+
+        public Builder rarity(ItemRarity rarity) {
+            this.rarity = rarity;
+            return this;
+        }
+
+        public Builder durability(int durability) {
+            this.durability = durability;
             return this;
         }
 

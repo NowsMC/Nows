@@ -12,6 +12,15 @@ Each version directory can contain:
 
 Prefer stable Nows-owned inputs in `space.nows.mc.api` when Minecraft changes class names, enum names, packages or constructor/property requirements between versions. For example, `ItemSpec`, `BlockSpec` and `BlockMaterial` describe basic item/block registration once, while each `mc/<version>/internal` adapter maps those specs onto that version's item properties, block properties, material model and registry rules.
 
+Common mod-facing and generator-facing code should prefer Nows stable wrapper/spec types before reaching for raw Minecraft classes:
+
+- Identity and geometry: `McId`, `McVec3`, `McBlockPos`, `McDirection`, `McWorldSnapshot` and `McEntitySnapshot`.
+- Items and blocks: `McItemStack`, `ItemSpec`, `FoodSpec`, `ToolSpec`, `ArmorSpec`, `BlockSpec`, `BlockSound`, `MapColor`, `LightSpec`, `BlockRenderType` and `BlockShapeSpec`.
+- Data, tags and recipes: `NbtCompound`, `NbtList`, `NbtValue`, `McDataComponent`, `McDataPatch`, `TagSpec`, `IngredientSpec` and `RecipeSpec`.
+- Commands and events: `CommandSpec`, `CommandArgumentSpec`, `CommandExecutionContext`, `ClientTickContext`, `ServerTickContext`, `LevelTickContext`, `PlayerEventContext`, `BlockEventContext` and `EntityEventContext`.
+
+Raw Minecraft types can still appear in version adapter APIs for internal escape hatches, but generated code and examples should use the stable wrappers where an overload exists.
+
 Only one `nows-mc-<minecraft-version>` artifact should be installed for a launcher profile.
 
 Runtime installs `space.nows.mc.internal.MinecraftIntegration` when it is present. Mods should normally reach the services through `MinecraftApi.registries(context)` and `MinecraftApi.dataPacks(context)` instead of depending on runtime reflection details.

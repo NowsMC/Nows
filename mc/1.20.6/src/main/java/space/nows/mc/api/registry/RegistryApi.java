@@ -40,6 +40,7 @@ import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockBehaviour;
+import space.nows.mc.api.McId;
 
 import java.util.Optional;
 import java.util.function.Function;
@@ -51,6 +52,18 @@ public interface RegistryApi {
 
     default ResourceLocation resourceLocation(String id) {
         return id(id);
+    }
+
+    default Item registerItem(McId id) {
+        return registerItem(id.toString());
+    }
+
+    default Block registerBlock(McId id) {
+        return registerBlock(id.toString());
+    }
+
+    default BlockEntry registerBlockWithItem(McId id) {
+        return registerBlockWithItem(id.toString());
     }
 
     <T> ResourceKey<T> key(ResourceKey<? extends Registry<T>> registry, String id);
@@ -132,6 +145,10 @@ public interface RegistryApi {
 
     ItemStack itemStack(ItemStackSpec spec);
 
+    default ItemStack itemStack(McItemStack stack) {
+        return itemStack(stack.toSpec());
+    }
+
 
     BlockEntry registerBlockWithItem(
             String id,
@@ -168,11 +185,19 @@ public interface RegistryApi {
 
     Optional<Item> item(String id);
 
+    default Optional<Item> item(McId id) {
+        return item(id.toString());
+    }
+
     default Item getItem(String id) {
         return item(id).orElseThrow(() -> new IllegalArgumentException("Unknown Minecraft item: " + id));
     }
 
     Optional<Block> block(String id);
+
+    default Optional<Block> block(McId id) {
+        return block(id.toString());
+    }
 
     default Block getBlock(String id) {
         return block(id).orElseThrow(() -> new IllegalArgumentException("Unknown Minecraft block: " + id));

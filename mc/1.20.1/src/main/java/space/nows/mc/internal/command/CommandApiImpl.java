@@ -20,10 +20,12 @@ import com.mojang.brigadier.CommandDispatcher;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
 import space.nows.mc.api.command.CommandApi;
+import space.nows.mc.api.command.CommandExecutionContext;
 import space.nows.mc.api.command.CommandSpec;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.function.Consumer;
 
 public final class CommandApiImpl implements CommandApi {
@@ -37,6 +39,10 @@ public final class CommandApiImpl implements CommandApi {
 
     public void register(CommandSpec spec) {
         register(dispatcher -> dispatcher.register(Commands.literal(spec.literal()).executes(context -> {
+            if (spec.contextExecutor() != null) {
+                return spec.contextExecutor().apply(new CommandExecutionContext(
+                        "", spec.permissionLevel(), Map.of(), ignored -> {}));
+            }
             spec.executor().run();
             return spec.result();
         })));

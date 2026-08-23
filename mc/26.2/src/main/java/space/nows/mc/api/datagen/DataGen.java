@@ -22,6 +22,14 @@ import com.squareup.moshi.Moshi;
 import java.io.IOException;
 import java.lang.reflect.Type;
 import java.nio.file.Path;
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+
+import space.nows.mc.api.recipe.IngredientSpec;
+import space.nows.mc.api.recipe.RecipeSpec;
+import space.nows.mc.api.registry.TagSpec;
 
 /** Small generated-data writer for recipes, tags and other JSON assets. */
 public interface DataGen {
@@ -63,6 +71,69 @@ public interface DataGen {
 
     default String recipePath(String id) {
         return "data/" + namespace(id) + "/recipe/" + pathPart(id) + ".json";
+    }
+
+    default void writeTag(TagSpec tag) throws IOException {
+        String relativePath = switch (tag.target()) {
+            case ITEMS -> itemTagPath(tag.id());
+            case BLOCKS -> blockTagPath(tag.id());
+            case FLUIDS -> "data/" + namespace(tag.id()) + "/tags/fluid/" + pathPart(tag.id()) + ".json";
+            case ENTITY_TYPES -> "data/" + namespace(tag.id()) + "/tags/entity_type/" + pathPart(tag.id()) + ".json";
+        };
+        writeJson(relativePath, Map.of("replace", false, "values", tag.values()));
+    }
+
+    default void writeRecipe(RecipeSpec recipe) throws IOException {
+        writeJson(recipePath(recipe.id()), recipeJson(recipe));
+    }
+
+    default Map<String, Object> recipeJson(RecipeSpec recipe) {
+        Map<String, Object> json = new LinkedHashMap<>();
+        switch (recipe.kind()) {
+            case SHAPED_CRAFTING -> {
+                json.put("type", "minecraft:crafting_shaped");
+                json.put("pattern", recipe.pattern());
+                Map<String, Object> keys = new LinkedHashMap<>();
+                recipe.keys().forEach((key, ingredient) -> keys.put(String.valueOf(key), ingredientJson(ingredient)));
+                json.put("key", keys);
+                json.put("result", stackJson(recipe.result().itemId(), recipe.result().count()));
+            }
+            case SHAPELESS_CRAFTING -> {
+                json.put("type", "minecraft:crafting_shapeless");
+                json.put("ingredients", recipe.ingredients().stream().map(DataGen::ingredientJson).toList());
+                json.put("result", stackJson(recipe.result().itemId(), recipe.result().count()));
+            }
+            case SMELTING, BLASTING, SMOKING, CAMPFIRE_COOKING -> {
+                json.put("type", "minecraft:" + recipe.kind().name().toLowerCase());
+                json.put("ingredient", recipe.ingredients().isEmpty() ? Map.of("item", "minecraft:stone") : ingredientJson(recipe.ingredients().get(0)));
+                json.put("result", recipe.result().itemId());
+                json.put("experience", recipe.experience());
+                json.put("cookingtime", recipe.cookingTime());
+            }
+            case STONECUTTING -> {
+                json.put("type", "minecraft:stonecutting");
+                json.put("ingredient", recipe.ingredients().isEmpty() ? Map.of("item", "minecraft:stone") : ingredientJson(recipe.ingredients().get(0)));
+                json.put("result", recipe.result().itemId());
+                json.put("count", recipe.result().count());
+            }
+        }
+        return json;
+    }
+
+    static Map<String, Object> ingredientJson(IngredientSpec ingredient) {
+        if (ingredient.tagId() != null) {
+            return Map.of("tag", ingredient.tagId());
+        }
+        if (ingredient.itemIds().size() == 1) {
+            return Map.of("item", ingredient.itemIds().get(0));
+        }
+        List<Map<String, Object>> values = new ArrayList<>();
+        ingredient.itemIds().forEach(id -> values.add(Map.of("item", id)));
+        return Map.of("items", values);
+    }
+
+    static Map<String, Object> stackJson(String itemId, int count) {
+        return count == 1 ? Map.of("item", itemId) : Map.of("item", itemId, "count", count);
     }
 
     default String itemTagPath(String id) {
