@@ -49,7 +49,9 @@ class TitleScreenAdapterContractTest {
 
             if (clientMixins.contains("TitleScreenMixin")) {
                 assertTitleScreenMixinStrategy(version, mixinRoot);
-            } else if (clientMixins.contains("ScreenAccessor") && clientMixins.contains("ScreenRenderMixin")) {
+            } else if (clientMixins.contains("ScreenAccessor")
+                    && clientMixins.contains("ScreenInitMixin")
+                    && clientMixins.contains("ScreenRenderMixin")) {
                 assertScreenHookStrategy(version, mixinRoot);
             } else {
                 fail(version + " must register a known Nows-owned title-screen integration strategy");
@@ -94,16 +96,20 @@ class TitleScreenAdapterContractTest {
     }
 
     private static void assertScreenHookStrategy(String version, Path mixinRoot) throws IOException {
-        String minecraftClientMixin = read(mixinRoot.resolve("MinecraftClientMixin.java"));
         String screenAccessor = read(mixinRoot.resolve("ScreenAccessor.java"));
+        String screenInitMixin = read(mixinRoot.resolve("ScreenInitMixin.java"));
         String screenRenderMixin = read(mixinRoot.resolve("ScreenRenderMixin.java"));
 
-        assertTrue(minecraftClientMixin.contains("screen instanceof TitleScreen"),
-                version + " MinecraftClientMixin must attach buttons only to the title screen");
-        assertTrue(minecraftClientMixin.contains("new ModListScreen(screen, context)"),
-                version + " MinecraftClientMixin must bind the current title screen as ModListScreen parent");
         assertTrue(screenAccessor.contains("@Invoker(\"addRenderableWidget\")"),
                 version + " ScreenAccessor must expose Screen.addRenderableWidget");
+        assertTrue(screenInitMixin.contains("this instanceof TitleScreen"),
+                version + " ScreenInitMixin must attach buttons only to the title screen");
+        assertTrue(screenInitMixin.contains("method = \"init(II)V\""),
+                version + " ScreenInitMixin must hook the mapped Screen.init(int,int) lifecycle");
+        assertTrue(screenInitMixin.contains("titleScreenImpl().addButtons"),
+                version + " ScreenInitMixin must initialize Nows title-screen widgets");
+        assertTrue(screenInitMixin.contains("new ModListScreen(screen, context)"),
+                version + " ScreenInitMixin must bind the current title screen as ModListScreen parent");
         assertTrue(screenRenderMixin.contains("this instanceof TitleScreen"),
                 version + " ScreenRenderMixin must render only on the title screen");
         assertTrue(screenRenderMixin.contains("titleScreenImpl().renderAll"),

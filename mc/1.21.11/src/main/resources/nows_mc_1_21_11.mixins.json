@@ -10,6 +10,7 @@
     "MinecraftClientMixin",
     "PackRepositoryMixin",
     "ScreenAccessor",
+    "ScreenInitMixin",
     "ScreenRenderMixin"
   ],
   "injectors": {
