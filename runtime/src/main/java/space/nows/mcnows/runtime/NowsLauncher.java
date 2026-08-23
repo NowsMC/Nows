@@ -49,6 +49,7 @@ import java.util.Properties;
 public final class NowsLauncher {
     private static final Logger LOG = NowsLog.get(NowsLauncher.class);
     private static final NowsSide RUNTIME_SIDE = NowsSide.CLIENT;
+    private static final String MINECRAFT_ADAPTER_PATH_PROPERTY = "nows.minecraftAdapterPath";
     private static final String MINECRAFT_ADAPTER_MARKER =
             "space/nows/mcnows/mc/internal/MinecraftIntegration.class";
     private NowsLauncher() {}
@@ -259,6 +260,14 @@ public final class NowsLauncher {
     private static Optional<URL> minecraftAdapterUrl(MinecraftVersionPolicy policy) throws IOException {
         if (!policy.bundled()) {
             return Optional.empty();
+        }
+        String configuredPath = System.getProperty(MINECRAFT_ADAPTER_PATH_PROPERTY, "").trim();
+        if (!configuredPath.isEmpty()) {
+            Path path = Path.of(configuredPath).toAbsolutePath().normalize();
+            if (!Files.isRegularFile(path)) {
+                throw new IOException("Configured Minecraft adapter JAR is missing: " + path);
+            }
+            return Optional.of(path.toUri().toURL());
         }
         URL resource = NowsLauncher.class.getClassLoader().getResource(MINECRAFT_ADAPTER_MARKER);
         if (resource == null) {

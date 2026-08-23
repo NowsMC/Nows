@@ -130,7 +130,9 @@ The normal installer is a generic Java 8-compatible entrypoint. It chooses the t
 https://files.nows.space/releases/nows/<nows-version>/<minecraft-version>/install.properties
 ```
 
-For local/offline development, the CLI class can still install from a local manifest and artifact directory. Public releases also publish separate per-Minecraft offline installer JARs so release testing can happen before files are uploaded to `files.nows.space`.
+For local/offline development, the CLI class can still install from a local manifest and artifact directory. Public releases also publish separate per-Minecraft offline installer JARs so release testing can happen before files are uploaded to `files.nows.space`. Offline installer JARs use the same UI entrypoint as the normal installer and lock the Minecraft version to the bundled payload; scripted offline installs opt into CLI mode with `--cli`.
+
+Version-specific `space.nows.mcnows:nows-mc-*` adapters are installed as files but must not be added to launcher-owned libraries. The generated launcher profile or Prism/MultiMC patch passes `-Dnows.minecraftAdapterPath=<adapter.jar>` instead. Runtime then adds that adapter URL to `NowsClassLoader` beside the Minecraft client jar, keeping Minecraft-referencing adapter classes in the same loader as the game classes and avoiding duplicate `net.minecraft.*` type identity across parent and child classloaders.
 
 Installer-embedded dependencies, currently KDL4J, may be embedded into installer artifacts and copied into the Minecraft libraries directory when necessary. KDL4J resolves from JitPack first, with GitHub Packages kept as a release fallback. Normal Nows users must not need GitHub credentials just to install or run Nows.
 

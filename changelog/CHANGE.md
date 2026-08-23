@@ -5,7 +5,9 @@
 - Added instance install support with `--launcher` and `--instanceDir`, including instance game-folder mod placement and a generated Nows version reference file.
 - Added Prism/MultiMC instance launch metadata so those launchers run Nows through their component pipeline instead of only receiving copied files.
 - Moved launcher and instance controls into the installer UI's advanced dialog so the main install flow stays focused on the Official Launcher path.
-- Added JUnit coverage for installer launcher/instance option parsing and game-folder detection.
+- Offline installer JARs now open the same UI as the normal installer, with the bundled Minecraft version locked to the selected offline package.
+- Kept version-specific `nows-mc-*` adapters off launcher-owned classpaths and passed them to the Nows game classloader by path, fixing Minecraft verifier crashes on startup.
+- Added JUnit coverage for installer launcher/instance option parsing, game-folder detection and adapter classpath isolation.
 
 ## 0.6.1
 
