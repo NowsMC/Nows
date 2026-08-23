@@ -1,3 +1,11 @@
+## 0.9.0
+
+- Added broader Nows-owned Minecraft wrapper APIs for identifiers, positions, directions, item stacks, data components, recipes, tags, command contexts and event contexts.
+- Extended stable item and block specs with common generator-facing properties such as food, tools, armor, rarity, durability, block sound, light, render type, shape and movement factors.
+- Updated every supported Minecraft adapter to expose the new stable overloads and translate common spec fields without requiring generated code to import Minecraft classes.
+- Updated the Nows MCreator generator templates to prefer stable Nows APIs for item stacks, generated tags, food items and block sound/light declarations.
+- Bumped Nows release metadata to 0.9.0.
+
 ## 0.8.0
 
 - Renamed public Java packages into clearer Nows namespaces.

@@ -31,13 +31,13 @@ class LaunchArgumentsTest {
     @Test
     void readsNowsProfileIdFromSystemPropertyForInstanceLaunchers() {
         System.setProperty("nows.minecraftVersion", "1.20.1");
-        System.setProperty("nows.profileId", "nows-0.8.0-1.20.1");
+        System.setProperty("nows.profileId", "nows-0.9.0-1.20.1");
 
         LaunchArguments arguments = LaunchArguments.parse(new String[] {
                 "--gameDir", "instance/.minecraft"
         });
 
         assertEquals("1.20.1", arguments.minecraftVersion());
-        assertEquals("nows-0.8.0-1.20.1", arguments.profileId());
+        assertEquals("nows-0.9.0-1.20.1", arguments.profileId());
     }
 }
