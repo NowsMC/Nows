@@ -1,0 +1,32 @@
+mod id="nows_example" name="Nows Example Mod" version="${nowsVersion}" minecraft="${minecraftVersion}" side="client" {
+    info {
+        description "Small example mod used to smoke-test Nows metadata, entrypoints and Mixin."
+        author "TamKungZ_"
+        contributor "HollZaterQ"
+        license "Apache-2.0"
+        icon "assets/nows_example/icon.png"
+    }
+
+    links {
+        homepage "https://nows.space"
+        sources "https://github.com/NowsMC/Nows"
+        issues "https://github.com/NowsMC/Nows/issues"
+    }
+
+    compatibility {
+        requires "minecraft" version="${minecraftVersion}"
+        requires "nows" version="${nowsVersion}"
+        recommends "cloth-config" version=">=11.0.0"
+    }
+
+    properties {
+        channel "example"
+    }
+
+    runtime {
+        network-channel "nows_example:main"
+        listener "space.nows.mcnows.example.ExampleLifecycleListener"
+        entrypoint "space.nows.mcnows.example.ExampleMod"
+        mixin "nows_example.mixins.json"
+    }
+}
