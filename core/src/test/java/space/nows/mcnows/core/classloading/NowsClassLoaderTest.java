@@ -5,12 +5,14 @@ import org.junit.jupiter.api.io.TempDir;
 
 import java.io.InputStream;
 import java.net.URL;
+import java.net.URLClassLoader;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.jar.JarEntry;
 import java.util.jar.JarOutputStream;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class NowsClassLoaderTest {
@@ -50,6 +52,33 @@ class NowsClassLoaderTest {
             Class<?> loaded = loader.loadClass(PROBE_CLASS);
 
             assertEquals(jar.toUri(), loaded.getProtectionDomain().getCodeSource().getLocation().toURI());
+        }
+    }
+
+    @Test
+    void childOnlyPackagesDoNotFallBackToParent() throws Exception {
+        URL classes = CodeSourceProbe.class.getProtectionDomain().getCodeSource().getLocation();
+
+        try (URLClassLoader parent = new URLClassLoader(new URL[]{classes}, ClassLoader.getPlatformClassLoader());
+             NowsClassLoader loader = new NowsClassLoader(new URL[0], parent)) {
+            loader.addChildOnlyPrefix("space.nows.mcnows.core.classloading.");
+
+            assertThrows(ClassNotFoundException.class, () -> loader.loadClass(PROBE_CLASS));
+        }
+    }
+
+    @Test
+    void childClassDefinitionFailureDoesNotFallBackToParent(@TempDir Path tempDirectory) throws Exception {
+        Path jar = tempDirectory.resolve("broken-probe.jar");
+        try (JarOutputStream output = new JarOutputStream(Files.newOutputStream(jar))) {
+            output.putNextEntry(new JarEntry(PROBE_RESOURCE));
+            output.write(new byte[]{0, 1, 2, 3});
+            output.closeEntry();
+        }
+
+        try (NowsClassLoader loader = new NowsClassLoader(
+                new URL[]{jar.toUri().toURL()}, getClass().getClassLoader())) {
+            assertThrows(LinkageError.class, () -> loader.loadClass(PROBE_CLASS));
         }
     }
 }

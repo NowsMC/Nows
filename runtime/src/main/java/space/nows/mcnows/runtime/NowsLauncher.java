@@ -176,6 +176,7 @@ public final class NowsLauncher {
         // Parent owns stable loader/integration APIs and Minecraft-owned common libraries.
         // Version-specific Minecraft adapters stay child-first with the game classes they reference.
         List<String> childFirstPrefixes = List.of("space.nows.mcnows.mc.");
+        List<String> childOnlyPrefixes = List.of("net.minecraft.");
         List<String> prefixes = List.of(
                 "space.nows.mcnows.api.",
                 "space.nows.mcnows.core.",
@@ -192,10 +193,14 @@ public final class NowsLauncher {
         for (String prefix : childFirstPrefixes) {
             loader.addChildFirstPrefix(prefix);
         }
+        for (String prefix : childOnlyPrefixes) {
+            loader.addChildOnlyPrefix(prefix);
+        }
         for (String prefix : prefixes) {
             loader.addParentFirstPrefix(prefix);
         }
         LOG.info("Child-first package prefixes ({}): {}", childFirstPrefixes.size(), String.join(", ", childFirstPrefixes));
+        LOG.info("Child-only package prefixes ({}): {}", childOnlyPrefixes.size(), String.join(", ", childOnlyPrefixes));
         LOG.info("Parent-first package prefixes ({}): {}", prefixes.size(), String.join(", ", prefixes));
     }
 
