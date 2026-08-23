@@ -27,6 +27,7 @@ class TitleScreenAdapterContractTest {
             Path javaRoot = mcRoot.resolve(version).resolve("src/main/java/space/nows/mcnows/mc");
             String screenContext = read(javaRoot.resolve("api/client/ui/ScreenContext.java"));
             String loaderMenu = read(javaRoot.resolve("internal/client/LoaderMenu.java"));
+            String modListScreen = read(javaRoot.resolve("internal/client/ModListScreen.java"));
             Path mixinRoot = javaRoot.resolve("internal/mixin");
             List<String> clientMixins = clientMixins(mcRoot, version);
 
@@ -41,6 +42,11 @@ class TitleScreenAdapterContractTest {
                     version + " LoaderMenu must not construct Minecraft TitleScreen directly");
             assertFalse(loaderMenu.contains("Minecraft.getInstance()"),
                     version + " LoaderMenu must not own version-specific screen switching");
+
+            if (version.equals("1.21.11")) {
+                assertFalse(modListScreen.contains("renderBackground(graphics, mouseX, mouseY, delta)"),
+                        version + " ModListScreen must not request a second 1.21.11 GUI blur pass");
+            }
 
             for (String mixin : clientMixins) {
                 assertTrue(Files.exists(mixinRoot.resolve(mixin + ".java")),
