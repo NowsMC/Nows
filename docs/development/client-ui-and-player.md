@@ -19,6 +19,8 @@ ui.titleScreen().render(render ->
         render.text("my_mod loaded", 2, render.height() - 42, 0xFFAAFFAA));
 ```
 
+`ScreenContext.showNowsMods(context)` opens the built-in Nows Mods screen from a title-screen button. The selected Minecraft adapter owns the actual screen parent and `setScreen`/`setScreenAndShow` calls, so callers do not need to touch `TitleScreen` or current-screen fields directly.
+
 Client player helpers expose both nullable and fail-fast player access. On multiplayer servers, server-authoritative values may be corrected by the server:
 
 ```java
