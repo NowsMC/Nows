@@ -62,7 +62,9 @@ public abstract class TitleScreenMixin extends Screen {
                         (title, initializer, renderer) -> Minecraft.getInstance().setScreenAndShow(
                                 new space.nows.mcnows.mc.internal.client.SimpleScreen(
                                         Component.literal(title), initializer, renderer)),
-                        () -> Minecraft.getInstance().setScreenAndShow(null)));
+                        () -> Minecraft.getInstance().setScreenAndShow(null),
+                        context -> Minecraft.getInstance().setScreenAndShow(
+                                new space.nows.mcnows.mc.internal.client.ModListScreen(screen, context))));
     }
 
     @Inject(
