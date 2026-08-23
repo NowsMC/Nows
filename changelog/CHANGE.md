@@ -1,3 +1,10 @@
+## 0.6.1
+
+- Fixed the built-in Nows Mods title-screen button so Minecraft adapters reuse the active title screen instead of constructing a fresh `TitleScreen` during loader UI setup.
+- Updated the Minecraft 26.2 title-screen hook for the newer client screen lifecycle while keeping the mod list's Done action parent-aware.
+- Aligned example/API mod Java release selection with the Minecraft adapters that require Java 21.
+- Kept the example mod in the main repository instead of as a submodule.
+
 ## 0.6.0
 
 - Added stable Nows-owned registry specs for item and block registration across Minecraft versions.
