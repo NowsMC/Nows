@@ -33,5 +33,6 @@ include(
     "repos:NowsRemapper",
     "repos:NowsInstaller",
     "repos:NowsGradlePlugin",
-    "repos:NowsApiMod"
+    "repos:NowsApiMod",
+    "repos:NowsMCreatorGenerator"
 )

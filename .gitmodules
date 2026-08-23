@@ -14,3 +14,7 @@
 [submodule "repos/NowsRemapper"]
 	path = repos/NowsRemapper
 	url = git@github.com:NowsMC/NowsRemapper.git
+[submodule "repos/NowsMCreatorGenerator"]
+	path = repos/NowsMCreatorGenerator
+	url = git@github.com:NowsMC/NowsMCreatorGenerator.git
+	branch = 26.2
