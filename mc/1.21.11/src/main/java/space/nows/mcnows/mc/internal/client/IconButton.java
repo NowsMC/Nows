@@ -16,6 +16,7 @@ public final class IconButton extends Button {
 
     @Override
     protected void renderContents(GuiGraphics graphics, int mouseX, int mouseY, float delta) {
+        renderDefaultSprite(graphics);
         int size = Math.min(16, Math.min(getWidth(), getHeight()) - 4);
         int x = getX() + (getWidth() - size) / 2;
         int y = getY() + (getHeight() - size) / 2;
