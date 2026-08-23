@@ -18,6 +18,7 @@ package space.nows.mc.internal.mixin;
 
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.gui.screens.TitleScreen;
 import net.minecraft.client.renderer.RenderPipelines;
@@ -27,21 +28,57 @@ import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
+import space.nows.mc.api.client.ui.ButtonSink;
 import space.nows.mc.api.client.ui.RenderContext;
+import space.nows.mc.api.client.ui.ScreenContext;
 import space.nows.mc.internal.ClientHooks;
+import space.nows.mc.internal.client.IconButton;
 import space.nows.mc.internal.client.UiImpl;
 
-@Mixin(value = Screen.class, remap = false)
-public abstract class ScreenRenderMixin {
-    @Inject(
-            method = "renderWithTooltipAndSubtitles(Lnet/minecraft/client/gui/GuiGraphics;IIF)V",
-            at = @At("TAIL"),
-            remap = false
-    )
+@Mixin(value = TitleScreen.class, remap = false)
+public abstract class TitleScreenMixin extends Screen {
+    protected TitleScreenMixin(Component title) {
+        super(title);
+    }
+
+    @Inject(method = "init()V", at = @At("TAIL"), remap = false)
+    private void nows$initTitleUi(CallbackInfo ci) {
+        Screen screen = (Screen) (Object) this;
+        UiImpl.INSTANCE.titleScreenImpl().addButtons(
+                new ScreenContext(
+                        screen.width,
+                        screen.height,
+                        new ButtonSink() {
+                            @Override
+                            public void addButton(int x, int y, int width, int height, String message, Runnable onPress) {
+                                addRenderableWidget(Button.builder(Component.literal(message), button -> onPress.run())
+                                        .bounds(x, y, width, height)
+                                        .build());
+                            }
+
+                            @Override
+                            public void addIconButton(
+                                    int x, int y, int width, int height, String icon, String message, Runnable onPress) {
+                                addRenderableWidget(new IconButton(
+                                        x,
+                                        y,
+                                        width,
+                                        height,
+                                        Identifier.tryParse(icon),
+                                        Component.literal(message),
+                                        onPress));
+                            }
+                        },
+                        (title, initializer, renderer) -> Minecraft.getInstance().setScreen(
+                                new space.nows.mc.internal.client.SimpleScreen(
+                                        Component.literal(title), initializer, renderer)),
+                        () -> Minecraft.getInstance().setScreen(null),
+                        context -> Minecraft.getInstance().setScreen(
+                                new space.nows.mc.internal.client.ModListScreen(screen, context))));
+    }
+
+    @Inject(method = "render(Lnet/minecraft/client/gui/GuiGraphics;IIF)V", at = @At("TAIL"), remap = false)
     private void nows$renderTitleBadge(GuiGraphics graphics, int mouseX, int mouseY, float delta, CallbackInfo ci) {
-        if (!((Object) this instanceof TitleScreen)) {
-            return;
-        }
         Minecraft minecraft = Minecraft.getInstance();
         int x = 2;
         int y = graphics.guiHeight() - 30;
