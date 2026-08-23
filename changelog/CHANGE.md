@@ -1,6 +1,7 @@
 ## 0.8.0
 
 - Renamed public Java packages into clearer Nows namespaces.
+- Hardened core loader contracts with stricter context, service, config, classloader, mod metadata, discovery and dependency validation.
 - Bumped Nows release metadata to 0.8.0.
 
 ## 0.7.0

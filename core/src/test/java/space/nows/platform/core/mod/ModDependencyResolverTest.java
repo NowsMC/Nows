@@ -58,6 +58,14 @@ class ModDependencyResolverTest {
     }
 
     @Test
+    void rejectsDuplicateModIds() {
+        ModContainer first = mod("duplicate", "1.0.0", List.of());
+        ModContainer second = mod("duplicate", "2.0.0", List.of());
+
+        assertThrows(IOException.class, () -> ModDependencyResolver.resolve(List.of(first, second), Map.of()));
+    }
+
+    @Test
     void sortsByRequiredDependenciesAndLoadRules() throws Exception {
         ModContainer first = mod("first", "1.0.0", List.of());
         ModContainer middle = mod("middle", "1.0.0",

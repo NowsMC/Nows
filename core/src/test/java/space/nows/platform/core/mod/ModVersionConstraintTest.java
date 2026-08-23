@@ -30,4 +30,11 @@ class ModVersionConstraintTest {
         assertFalse(ModVersionConstraint.matches("<1.0.0", "1.2.3"));
         assertFalse(ModVersionConstraint.matches("[1.0.0,2.0.0)", "2.0.0"));
     }
+
+    @Test
+    void rejectsEmptyMalformedConstraints() {
+        assertFalse(ModVersionConstraint.matches(",", "1.2.3"));
+        assertFalse(ModVersionConstraint.matches(">=", "1.2.3"));
+        assertFalse(ModVersionConstraint.matches("[,]", "1.2.3"));
+    }
 }

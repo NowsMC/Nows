@@ -23,24 +23,31 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Locale;
+import java.util.Objects;
 import java.util.Set;
 
 public final class ModDiscovery {
     private ModDiscovery() {}
 
     public static List<ModContainer> scan(Path modsDirectory, ModMetadataReader reader) throws IOException {
+        Objects.requireNonNull(reader, "reader");
         List<ModContainer> result = new ArrayList<>();
         Set<String> ids = new HashSet<>();
-        scanInto(modsDirectory, reader, result, ids);
+        scanInto(Objects.requireNonNull(modsDirectory, "modsDirectory"), reader, result, ids);
         return List.copyOf(result);
     }
 
     public static List<ModContainer> scan(List<Path> modsDirectories, ModMetadataReader reader) throws IOException {
+        Objects.requireNonNull(modsDirectories, "modsDirectories");
+        Objects.requireNonNull(reader, "reader");
         List<ModContainer> result = new ArrayList<>();
         Set<String> ids = new HashSet<>();
         Set<Path> scanned = new HashSet<>();
         for (Path modsDirectory : modsDirectories) {
-            Path normalized = modsDirectory.toAbsolutePath().normalize();
+            Path normalized = Objects.requireNonNull(modsDirectory, "modsDirectory")
+                    .toAbsolutePath()
+                    .normalize();
             if (scanned.add(normalized)) {
                 scanInto(normalized, reader, result, ids);
             }
@@ -57,8 +64,8 @@ public final class ModDiscovery {
         Files.createDirectories(modsDirectory);
         try (var paths = Files.list(modsDirectory)) {
             for (Path jar : paths.filter(Files::isRegularFile)
-                    .filter(path -> path.getFileName().toString().endsWith(".jar"))
-                    .sorted(Comparator.comparing(path -> path.getFileName().toString()))
+                    .filter(path -> path.getFileName().toString().toLowerCase(Locale.ROOT).endsWith(".jar"))
+                    .sorted(Comparator.comparing(path -> path.getFileName().toString().toLowerCase(Locale.ROOT)))
                     .toList()) {
                 var descriptor = reader.read(jar);
                 if (descriptor.isEmpty()) continue;

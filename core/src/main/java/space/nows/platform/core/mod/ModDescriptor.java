@@ -21,6 +21,7 @@ import space.nows.platform.api.NowsSide;
 import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 
@@ -59,7 +60,7 @@ public record ModDescriptor(
         if (id == null || id.isBlank()) {
             throw new IllegalArgumentException("Mod id must not be blank");
         }
-        id = id.trim();
+        id = normalizeId(id);
         name = name == null || name.isBlank() ? id : name.trim();
         version = version == null || version.isBlank() ? "unknown" : version.trim();
         minecraft = minecraft == null || minecraft.isBlank() ? "*" : minecraft.trim();
@@ -77,7 +78,7 @@ public record ModDescriptor(
         if (declarations != null) {
             declarations.forEach((key, value) -> {
                 if (key != null && !key.isBlank()) {
-                    copy.put(key.trim(), List.copyOf(value == null ? List.of() : value));
+                    copy.put(normalizeKey(key), immutableStringList(value));
                 }
             });
         }
@@ -85,7 +86,10 @@ public record ModDescriptor(
     }
 
     public List<String> declarations(String key) {
-        return declarations.getOrDefault(key, List.of());
+        if (key == null || key.isBlank()) {
+            return List.of();
+        }
+        return declarations.getOrDefault(normalizeKey(key), List.of());
     }
 
     public Optional<String> declaration(String key) {
@@ -98,15 +102,25 @@ public record ModDescriptor(
     }
 
     public Optional<String> contact(String key) {
-        return Optional.ofNullable(contacts.get(key));
+        if (key == null || key.isBlank()) {
+            return Optional.empty();
+        }
+        return Optional.ofNullable(contacts.get(key.trim()));
     }
 
     public Optional<String> property(String key) {
-        return Optional.ofNullable(properties.get(key));
+        if (key == null || key.isBlank()) {
+            return Optional.empty();
+        }
+        return Optional.ofNullable(properties.get(key.trim()));
     }
 
     public List<ModDependency> dependencies(String id) {
-        return dependencies.stream().filter(dependency -> dependency.id().equals(id)).toList();
+        if (id == null || id.isBlank()) {
+            return List.of();
+        }
+        String normalizedId = normalizeId(id);
+        return dependencies.stream().filter(dependency -> dependency.id().equals(normalizedId)).toList();
     }
 
     public List<ModDependency> requiredDependencies() {
@@ -127,5 +141,23 @@ public record ModDescriptor(
             });
         }
         return Collections.unmodifiableMap(copy);
+    }
+
+    private static List<String> immutableStringList(List<String> input) {
+        if (input == null || input.isEmpty()) {
+            return List.of();
+        }
+        return input.stream()
+                .filter(value -> value != null && !value.isBlank())
+                .map(String::trim)
+                .toList();
+    }
+
+    private static String normalizeKey(String key) {
+        return key.trim().toLowerCase(Locale.ROOT);
+    }
+
+    static String normalizeId(String id) {
+        return id.trim().toLowerCase(Locale.ROOT);
     }
 }

@@ -21,11 +21,14 @@ import space.nows.platform.core.mod.ModDescriptor;
 import space.nows.platform.api.config.NowsConfigFiles;
 
 import java.nio.file.Path;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
+import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
 
 /** Stable runtime context. Optional functionality lives in {@link NowsServices}. */
 public record NowsContext(
@@ -37,8 +40,18 @@ public record NowsContext(
         NowsServices services
 ) {
     public NowsContext {
+        minecraftVersion = Objects.requireNonNull(minecraftVersion, "minecraftVersion");
+        gameDirectory = Objects.requireNonNull(gameDirectory, "gameDirectory");
+        gameClassLoader = Objects.requireNonNull(gameClassLoader, "gameClassLoader");
+        services = Objects.requireNonNull(services, "services");
         side = side == null ? NowsSide.CLIENT : side;
-        mods = List.copyOf(mods);
+        mods = List.copyOf(Objects.requireNonNull(mods, "mods"));
+        Set<String> ids = new HashSet<>();
+        for (ModContainer mod : mods) {
+            if (!ids.add(mod.descriptor().id())) {
+                throw new IllegalArgumentException("Duplicate Nows mod id in context: " + mod.descriptor().id());
+            }
+        }
     }
 
     public <T> T service(Class<T> type) {
@@ -62,8 +75,12 @@ public record NowsContext(
     }
 
     public Optional<ModContainer> mod(String id) {
+        if (id == null || id.isBlank()) {
+            return Optional.empty();
+        }
+        String normalizedId = id.trim().toLowerCase(java.util.Locale.ROOT);
         return mods.stream()
-                .filter(mod -> mod.descriptor().id().equals(id))
+                .filter(mod -> mod.descriptor().id().equals(normalizedId))
                 .findFirst();
     }
 

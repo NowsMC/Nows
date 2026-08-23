@@ -84,6 +84,24 @@ class NowsClassLoaderTest {
     }
 
     @Test
+    void rejectsInvalidClassLoadingHooks() throws Exception {
+        try (NowsClassLoader loader = new NowsClassLoader(new URL[0], ClassLoader.getPlatformClassLoader())) {
+            assertThrows(IllegalArgumentException.class, () -> loader.addParentFirstPrefix(""));
+            assertThrows(IllegalArgumentException.class, () -> loader.addChildFirstPrefix(" "));
+            assertThrows(IllegalArgumentException.class, () -> loader.addChildOnlyPrefix(null));
+            assertThrows(NullPointerException.class, () -> loader.addTransformer(null));
+            assertThrows(NullPointerException.class, () -> loader.addTransformerFirst(null));
+        }
+    }
+
+    @Test
+    void rawClassBytesToleratesBootstrapParent() throws Exception {
+        try (NowsClassLoader loader = new NowsClassLoader(new URL[0], null)) {
+            assertEquals(null, loader.getRawClassBytes(PROBE_CLASS));
+        }
+    }
+
+    @Test
     void childClassDefinitionFailureDoesNotFallBackToParent(@TempDir Path tempDirectory) throws Exception {
         Path jar = tempDirectory.resolve("broken-probe.jar");
         try (JarOutputStream output = new JarOutputStream(Files.newOutputStream(jar))) {

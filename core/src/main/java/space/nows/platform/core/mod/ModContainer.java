@@ -17,6 +17,11 @@
 package space.nows.platform.core.mod;
 
 import java.nio.file.Path;
+import java.util.Objects;
 
 public record ModContainer(Path path, ModDescriptor descriptor) {
+    public ModContainer {
+        path = Objects.requireNonNull(path, "path").toAbsolutePath().normalize();
+        descriptor = Objects.requireNonNull(descriptor, "descriptor");
+    }
 }

@@ -37,13 +37,18 @@ public final class ModVersionConstraint {
         if (isRange(normalized)) {
             return matchesRange(normalized, actualVersion);
         }
+        boolean matchedAny = false;
         for (String part : normalized.split(",")) {
             String single = part.trim();
-            if (!single.isEmpty() && !matchesSingle(single, actualVersion)) {
+            if (single.isEmpty()) {
+                continue;
+            }
+            matchedAny = true;
+            if (!matchesSingle(single, actualVersion)) {
                 return false;
             }
         }
-        return true;
+        return matchedAny;
     }
 
     private static boolean matchesSingle(String constraint, String actualVersion) {
@@ -55,6 +60,9 @@ public final class ModVersionConstraint {
                 expected = constraint.substring(candidate.length()).trim();
                 break;
             }
+        }
+        if (expected.isBlank()) {
+            return false;
         }
         int comparison = compare(actualVersion, expected);
         return switch (operator) {
@@ -77,6 +85,9 @@ public final class ModVersionConstraint {
         }
         String min = body.substring(0, separator).trim();
         String max = body.substring(separator + 1).trim();
+        if (min.isEmpty() && max.isEmpty()) {
+            return false;
+        }
         if (!min.isEmpty()) {
             int comparison = compare(actualVersion, min);
             if (comparison < 0 || (!includeMin && comparison == 0)) {

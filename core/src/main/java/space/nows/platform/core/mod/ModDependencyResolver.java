@@ -39,7 +39,9 @@ public final class ModDependencyResolver {
         Map<String, Integer> originalOrder = new HashMap<>();
         for (int index = 0; index < mods.size(); index++) {
             ModContainer mod = mods.get(index);
-            modsById.put(mod.descriptor().id(), mod);
+            if (modsById.putIfAbsent(mod.descriptor().id(), mod) != null) {
+                throw new IOException("Duplicate Nows mod id '" + mod.descriptor().id() + "'");
+            }
             originalOrder.put(mod.descriptor().id(), index);
         }
 

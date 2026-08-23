@@ -28,6 +28,7 @@ import java.security.CodeSource;
 import java.security.cert.Certificate;
 import java.nio.file.Path;
 import java.util.List;
+import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
@@ -51,15 +52,15 @@ public final class NowsClassLoader extends URLClassLoader {
     private volatile ClassGenerator classGenerator;
 
     public NowsClassLoader(URL[] urls, ClassLoader parent) {
-        super("nows-game", urls, parent);
+        super("nows-game", Objects.requireNonNull(urls, "urls"), parent);
         parentFirstPrefixes.addAll(List.of("java.", "javax.", "jakarta.", "jdk.", "sun."));
     }
 
-    public void addParentFirstPrefix(String prefix) { parentFirstPrefixes.add(prefix); }
-    public void addChildFirstPrefix(String prefix) { childFirstPrefixes.add(prefix); }
-    public void addChildOnlyPrefix(String prefix) { childOnlyPrefixes.add(prefix); }
-    public void addTransformer(ClassTransformer transformer) { transformers.add(transformer); }
-    public void addTransformerFirst(ClassTransformer transformer) { transformers.add(0, transformer); }
+    public void addParentFirstPrefix(String prefix) { parentFirstPrefixes.add(validatePrefix(prefix)); }
+    public void addChildFirstPrefix(String prefix) { childFirstPrefixes.add(validatePrefix(prefix)); }
+    public void addChildOnlyPrefix(String prefix) { childOnlyPrefixes.add(validatePrefix(prefix)); }
+    public void addTransformer(ClassTransformer transformer) { transformers.add(Objects.requireNonNull(transformer, "transformer")); }
+    public void addTransformerFirst(ClassTransformer transformer) { transformers.add(0, Objects.requireNonNull(transformer, "transformer")); }
     public void setClassGenerator(ClassGenerator generator) { classGenerator = generator; }
     public boolean isClassLoaded(String className) { return findLoadedClass(className) != null; }
 
@@ -69,7 +70,11 @@ public final class NowsClassLoader extends URLClassLoader {
         if (own != null) {
             try (InputStream input = own.openStream()) { return input.readAllBytes(); }
         }
-        try (InputStream input = getParent().getResourceAsStream(resource)) {
+        ClassLoader parent = getParent();
+        if (parent == null) {
+            return null;
+        }
+        try (InputStream input = parent.getResourceAsStream(resource)) {
             return input == null ? null : input.readAllBytes();
         }
     }
@@ -151,5 +156,12 @@ public final class NowsClassLoader extends URLClassLoader {
     private boolean isChildOnly(String name) {
         for (String prefix : childOnlyPrefixes) if (name.startsWith(prefix)) return true;
         return false;
+    }
+
+    private static String validatePrefix(String prefix) {
+        if (prefix == null || prefix.isBlank()) {
+            throw new IllegalArgumentException("Class-loading prefix must not be blank");
+        }
+        return prefix.trim();
     }
 }

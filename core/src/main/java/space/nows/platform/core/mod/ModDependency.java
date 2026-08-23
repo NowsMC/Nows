@@ -16,8 +16,6 @@
 
 package space.nows.platform.core.mod;
 
-import java.util.Locale;
-
 /** Format-neutral dependency declaration from mod metadata. */
 public record ModDependency(
         String kind,
@@ -31,11 +29,11 @@ public record ModDependency(
     }
 
     public ModDependency {
-        kind = kind == null || kind.isBlank() ? "depends" : kind.trim().toLowerCase(Locale.ROOT);
+        kind = kind == null || kind.isBlank() ? "depends" : ModDescriptor.normalizeId(kind);
         if (id == null || id.isBlank()) {
             throw new IllegalArgumentException("Dependency id must not be blank");
         }
-        id = id.trim().toLowerCase(Locale.ROOT);
+        id = ModDescriptor.normalizeId(id);
         version = version == null || version.isBlank() ? "*" : version.trim();
         reason = reason == null ? "" : reason.trim();
     }

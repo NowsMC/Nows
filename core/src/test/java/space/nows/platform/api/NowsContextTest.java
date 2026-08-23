@@ -25,6 +25,7 @@ import java.util.List;
 import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class NowsContextTest {
@@ -48,8 +49,29 @@ class NowsContextTest {
         assertTrue(context.isModLoaded("nows_example"));
         assertEquals(NowsSide.CLIENT, context.side());
         assertEquals("Nows Example Mod", context.requireModDescriptor("nows_example").name());
+        assertEquals("Nows Example Mod", context.requireModDescriptor(" Nows_Example ").name());
         assertEquals(container, context.requireMod("nows_example"));
         assertEquals(List.of(descriptor), context.modDescriptors());
         assertEquals(container, context.modsById().get("nows_example"));
+    }
+
+    @Test
+    void rejectsDuplicateModIds() {
+        ModContainer first = container("same_id");
+        ModContainer second = container("same_id");
+
+        assertThrows(IllegalArgumentException.class, () -> new NowsContext(
+                "26.2",
+                NowsSide.CLIENT,
+                Path.of(".minecraft"),
+                List.of(first, second),
+                getClass().getClassLoader(),
+                new NowsServices()));
+    }
+
+    private static ModContainer container(String id) {
+        return new ModContainer(
+                Path.of("mods/" + id + ".jar"),
+                new ModDescriptor(id, id, "1.0.0", "26.2", Map.of()));
     }
 }

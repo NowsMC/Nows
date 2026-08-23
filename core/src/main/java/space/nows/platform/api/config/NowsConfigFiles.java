@@ -21,6 +21,7 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Objects;
 import java.util.Properties;
 
 /** Small per-mod config file helper backed by the game directory. */
@@ -28,7 +29,7 @@ public final class NowsConfigFiles {
     private final Path directory;
 
     public NowsConfigFiles(Path directory) {
-        this.directory = directory;
+        this.directory = Objects.requireNonNull(directory, "directory").toAbsolutePath().normalize();
     }
 
     public Path directory() {
@@ -36,11 +37,12 @@ public final class NowsConfigFiles {
     }
 
     public Path modDirectory(String modId) {
-        return directory.resolve(modId);
+        return directory.resolve(safeSegment(modId, "modId"));
     }
 
     public Path file(String modId, String name) {
-        String fileName = name.endsWith(".properties") ? name : name + ".properties";
+        String safeName = safeSegment(name, "name");
+        String fileName = safeName.endsWith(".properties") ? safeName : safeName + ".properties";
         return modDirectory(modId).resolve(fileName);
     }
 
@@ -61,5 +63,17 @@ public final class NowsConfigFiles {
         try (OutputStream output = Files.newOutputStream(file)) {
             properties.store(output, comment);
         }
+    }
+
+    private static String safeSegment(String value, String label) {
+        if (value == null || value.isBlank()) {
+            throw new IllegalArgumentException(label + " must not be blank");
+        }
+        String segment = value.trim();
+        Path path = Path.of(segment);
+        if (path.isAbsolute() || path.getNameCount() != 1 || segment.equals(".") || segment.equals("..")) {
+            throw new IllegalArgumentException(label + " must be a single relative path segment: " + value);
+        }
+        return segment;
     }
 }
