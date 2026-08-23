@@ -2,6 +2,7 @@
 
 - Renamed public Java packages into clearer Nows namespaces.
 - Hardened core loader contracts with stricter context, service, config, classloader, mod metadata, discovery and dependency validation.
+- Hardened integration contracts for KDL metadata parsing, GEB listener registration, logging setup, Mixin properties and network channel handling.
 - Bumped Nows release metadata to 0.8.0.
 
 ## 0.7.0
