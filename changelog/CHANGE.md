@@ -1,3 +1,10 @@
+## 0.6.2
+
+- Published offline installer JARs for every supported Minecraft adapter so local release testing no longer depends on files being uploaded first.
+- Added installer launcher targets for Official Launcher, Modrinth, CurseForge, Prism, MultiMC and generic instance folders.
+- Added instance install support with `--launcher` and `--instanceDir`, including instance game-folder mod placement and a generated Nows version reference file.
+- Added JUnit coverage for installer launcher/instance option parsing and game-folder detection.
+
 ## 0.6.1
 
 - Fixed the built-in Nows Mods title-screen button so Minecraft adapters reuse the active title screen instead of constructing a fresh `TitleScreen` during loader UI setup.

@@ -22,16 +22,10 @@ Optional single-JAR experiment:
 ./gradlew allJar
 ```
 
-Stage release files for the default Minecraft target from `gradle.properties`:
+Stage release files for every supported Minecraft adapter:
 
 ```bash
 ./gradlew publishLayout
-```
-
-Stage a different supported Minecraft target:
-
-```bash
-./gradlew -Pminecraft_version=<minecraft-version> publishLayout
 ```
 
 Build only the local Maven repository for mod developers:
@@ -50,6 +44,12 @@ Build the user-facing installer:
 
 ```bash
 ./gradlew :repos:NowsInstaller:assemble
+```
+
+Build all offline installers without staging the full release layout:
+
+```bash
+./gradlew :repos:NowsInstaller:allOfflineJars
 ```
 
 Build distribution artifacts inside Docker. This uses one Gradle worker by default and stores Gradle and Minecraft caches in Docker volumes:
@@ -82,7 +82,7 @@ docker compose up nows-web
 Update the coordinated project version:
 
 ```bash
-./gradlew setNowsVersion -Pnew_nows_version=0.6.0
+./gradlew setNowsVersion -Pnew_nows_version=0.6.2
 ```
 
 Inspect the coordinated version state:
@@ -131,6 +131,8 @@ Nows also scans this optional profile overlay:
 .minecraft/nows/profiles/nows-<nows-version>-<minecraft-version>/mods
 ```
 
+For launcher-managed instances, pass `--launcher <modrinth|curseforge|prism|multimc|generic>` and `--instanceDir <path>`. Official installs update `launcher_profiles.json`; instance installs write mods into the selected instance game folder and write `nows/launcher-profile.properties` with the generated Nows version id.
+
 ## Installer
 
 `publishLayout` stages release folders for every supported `mc/<minecraft-version>` adapter:
@@ -145,12 +147,14 @@ Expected output:
 
 ```text
 .publishing/releases/nows/<nows-version>/installers/NowsInstaller-<nows-version>.jar
+.publishing/releases/nows/<nows-version>/installers/NowsInstallerOffline-<nows-version>-mc-<minecraft-version>.jar
 ```
 
 Local installer output:
 
 ```text
 repos/NowsInstaller/build/libs/NowsInstaller-<version>.jar
+repos/NowsInstaller/build/libs/NowsInstallerOffline-<version>-mc-<minecraft-version>.jar
 ```
 
 For local testing without downloads:
@@ -229,12 +233,12 @@ Plugin id:
 
 ```kotlin
 plugins {
-    id("space.nows.mcnows") version "0.6.0"
+    id("space.nows.mcnows") version "0.6.2"
 }
 
 nows {
     minecraftVersion.set("26.2")
-    nowsVersion.set("0.6.0")
+    nowsVersion.set("0.6.2")
 }
 ```
 

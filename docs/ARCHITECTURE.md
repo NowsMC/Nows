@@ -130,7 +130,7 @@ The normal installer is a generic Java 8-compatible entrypoint. It chooses the t
 https://files.nows.space/releases/nows/<nows-version>/<minecraft-version>/install.properties
 ```
 
-For local/offline development, the CLI class can still install from a local manifest and artifact directory. The public release no longer publishes a separate per-Minecraft offline installer JAR.
+For local/offline development, the CLI class can still install from a local manifest and artifact directory. Public releases also publish separate per-Minecraft offline installer JARs so release testing can happen before files are uploaded to `files.nows.space`.
 
 Installer-embedded dependencies, currently KDL4J, may be embedded into installer artifacts and copied into the Minecraft libraries directory when necessary. KDL4J resolves from JitPack first, with GitHub Packages kept as a release fallback. Normal Nows users must not need GitHub credentials just to install or run Nows.
 
@@ -138,7 +138,7 @@ The optional `:runtime:allJar` task is the assembly point for a later monolithic
 
 Launcher version profiles should inherit from the target vanilla Minecraft profile. The installer must not publish or embed Minecraft client JARs. When preparing the local profile JAR, it may copy the user's existing Mojang-named vanilla client, download the official client from Mojang, or remap an obfuscated local client with Mojang's official client mappings on the user's machine through `repos/NowsRemapper`. That profile JAR is local install output, not a bundled Nows library and not a redistributed loader dependency. If a compatible local profile JAR cannot be prepared, the version JSON may use the inherited `jar` field so the launcher can resolve the parent version.
 
-Nows launcher profiles should inherit the launcher's normal game folder by default by omitting `gameDir` from `launcher_profiles.json`. This matches other loaders and makes `.minecraft/mods` the normal user mod folder. A profile-local game folder under `.minecraft/nows/profiles/<profile-id>/` is available only when the installer is run with `--profileGameDir` or the UI option is selected. Runtime always also scans `.minecraft/nows/profiles/<profile-id>/mods` as an optional Nows-only overlay for testing or per-profile extras. The game folder is scanned first; duplicate Nows mod ids across both folders are invalid.
+Nows launcher profiles should inherit the launcher's normal game folder by default by omitting `gameDir` from `launcher_profiles.json`. This matches other loaders and makes `.minecraft/mods` the normal user mod folder. A profile-local game folder under `.minecraft/nows/profiles/<profile-id>/` is available only when the installer is run with `--profileGameDir` or the UI option is selected. Runtime always also scans `.minecraft/nows/profiles/<profile-id>/mods` as an optional Nows-only overlay for testing or per-profile extras. For third-party launcher instances, the installer accepts `--launcher` and `--instanceDir`, puts mods in the instance game folder, and records the generated version id in `nows/launcher-profile.properties` instead of mutating `launcher_profiles.json`. The game folder is scanned first; duplicate Nows mod ids across both folders are invalid.
 
 The title-screen Nows badge, mod-count display and built-in mod list/menu are required loader proof-of-life, so they belong to `mc/<minecraft version>` rather than `repos/NowsApiMod/`. Each supported `mc/<version>` adapter can declare built-in Mixin configs through `runtime.builtinMixinConfigs` in `nows-minecraft.properties`; runtime registers those configs before mod-declared configs and passes the Nows version, Minecraft version and discovered mod count into the version adapter's client hook.
 
@@ -192,10 +192,11 @@ Use this to inspect the coordinated version state:
 ./gradlew versionReport
 ```
 
-After `publishLayout`, processed `install.properties` files are staged for every supported Minecraft version and one shared installer is staged for the Nows version:
+After `publishLayout`, processed `install.properties` files are staged for every supported Minecraft version, one shared installer is staged for the Nows version, and per-Minecraft offline installers are staged beside it:
 
 ```text
 .publishing/releases/nows/<nows-version>/installers/NowsInstaller-<nows-version>.jar
+.publishing/releases/nows/<nows-version>/installers/NowsInstallerOffline-<nows-version>-mc-<minecraft-version>.jar
 ```
 
 The normal public installer link should point to:
