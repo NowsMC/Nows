@@ -43,6 +43,9 @@ public record LaunchArguments(
         }
         if (minecraftVersion == null || minecraftVersion.isBlank()) minecraftVersion = System.getProperty("nows.minecraftVersion");
         if (minecraftVersion == null || minecraftVersion.isBlank()) throw new IllegalArgumentException("Missing --nowsMinecraftVersion <version>");
+        if (profileId == null || profileId.isBlank()) {
+            profileId = System.getProperty("nows.profileId");
+        }
         if (minecraftDirectory == null) {
             minecraftDirectory = inferMinecraftDirectory(gameDirectory);
         }

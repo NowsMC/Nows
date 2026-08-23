@@ -131,7 +131,7 @@ Nows also scans this optional profile overlay:
 .minecraft/nows/profiles/nows-<nows-version>-<minecraft-version>/mods
 ```
 
-For launcher-managed instances, pass `--launcher <modrinth|curseforge|prism|multimc|generic>` and `--instanceDir <path>`. Official installs update `launcher_profiles.json`; instance installs write mods into the selected instance game folder and write `nows/launcher-profile.properties` with the generated Nows version id.
+For launcher-managed instances, pass `--launcher <modrinth|curseforge|prism|multimc|generic>` and `--instanceDir <path>`. Official installs update `launcher_profiles.json`. Prism and MultiMC installs write instance pack metadata (`mmc-pack.json` plus `patches/space.nows.mcnows.json`) so the launcher can run Nows directly. Modrinth, CurseForge and generic instance installs write mods into the selected instance game folder and write `nows/launcher-profile.properties` with the generated Nows version id; native app launch support still depends on that launcher accepting custom Minecraft version ids.
 
 ## Installer
 
