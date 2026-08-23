@@ -8,6 +8,8 @@
 - Offline installer JARs now open the same UI as the normal installer, with the bundled Minecraft version locked to the selected offline package.
 - Official Launcher profiles now request the Java runtime required by Nows and the target Minecraft version instead of inheriting legacy Java 8 from older vanilla profiles.
 - Offline installs now fail clearly when no local Minecraft client JAR is available to prepare the Nows profile, instead of leaving a launcher profile that later runs the obfuscated vanilla client and crashes.
+- Fixed the local Minecraft remapper so inherited/static method call sites are remapped with the same owner/descriptor namespace as their declarations, preventing startup crashes such as `V705.a()` and `Block.b(...)` on remapped clients.
+- Gradle and installer Minecraft preparation now rebuild from the runtime client plus cached Mojang mappings before trusting an existing profile JAR, so stale or manually copied remapped clients do not keep breaking every launcher profile.
 - Kept version-specific `nows-mc-*` adapters off launcher-owned classpaths and passed them to the Nows game classloader by path, fixing Minecraft verifier crashes on startup.
 - Moved the Minecraft 1.21.11 title-screen integration off `TitleScreen` itself and onto loader-owned init/render hooks so the latest client reaches the title screen cleanly while still showing the Nows Mods action.
 - Fixed the Minecraft 1.21.11 Nows Mods screen so opening it does not request a second GUI blur pass and crash while rendering.
