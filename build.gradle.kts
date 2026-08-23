@@ -85,6 +85,13 @@ fun minecraftTaskSuffix(minecraft: String): String =
 fun apiModJarTaskName(minecraft: String): String =
     "apiMod${minecraftTaskSuffix(minecraft)}Jar"
 
+fun offlineInstallerJarTaskName(minecraft: String): String =
+    if (minecraft == minecraftVersion.get()) {
+        "offlineJar"
+    } else {
+        "offline${minecraftTaskSuffix(minecraft)}Jar"
+    }
+
 fun MavenPublication.configureNowsPom(projectPath: String) {
     pom {
         name.set(publicArtifactId(projectPath))
@@ -501,7 +508,7 @@ val publishLayout by tasks.registering {
     dependsOn(
         "publishMavenLayout",
         ":repos:NowsInstaller:jar",
-        ":repos:NowsInstaller:offlineJar",
+        ":repos:NowsInstaller:allOfflineJars",
         ":repos:NowsGradlePlugin:jar",
         ":repos:NowsApiMod:allApiModJars"
     )
@@ -523,7 +530,9 @@ val publishLayout by tasks.registering {
         val installerProject = project(":repos:NowsInstaller")
         listOf(
             installerProject.tasks.named<Jar>("jar").get().archiveFile.get().asFile,
-            installerProject.tasks.named<Jar>("offlineJar").get().archiveFile.get().asFile,
+            *publishedMinecraftVersions.map { minecraft ->
+                installerProject.tasks.named<Jar>(offlineInstallerJarTaskName(minecraft)).get().archiveFile.get().asFile
+            }.toTypedArray(),
             *publishedMinecraftVersions.map { minecraft ->
                 project(":repos:NowsApiMod").tasks.named<Jar>(apiModJarTaskName(minecraft)).get().archiveFile.get().asFile
             }.toTypedArray(),
@@ -540,7 +549,9 @@ val publishLayout by tasks.registering {
         val installerProject = project(":repos:NowsInstaller")
         val offlineMavenArtifacts = installerProject.configurations.getByName("offlineMavenArtifacts").resolve()
         val installer = installerProject.tasks.named<Jar>("jar").get().archiveFile.get().asFile
-        val offlineInstaller = installerProject.tasks.named<Jar>("offlineJar").get().archiveFile.get().asFile
+        val offlineInstallers = publishedMinecraftVersions.associateWith { minecraft ->
+            installerProject.tasks.named<Jar>(offlineInstallerJarTaskName(minecraft)).get().archiveFile.get().asFile
+        }
         val apiMods = publishedMinecraftVersions.associateWith { minecraft ->
             project(":repos:NowsApiMod").tasks.named<Jar>(apiModJarTaskName(minecraft)).get().archiveFile.get().asFile
         }
@@ -551,9 +562,12 @@ val publishLayout by tasks.registering {
         delete(releaseVersionRoot)
         sharedInstallersRoot.mkdirs()
         installer.copyTo(sharedInstallersRoot.resolve(installer.name), overwrite = true)
-        offlineInstaller.copyTo(sharedInstallersRoot.resolve(offlineInstaller.name), overwrite = true)
+        offlineInstallers.values.forEach { offlineInstaller ->
+            offlineInstaller.copyTo(sharedInstallersRoot.resolve(offlineInstaller.name), overwrite = true)
+        }
         sharedInstallersRoot.resolve("SHA256SUMS").writeText(
-            listOf(installer, offlineInstaller).joinToString(System.lineSeparator(), postfix = System.lineSeparator()) {
+            (listOf(installer) + offlineInstallers.values.sortedBy { it.name })
+                .joinToString(System.lineSeparator(), postfix = System.lineSeparator()) {
                 sha256(it) + "  " + it.name
             }
         )
