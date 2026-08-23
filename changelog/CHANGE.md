@@ -12,9 +12,14 @@
 - Gradle and installer Minecraft preparation now rebuild from the runtime client plus cached Mojang mappings before trusting an existing profile JAR, so stale or manually copied remapped clients do not keep breaking every launcher profile.
 - Added remapper fingerprint metadata to prepared Minecraft client jars so repeat Gradle and installer runs reuse valid remapped clients instead of remapping every Minecraft version again.
 - Kept version-specific `nows-mc-*` adapters off launcher-owned classpaths and passed them to the Nows game classloader by path, fixing Minecraft verifier crashes on startup.
+- Kept Minecraft-owned packages child-only inside the Nows game classloader so failed game-class transforms do not fall back to the launcher classpath and hide the real adapter error.
+- Fixed legacy `PackRepository` mixin constructor targeting for Minecraft 1.16.4 through 1.19.2, preventing resource-pack source injection from crashing on startup.
+- Fixed Nows mod resource-pack metadata and pack formats for Minecraft 1.16.4 through 1.21.1 so loader resources create valid packs instead of `null` entries.
 - Moved the Minecraft 1.21.11 title-screen integration off `TitleScreen` itself and onto loader-owned init/render hooks so the latest client reaches the title screen cleanly while still showing the Nows Mods action.
 - Fixed the Minecraft 1.21.11 Nows Mods screen so opening it does not request a second GUI blur pass and crash while rendering.
+- Fixed the Minecraft 1.21.11 title-screen Nows Mods button rendering so the icon keeps the normal vanilla button background.
 - Added JUnit coverage for installer launcher/instance option parsing, game-folder detection, adapter classpath isolation and per-version title-screen hook strategies.
+- Added shared Minecraft adapter JUnit contracts for legacy `PackRepository` constructor hooks and Nows resource-pack metadata.
 
 ## 0.6.1
 
