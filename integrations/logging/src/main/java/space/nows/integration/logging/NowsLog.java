@@ -19,6 +19,8 @@ package space.nows.integration.logging;
 import reactor.util.Logger;
 import reactor.util.Loggers;
 
+import java.util.Objects;
+
 /** Logging policy for Nows integrations over Minecraft's existing SLF4J -> Log4j2 backend. */
 public final class NowsLog {
     public static final String BACKEND_PROPERTY = "nows.logging.backend";
@@ -36,16 +38,24 @@ public final class NowsLog {
         }
     }
 
-    public static Logger get(Class<?> type) { configure(); return Loggers.getLogger(type); }
-    public static Logger get(String name) { configure(); return Loggers.getLogger(name); }
+    public static Logger get(Class<?> type) {
+        configure();
+        return Loggers.getLogger(Objects.requireNonNull(type, "type"));
+    }
+
+    public static Logger get(String name) {
+        configure();
+        return Loggers.getLogger(requireName(name));
+    }
 
     public static Phase phase(Logger logger, String name) {
-        return new Phase(logger, name);
+        return new Phase(logger, requireName(name));
     }
 
     private static void configureBackend(String backend) {
+        String selectedBackend = backend == null || backend.isBlank() ? "slf4j" : backend.trim().toLowerCase();
         try {
-            switch (backend.trim().toLowerCase()) {
+            switch (selectedBackend) {
                 case "console" -> Loggers.useConsoleLoggers();
                 case "verbose-console" -> Loggers.useVerboseConsoleLoggers();
                 case "jdk" -> Loggers.useJdkLoggers();
@@ -53,13 +63,13 @@ public final class NowsLog {
                 default -> {
                     Loggers.useSl4jLoggers();
                     Loggers.getLogger(NowsLog.class).warn(
-                            "Unknown Nows logging backend '{}', using slf4j", backend);
+                            "Unknown Nows logging backend '{}', using slf4j", selectedBackend);
                 }
             }
         } catch (RuntimeException | LinkageError failure) {
             Loggers.useJdkLoggers();
             Loggers.getLogger(NowsLog.class).warn(
-                    "Nows logging backend '{}' is unavailable, using jdk fallback", backend, failure);
+                    "Nows logging backend '{}' is unavailable, using jdk fallback", selectedBackend, failure);
         }
     }
 
@@ -70,7 +80,7 @@ public final class NowsLog {
         private boolean closed;
 
         private Phase(Logger logger, String name) {
-            this.logger = logger;
+            this.logger = Objects.requireNonNull(logger, "logger");
             this.name = name;
             this.startNanos = System.nanoTime();
             logger.info("{} started", name);
@@ -94,5 +104,12 @@ public final class NowsLog {
         private long elapsedMillis() {
             return (System.nanoTime() - startNanos) / 1_000_000L;
         }
+    }
+
+    private static String requireName(String name) {
+        if (name == null || name.isBlank()) {
+            throw new IllegalArgumentException("Logger name must not be blank");
+        }
+        return name.trim();
     }
 }
