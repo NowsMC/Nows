@@ -1,4 +1,4 @@
-## 0.6.2
+## 0.7.0
 
 - Published offline installer JARs for every supported Minecraft adapter so local release testing no longer depends on files being uploaded first.
 - Added installer launcher targets for Official Launcher, Modrinth, CurseForge, Prism, MultiMC and generic instance folders.
