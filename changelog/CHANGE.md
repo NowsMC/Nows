@@ -8,7 +8,7 @@
 - Offline installer JARs now open the same UI as the normal installer, with the bundled Minecraft version locked to the selected offline package.
 - Kept version-specific `nows-mc-*` adapters off launcher-owned classpaths and passed them to the Nows game classloader by path, fixing Minecraft verifier crashes on startup.
 - Moved the Minecraft 1.21.11 title-screen integration off `TitleScreen` itself and onto loader-owned screen hooks so the latest client reaches the title screen cleanly.
-- Added JUnit coverage for installer launcher/instance option parsing, game-folder detection and adapter classpath isolation.
+- Added JUnit coverage for installer launcher/instance option parsing, game-folder detection, adapter classpath isolation and per-version title-screen hook strategies.
 
 ## 0.6.1
 

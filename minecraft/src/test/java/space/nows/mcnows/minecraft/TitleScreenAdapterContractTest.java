@@ -1,5 +1,9 @@
 package space.nows.mcnows.minecraft;
 
+import com.google.gson.JsonArray;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
 import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
@@ -11,6 +15,7 @@ import java.util.stream.Stream;
 
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 class TitleScreenAdapterContractTest {
     @Test
@@ -22,9 +27,8 @@ class TitleScreenAdapterContractTest {
             Path javaRoot = mcRoot.resolve(version).resolve("src/main/java/space/nows/mcnows/mc");
             String screenContext = read(javaRoot.resolve("api/client/ui/ScreenContext.java"));
             String loaderMenu = read(javaRoot.resolve("internal/client/LoaderMenu.java"));
-            String titleScreenMixin = read(javaRoot.resolve("internal/mixin/TitleScreenMixin.java"));
-            String mixinConfig = read(mcRoot.resolve(version)
-                    .resolve("src/main/resources/nows_mc_" + version.replace('.', '_') + ".mixins.json"));
+            Path mixinRoot = javaRoot.resolve("internal/mixin");
+            List<String> clientMixins = clientMixins(mcRoot, version);
 
             assertTrue(screenContext.contains("Consumer<NowsContext> nowsMods"),
                     version + " ScreenContext must carry a Nows-owned title-screen action");
@@ -38,19 +42,17 @@ class TitleScreenAdapterContractTest {
             assertFalse(loaderMenu.contains("Minecraft.getInstance()"),
                     version + " LoaderMenu must not own version-specific screen switching");
 
-            assertTrue(titleScreenMixin.contains("new space.nows.mcnows.mc.internal.client.ModListScreen(screen, context)"),
-                    version + " TitleScreenMixin must bind the current title screen as ModListScreen parent");
-            assertTrue(mixinConfig.contains("\"TitleScreenMixin\""),
-                    version + " built-in mixin config must register TitleScreenMixin");
+            for (String mixin : clientMixins) {
+                assertTrue(Files.exists(mixinRoot.resolve(mixin + ".java")),
+                        version + " client mixin config must only reference existing source: " + mixin);
+            }
 
-            if (version.startsWith("26.")) {
-                assertTrue(titleScreenMixin.contains("setScreenAndShow"),
-                        version + " should use the newer screen show API");
+            if (clientMixins.contains("TitleScreenMixin")) {
+                assertTitleScreenMixinStrategy(version, mixinRoot);
+            } else if (clientMixins.contains("ScreenAccessor") && clientMixins.contains("ScreenRenderMixin")) {
+                assertScreenHookStrategy(version, mixinRoot);
             } else {
-                assertTrue(titleScreenMixin.contains(".setScreen("),
-                        version + " should use the classic screen switch API");
-                assertFalse(titleScreenMixin.contains("setScreenAndShow"),
-                        version + " should not use the newer screen show API");
+                fail(version + " must register a known Nows-owned title-screen integration strategy");
             }
         }
     }
@@ -60,15 +62,59 @@ class TitleScreenAdapterContractTest {
             return paths
                     .filter(Files::isDirectory)
                     .map(path -> path.getFileName().toString())
-                    .filter(version -> Files.exists(pathForVersion(mcRoot, version)))
+                    .filter(version -> Files.exists(mixinConfigPath(mcRoot, version)))
                     .sorted()
                     .toList();
         }
     }
 
-    private static Path pathForVersion(Path mcRoot, String version) {
+    private static List<String> clientMixins(Path mcRoot, String version) throws IOException {
+        JsonObject config = JsonParser.parseString(read(mixinConfigPath(mcRoot, version))).getAsJsonObject();
+        JsonArray client = config.getAsJsonArray("client");
+        return client.asList().stream()
+                .map(JsonElement::getAsString)
+                .toList();
+    }
+
+    private static void assertTitleScreenMixinStrategy(String version, Path mixinRoot) throws IOException {
+        String titleScreenMixin = read(mixinRoot.resolve("TitleScreenMixin.java"));
+
+        assertTrue(titleScreenMixin.contains("new space.nows.mcnows.mc.internal.client.ModListScreen(screen, context)"),
+                version + " TitleScreenMixin must bind the current title screen as ModListScreen parent");
+
+        if (version.startsWith("26.")) {
+            assertTrue(titleScreenMixin.contains("setScreenAndShow"),
+                    version + " should use the newer screen show API");
+        } else {
+            assertTrue(titleScreenMixin.contains(".setScreen("),
+                    version + " should use the classic screen switch API");
+            assertFalse(titleScreenMixin.contains("setScreenAndShow"),
+                    version + " should not use the newer screen show API");
+        }
+    }
+
+    private static void assertScreenHookStrategy(String version, Path mixinRoot) throws IOException {
+        String minecraftClientMixin = read(mixinRoot.resolve("MinecraftClientMixin.java"));
+        String screenAccessor = read(mixinRoot.resolve("ScreenAccessor.java"));
+        String screenRenderMixin = read(mixinRoot.resolve("ScreenRenderMixin.java"));
+
+        assertTrue(minecraftClientMixin.contains("screen instanceof TitleScreen"),
+                version + " MinecraftClientMixin must attach buttons only to the title screen");
+        assertTrue(minecraftClientMixin.contains("new ModListScreen(screen, context)"),
+                version + " MinecraftClientMixin must bind the current title screen as ModListScreen parent");
+        assertTrue(screenAccessor.contains("@Invoker(\"addRenderableWidget\")"),
+                version + " ScreenAccessor must expose Screen.addRenderableWidget");
+        assertTrue(screenRenderMixin.contains("this instanceof TitleScreen"),
+                version + " ScreenRenderMixin must render only on the title screen");
+        assertTrue(screenRenderMixin.contains("titleScreenImpl().renderAll"),
+                version + " ScreenRenderMixin must render Nows title-screen widgets");
+        assertFalse(Files.exists(mixinRoot.resolve("TitleScreenMixin.java")),
+                version + " screen-hook strategy must not ship the direct TitleScreen mixin");
+    }
+
+    private static Path mixinConfigPath(Path mcRoot, String version) {
         return mcRoot.resolve(version)
-                .resolve("src/main/java/space/nows/mcnows/mc/internal/mixin/TitleScreenMixin.java");
+                .resolve("src/main/resources/nows_mc_" + version.replace('.', '_') + ".mixins.json");
     }
 
     private static String read(Path path) throws IOException {
