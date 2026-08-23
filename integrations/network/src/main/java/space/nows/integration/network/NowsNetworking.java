@@ -28,6 +28,7 @@ import java.util.EnumMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.CopyOnWriteArrayList;
 
@@ -47,12 +48,14 @@ public final class NowsNetworking {
     }
 
     public static NowsNetworking install(NowsServices services, NowsSide runtimeSide) {
+        Objects.requireNonNull(services, "services");
         NowsNetworking networking = new NowsNetworking(runtimeSide);
         services.register(NowsNetworking.class, networking);
         return networking;
     }
 
     public static NowsNetworking service(NowsContext context) {
+        Objects.requireNonNull(context, "context");
         return context.service(NowsNetworking.class);
     }
 
@@ -73,6 +76,7 @@ public final class NowsNetworking {
     }
 
     public synchronized NetworkChannel registerChannel(NetworkChannelId id, NetworkDirection... directions) {
+        Objects.requireNonNull(id, "id");
         NetworkChannel channel = new NetworkChannel(id, directions);
         NetworkChannel existing = channels.get(id);
         if (existing != null) {
@@ -101,9 +105,9 @@ public final class NowsNetworking {
             NetworkDirection direction,
             NetworkPacketHandler handler
     ) {
-        if (handler == null) {
-            throw new IllegalArgumentException("Network packet handler must not be null");
-        }
+        Objects.requireNonNull(id, "id");
+        Objects.requireNonNull(direction, "direction");
+        Objects.requireNonNull(handler, "handler");
         NetworkChannel channel = registerChannel(id, direction);
         if (!channel.supports(direction)) {
             throw new IllegalArgumentException("Network channel " + id + " does not support " + direction);
@@ -118,6 +122,8 @@ public final class NowsNetworking {
     }
 
     public boolean canSend(NetworkChannelId id, NetworkDirection direction) {
+        Objects.requireNonNull(id, "id");
+        Objects.requireNonNull(direction, "direction");
         NetworkChannel channel = channels.get(id);
         return channel != null
                 && channel.supports(direction)
@@ -134,6 +140,8 @@ public final class NowsNetworking {
     }
 
     public boolean send(NetworkChannelId id, NetworkDirection direction, NetworkPayload payload) throws Exception {
+        Objects.requireNonNull(id, "id");
+        Objects.requireNonNull(direction, "direction");
         if (!canSend(id, direction)) {
             return false;
         }
@@ -150,6 +158,8 @@ public final class NowsNetworking {
     }
 
     public int receive(NetworkChannelId id, NetworkDirection direction, NetworkPayload payload) throws Exception {
+        Objects.requireNonNull(id, "id");
+        Objects.requireNonNull(direction, "direction");
         NetworkChannel channel = channels.get(id);
         if (channel == null || !channel.supports(direction)) {
             return 0;
@@ -166,6 +176,7 @@ public final class NowsNetworking {
     }
 
     public int registerDeclaredChannels(List<ModContainer> mods) {
+        Objects.requireNonNull(mods, "mods");
         int count = 0;
         for (ModContainer mod : mods) {
             for (String id : mod.descriptor().declarations("network-channel")) {
@@ -194,9 +205,7 @@ public final class NowsNetworking {
         }
 
         public NetworkChannel {
-            if (id == null) {
-                throw new IllegalArgumentException("Network channel id must not be null");
-            }
+            Objects.requireNonNull(id, "id");
             directions = List.copyOf(directions == null || directions.isEmpty()
                     ? List.of(NetworkDirection.CLIENTBOUND, NetworkDirection.SERVERBOUND)
                     : directions);
@@ -223,6 +232,7 @@ public final class NowsNetworking {
             List<NetworkDirection> result = new ArrayList<>();
             Collections.addAll(result, directions);
             result.removeIf(direction -> direction == null);
+            result = result.stream().distinct().toList();
             return result.isEmpty()
                     ? List.of(NetworkDirection.CLIENTBOUND, NetworkDirection.SERVERBOUND)
                     : List.copyOf(result);

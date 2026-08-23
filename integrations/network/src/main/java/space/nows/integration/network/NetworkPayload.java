@@ -21,6 +21,7 @@ import io.netty.buffer.Unpooled;
 
 import java.nio.ByteBuffer;
 import java.util.Arrays;
+import java.util.Objects;
 
 /** Binary packet payload backed by Minecraft's Netty ByteBuf stack. */
 public final class NetworkPayload {
@@ -29,7 +30,7 @@ public final class NetworkPayload {
     private final ByteBuf buffer;
 
     private NetworkPayload(ByteBuf buffer) {
-        this.buffer = buffer.asReadOnly();
+        this.buffer = Objects.requireNonNull(buffer, "buffer").asReadOnly();
     }
 
     public int size() {

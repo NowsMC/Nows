@@ -20,10 +20,12 @@ import io.netty.buffer.Unpooled;
 import org.junit.jupiter.api.Test;
 import space.nows.platform.api.NowsSide;
 
+import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class NowsNetworkingTest {
@@ -62,6 +64,33 @@ class NowsNetworkingTest {
         networking.registerChannel("example:main", NetworkDirection.SERVERBOUND);
 
         assertFalse(networking.send("example:main", NetworkDirection.SERVERBOUND, new byte[] {7}));
+    }
+
+    @Test
+    void rejectsInvalidNetworkInputs() {
+        NowsNetworking networking = new NowsNetworking(NowsSide.CLIENT);
+
+        assertThrows(IllegalArgumentException.class, () -> NetworkChannelId.of("missing_namespace"));
+        assertThrows(NullPointerException.class, () -> networking.registerChannel((NetworkChannelId) null));
+        assertThrows(NullPointerException.class, () ->
+                networking.registerHandler("example:main", null, (context, payload) -> {}));
+        assertThrows(NullPointerException.class, () ->
+                networking.registerHandler("example:main", NetworkDirection.CLIENTBOUND, null));
+        assertThrows(NullPointerException.class, () ->
+                networking.receive(NetworkChannelId.of("example:main"), null, NetworkPayload.empty()));
+    }
+
+    @Test
+    void normalizesDuplicateChannelDirections() {
+        NowsNetworking networking = new NowsNetworking(NowsSide.CLIENT);
+
+        NowsNetworking.NetworkChannel channel = networking.registerChannel(
+                "example:main",
+                NetworkDirection.CLIENTBOUND,
+                NetworkDirection.CLIENTBOUND,
+                null);
+
+        assertEquals(List.of(NetworkDirection.CLIENTBOUND), channel.directions());
     }
 
     private static final class RecordingTransport implements NetworkTransport {

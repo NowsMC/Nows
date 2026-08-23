@@ -18,10 +18,17 @@ package space.nows.integration.network;
 
 import space.nows.platform.api.NowsSide;
 
+import java.util.Objects;
+
 /** Context supplied to packet handlers. */
 public record NetworkPacketContext(
         NowsSide runtimeSide,
         NetworkDirection direction,
         NetworkChannelId channel
 ) {
+    public NetworkPacketContext {
+        runtimeSide = Objects.requireNonNull(runtimeSide, "runtimeSide");
+        direction = Objects.requireNonNull(direction, "direction");
+        channel = Objects.requireNonNull(channel, "channel");
+    }
 }
