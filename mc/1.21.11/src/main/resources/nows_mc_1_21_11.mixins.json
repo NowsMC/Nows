@@ -9,7 +9,8 @@
   "client": [
     "MinecraftClientMixin",
     "PackRepositoryMixin",
-    "TitleScreenMixin"
+    "ScreenAccessor",
+    "ScreenRenderMixin"
   ],
   "injectors": {
     "defaultRequire": 1
