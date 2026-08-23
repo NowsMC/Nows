@@ -43,6 +43,7 @@ import java.net.URI;
 import java.net.URL;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -73,6 +74,7 @@ public final class NowsMixinService implements IMixinService, IClassProvider, IC
     }
 
     public static void detach(NowsClassLoader targetLoader) {
+        Objects.requireNonNull(targetLoader, "targetLoader");
         NowsClassLoader current = loader;
         if (current == null) {
             return;

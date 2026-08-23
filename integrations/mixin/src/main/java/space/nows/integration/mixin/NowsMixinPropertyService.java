@@ -20,6 +20,7 @@ import org.spongepowered.asm.service.IGlobalPropertyService;
 import org.spongepowered.asm.service.IPropertyKey;
 
 import java.util.Map;
+import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 
 /** Nows-owned Mixin blackboard. Keys are namespaced by their resolved string value. */
@@ -34,11 +35,12 @@ public final class NowsMixinPropertyService implements IGlobalPropertyService {
     @SuppressWarnings("unchecked")
     @Override
     public <T> T getProperty(IPropertyKey key) {
-        return (T) values.get(key);
+        return (T) values.get(Objects.requireNonNull(key, "key"));
     }
 
     @Override
     public void setProperty(IPropertyKey key, Object value) {
+        Objects.requireNonNull(key, "key");
         if (value == null) values.remove(key);
         else values.put(key, value);
     }
@@ -51,7 +53,7 @@ public final class NowsMixinPropertyService implements IGlobalPropertyService {
 
     @Override
     public String getPropertyString(IPropertyKey key, String defaultValue) {
-        Object value = values.get(key);
+        Object value = values.get(Objects.requireNonNull(key, "key"));
         return value == null ? defaultValue : String.valueOf(value);
     }
 
@@ -60,6 +62,7 @@ public final class NowsMixinPropertyService implements IGlobalPropertyService {
             if (name == null || name.isBlank()) {
                 throw new IllegalArgumentException("Mixin property key cannot be blank");
             }
+            name = name.trim();
         }
 
         @Override
