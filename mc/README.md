@@ -19,6 +19,8 @@ Common mod-facing and generator-facing code should prefer Nows stable wrapper/sp
 - Data, tags and recipes: `NbtCompound`, `NbtList`, `NbtValue`, `McDataComponent`, `McDataPatch`, `TagSpec`, `IngredientSpec` and `RecipeSpec`.
 - Commands and events: `CommandSpec`, `CommandArgumentSpec`, `CommandExecutionContext`, `ClientTickContext`, `ServerTickContext`, `LevelTickContext`, `PlayerEventContext`, `BlockEventContext` and `EntityEventContext`.
 
+Use the `Mc` prefix for stable Nows-owned value or snapshot types that model Minecraft concepts directly and may otherwise collide with native or third-party names, such as `McText`, `McItemStack`, `McId` and `McVec3`. Do not use `Mc` just because a class lives in the Minecraft adapter area. Services, bridges, helpers and conversion utilities should use names that describe the role instead, such as `NativeTextBridge` or `NativeItemStackBridge`.
+
 Raw Minecraft types can still appear in version adapter APIs for internal escape hatches, but generated code and examples should use the stable wrappers where an overload exists.
 
 Only one `nows-mc-<minecraft-version>` artifact should be installed for a launcher profile.
