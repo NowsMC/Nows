@@ -79,9 +79,8 @@ class TitleScreenAdapterContractTest {
                 fail(version + " must register a known Nows-owned title-screen integration strategy");
             }
 
-            assertTrue(clientMixins.contains("LoadingOverlayMixin"),
-                    version + " must register the Nows loading overlay");
-            assertLoadingOverlayStrategy(version, mixinRoot);
+            assertFalse(clientMixins.contains("LoadingOverlayMixin"),
+                    version + " must leave Minecraft's loading overlay vanilla-owned");
         }
     }
 
@@ -142,26 +141,6 @@ class TitleScreenAdapterContractTest {
                 version + " ScreenRenderMixin must render Nows title-screen widgets");
         assertFalse(Files.exists(mixinRoot.resolve("TitleScreenMixin.java")),
                 version + " screen-hook strategy must not ship the direct TitleScreen mixin");
-    }
-
-    private static void assertLoadingOverlayStrategy(String version, Path mixinRoot) throws IOException {
-        String loadingOverlayMixin = read(mixinRoot.resolve("LoadingOverlayMixin.java"));
-
-        assertTrue(loadingOverlayMixin.contains("ClientHooks.loadingSnapshot()"),
-                version + " LoadingOverlayMixin must render the runtime loading snapshot");
-        if (version.startsWith("26.")) {
-            assertTrue(loadingOverlayMixin.contains("extractRenderState(Lnet/minecraft/client/gui/GuiGraphicsExtractor;IIF)V"),
-                    version + " LoadingOverlayMixin must hook the extract render-state lifecycle");
-        } else if (version.equals("1.20.1")
-                || version.equals("1.20.6")
-                || version.equals("1.21.1")
-                || version.equals("1.21.11")) {
-            assertTrue(loadingOverlayMixin.contains("render(Lnet/minecraft/client/gui/GuiGraphics;IIF)V"),
-                    version + " LoadingOverlayMixin must hook the GuiGraphics render lifecycle");
-        } else {
-            assertTrue(loadingOverlayMixin.contains("render(Lcom/mojang/blaze3d/vertex/PoseStack;IIF)V"),
-                    version + " LoadingOverlayMixin must hook the PoseStack render lifecycle");
-        }
     }
 
     private static Path mixinConfigPath(Path mcRoot, String version) {

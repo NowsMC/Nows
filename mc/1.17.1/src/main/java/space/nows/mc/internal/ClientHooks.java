@@ -17,8 +17,6 @@
 package space.nows.mc.internal;
 
 import net.minecraft.server.packs.repository.RepositorySource;
-import space.nows.platform.core.loading.NowsLoadingSnapshot;
-import space.nows.platform.core.loading.NowsLoadingState;
 import space.nows.platform.core.mod.ModContainer;
 import space.nows.mc.internal.resources.ModPackSource;
 
@@ -47,10 +45,6 @@ public final class ClientHooks {
 
     public static Set<RepositorySource> withModResourcePackSource(Set<RepositorySource> sources, RepositorySource[] originalSources) {
         return ModPackSource.appendClientSource(sources, originalSources, mods);
-    }
-
-    public static NowsLoadingSnapshot loadingSnapshot() {
-        return NowsLoadingState.snapshot();
     }
 
     public static String loaderLine() {
