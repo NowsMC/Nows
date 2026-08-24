@@ -44,6 +44,7 @@ import space.nows.minecraft.LaunchArguments;
 import space.nows.minecraft.MinecraftCompatibility;
 import space.nows.minecraft.MinecraftVersionPolicy;
 import space.nows.integration.mixin.NowsMixinBootstrap;
+import space.nows.platform.core.loading.NowsLoadingState;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
@@ -65,6 +66,7 @@ import java.util.Properties;
 public final class NowsLauncher {
     private static final Logger LOG = NowsLog.get(NowsLauncher.class);
     private static final NowsSide RUNTIME_SIDE = NowsSide.CLIENT;
+    private static final int BOOTSTRAP_PHASES = 18;
     private static final String MINECRAFT_ADAPTER_PATH_PROPERTY = "nows.minecraftAdapterPath";
     private static final String MINECRAFT_ADAPTER_MARKER =
             "space/nows/mc/internal/MinecraftIntegration.class";
@@ -87,6 +89,7 @@ public final class NowsLauncher {
     }
 
     private static void launch(String[] args) throws Exception {
+        NowsLoadingState.start("Nows Loader", BOOTSTRAP_PHASES);
         LaunchArguments launch = phase("Parse launch arguments", () -> LaunchArguments.parse(args));
         LOG.info("Launch target: Minecraft {}, side {}, game directory {}",
                 launch.minecraftVersion(), RUNTIME_SIDE.metadataName(), launch.gameDirectory());
@@ -196,6 +199,7 @@ public final class NowsLauncher {
         List<String> prefixes = List.of(
                 "space.nows.platform.api.",
                 "space.nows.platform.core.",
+                "space.nows.platform.core.loading.",
                 "space.nows.integration.",
                 "space.nows.minecraft.",
                 "space.nows.integration.mixin.",
@@ -372,6 +376,7 @@ public final class NowsLauncher {
             for (String className : mod.descriptor().declarations("entrypoint")) {
                 LOG.info("Running entrypoint: {} -> {}", mod.descriptor().id(), className);
                 events.post(new NowsModEntrypointStartingEvent(context, mod, className));
+                NowsLoadingState.detail(mod.descriptor().id() + " -> " + className);
                 Object instance = Class.forName(className, true, loader).getDeclaredConstructor().newInstance();
                 if (!(instance instanceof ModInitializer initializer)) {
                     throw new IllegalStateException(className + " does not implement " + ModInitializer.class.getName());
@@ -459,12 +464,15 @@ public final class NowsLauncher {
 
     private static <T> T phase(String name, ThrowingSupplier<T> action) throws Exception {
         NowsLog.Phase phase = NowsLog.phase(LOG, name);
+        NowsLoadingState.begin(name);
         try {
             T result = action.get();
             phase.close();
+            NowsLoadingState.complete(name);
             return result;
         } catch (Exception | Error failure) {
             phase.fail(failure);
+            NowsLoadingState.fail(name, failure);
             throw failure;
         }
     }
