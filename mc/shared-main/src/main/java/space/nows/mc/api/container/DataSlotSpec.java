@@ -14,13 +14,13 @@
  * limitations under the License.
  */
 
-package space.nows.mc.api.menu;
+package space.nows.mc.api.container;
 
 import space.nows.mc.api.registry.ItemSpec;
 
-/** Stable synced integer data slot used by a container menu. */
-public record MenuDataSpec(String name, int index) {
-    public MenuDataSpec {
+/** Stable synced integer data slot used by a container layout. */
+public record DataSlotSpec(String name, int index) {
+    public DataSlotSpec {
         name = ItemSpec.requireId(name);
         if (index < 0) {
             throw new IllegalArgumentException("index must be >= 0");

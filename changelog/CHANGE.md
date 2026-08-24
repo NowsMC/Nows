@@ -3,7 +3,7 @@
 - Added shared Nows-owned bridges for converting `McText` and `McItemStack` into the selected Minecraft adapter's native component and item stack types.
 - Centralized repeated `McText` conversion across text, config and player APIs so stable text wrappers stay the common path while native component overloads remain available as escape hatches.
 - Added stable recipe-viewer overloads for category titles, icons, catalysts and common slot builders using `McText` and `McItemStack`.
-- Added stable menu, screen and workstation recipe specs for container slots, synced data, progress bars and custom cooking recipe shapes.
+- Added stable container layout, screen and workstation recipe specs for slots, synced data, progress bars and custom cooking recipe shapes.
 - Bumped Nows release metadata to 0.9.1.
 
 ## 0.9.0

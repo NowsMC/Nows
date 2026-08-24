@@ -30,12 +30,12 @@ import space.nows.mc.api.command.CommandSpec;
 import space.nows.mc.api.datapack.DataPacks;
 import space.nows.mc.api.datapack.PackTarget;
 import space.nows.mc.api.event.GameEvents;
-import space.nows.mc.api.menu.MenuSpec;
+import space.nows.mc.api.container.LayoutSpec;
 import space.nows.mc.api.client.ui.ScreenProgressSpec;
 import space.nows.mc.api.recipe.WorkstationRecipeSpec;
 import space.nows.mc.api.client.ui.ScreenSpec;
-import space.nows.mc.api.menu.MenuSlotRule;
-import space.nows.mc.api.menu.MenuSlotSpec;
+import space.nows.mc.api.container.SlotRule;
+import space.nows.mc.api.container.SlotSpec;
 import space.nows.mc.api.nbt.NbtApi;
 import space.nows.mc.api.nbt.NbtCompound;
 import space.nows.mc.api.nbt.NbtValue;
@@ -128,10 +128,11 @@ class RegistryApiStableContractTest {
         assertDoesNotThrow(() -> RecipeViewerLayout.Builder.class.getMethod("inputStack", int.class, int.class, McItemStack.class));
         assertDoesNotThrow(() -> RecipeViewerLayout.Builder.class.getMethod("output", int.class, int.class, McItemStack.class));
         assertDoesNotThrow(() -> RecipeViewerLayout.Builder.class.getMethod("catalyst", int.class, int.class, McItemStack.class));
-        assertDoesNotThrow(() -> MenuSpec.class.getMethod("builder", String.class));
+        assertDoesNotThrow(() -> LayoutSpec.class.getMethod("builder", String.class));
         assertDoesNotThrow(() -> ScreenSpec.class.getMethod("builder", String.class, McText.class, String.class));
+        assertDoesNotThrow(() -> ScreenSpec.class.getMethod("layoutId"));
         assertDoesNotThrow(() -> WorkstationRecipeSpec.class.getMethod("builder", String.class, String.class));
-        assertDoesNotThrow(() -> MenuSlotSpec.class.getMethod("fuel", int.class, int.class, int.class));
+        assertDoesNotThrow(() -> SlotSpec.class.getMethod("fuel", int.class, int.class, int.class));
         assertDoesNotThrow(() -> ScreenProgressSpec.class.getMethod(
                 "horizontal",
                 String.class,
@@ -208,7 +209,7 @@ class RegistryApiStableContractTest {
                         .catalyst(36, 0, McItemStack.of("minecraft:crafting_table"))
                         .build());
         recipes.registerCatalyst("nows_contract", McItemStack.of("minecraft:stone"));
-        MenuSpec menu = MenuSpec.builder("nows_contract:stove")
+        LayoutSpec containerLayout = LayoutSpec.builder("nows_contract:stove")
                 .block("nows_contract:stove")
                 .containerSlotCount(4)
                 .input(0, 44, 17)
@@ -233,6 +234,6 @@ class RegistryApiStableContractTest {
                 .cookingTime(100)
                 .combined(false)
                 .build();
-        MenuSlotRule outputRule = menu.slots().get(2).rule();
+        SlotRule outputRule = containerLayout.slots().get(2).rule();
     }
 }

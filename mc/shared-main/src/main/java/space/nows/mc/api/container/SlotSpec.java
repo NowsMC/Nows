@@ -14,19 +14,19 @@
  * limitations under the License.
  */
 
-package space.nows.mc.api.menu;
+package space.nows.mc.api.container;
 
 import java.util.Objects;
 
-/** Stable container menu slot description with screen coordinates. */
-public record MenuSlotSpec(
+/** Stable container slot description with screen coordinates. */
+public record SlotSpec(
         int index,
         int x,
         int y,
-        MenuSlotRole role,
-        MenuSlotRule rule
+        SlotRole role,
+        SlotRule rule
 ) {
-    public MenuSlotSpec {
+    public SlotSpec {
         if (index < 0) {
             throw new IllegalArgumentException("index must be >= 0");
         }
@@ -34,19 +34,19 @@ public record MenuSlotSpec(
         rule = Objects.requireNonNull(rule, "rule");
     }
 
-    public static MenuSlotSpec input(int index, int x, int y) {
-        return new MenuSlotSpec(index, x, y, MenuSlotRole.INPUT, MenuSlotRule.ANY);
+    public static SlotSpec input(int index, int x, int y) {
+        return new SlotSpec(index, x, y, SlotRole.INPUT, SlotRule.ANY);
     }
 
-    public static MenuSlotSpec fuel(int index, int x, int y) {
-        return new MenuSlotSpec(index, x, y, MenuSlotRole.FUEL, MenuSlotRule.FUEL);
+    public static SlotSpec fuel(int index, int x, int y) {
+        return new SlotSpec(index, x, y, SlotRole.FUEL, SlotRule.FUEL);
     }
 
-    public static MenuSlotSpec output(int index, int x, int y) {
-        return new MenuSlotSpec(index, x, y, MenuSlotRole.OUTPUT, MenuSlotRule.NONE);
+    public static SlotSpec output(int index, int x, int y) {
+        return new SlotSpec(index, x, y, SlotRole.OUTPUT, SlotRule.NONE);
     }
 
-    public static MenuSlotSpec byproduct(int index, int x, int y) {
-        return new MenuSlotSpec(index, x, y, MenuSlotRole.BYPRODUCT, MenuSlotRule.NONE);
+    public static SlotSpec byproduct(int index, int x, int y) {
+        return new SlotSpec(index, x, y, SlotRole.BYPRODUCT, SlotRule.NONE);
     }
 }

@@ -14,15 +14,12 @@
  * limitations under the License.
  */
 
-package space.nows.mc.api.menu;
+package space.nows.mc.api.container;
 
-/** Stable role for a slot in a menu or recipe display. */
-public enum MenuSlotRole {
-    INPUT,
+/** Stable placement rule for a container slot. */
+public enum SlotRule {
+    ANY,
     FUEL,
-    OUTPUT,
-    BYPRODUCT,
-    CATALYST,
-    PLAYER_INVENTORY,
-    PLAYER_HOTBAR
+    NONE,
+    CUSTOM
 }

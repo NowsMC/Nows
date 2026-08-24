@@ -23,9 +23,9 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
-/** Stable texture-backed screen description for a container menu. */
+/** Stable texture-backed screen description for a container UI. */
 public final class ScreenSpec {
-    private final String menuId;
+    private final String layoutId;
     private final McText title;
     private final String backgroundTextureId;
     private final int width;
@@ -34,7 +34,7 @@ public final class ScreenSpec {
     private final List<ScreenProgressSpec> progressBars;
 
     private ScreenSpec(Builder builder) {
-        this.menuId = ItemSpec.requireId(builder.menuId);
+        this.layoutId = ItemSpec.requireId(builder.layoutId);
         this.title = Objects.requireNonNull(builder.title, "title");
         this.backgroundTextureId = ItemSpec.requireId(builder.backgroundTextureId);
         this.width = builder.width;
@@ -46,12 +46,12 @@ public final class ScreenSpec {
         }
     }
 
-    public static Builder builder(String menuId, McText title, String backgroundTextureId) {
-        return new Builder(menuId, title, backgroundTextureId);
+    public static Builder builder(String layoutId, McText title, String backgroundTextureId) {
+        return new Builder(layoutId, title, backgroundTextureId);
     }
 
-    public String menuId() {
-        return menuId;
+    public String layoutId() {
+        return layoutId;
     }
 
     public McText title() {
@@ -79,7 +79,7 @@ public final class ScreenSpec {
     }
 
     public static final class Builder {
-        private final String menuId;
+        private final String layoutId;
         private final McText title;
         private final String backgroundTextureId;
         private int width = 176;
@@ -87,8 +87,8 @@ public final class ScreenSpec {
         private int inventoryLabelY = 72;
         private final List<ScreenProgressSpec> progressBars = new ArrayList<>();
 
-        private Builder(String menuId, McText title, String backgroundTextureId) {
-            this.menuId = menuId;
+        private Builder(String layoutId, McText title, String backgroundTextureId) {
+            this.layoutId = layoutId;
             this.title = title;
             this.backgroundTextureId = backgroundTextureId;
         }
