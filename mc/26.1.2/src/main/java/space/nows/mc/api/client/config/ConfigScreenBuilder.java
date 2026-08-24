@@ -19,6 +19,7 @@ package space.nows.mc.api.client.config;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
 import space.nows.mc.api.text.McText;
+import space.nows.mc.api.text.NativeTextBridge;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -67,14 +68,7 @@ public final class ConfigScreenBuilder {
     }
 
     private static Component component(McText text) {
-        if (text == null) {
-            return Component.literal("");
-        }
-        return switch (text.type()) {
-            case LITERAL -> Component.literal(text.value());
-            case TRANSLATABLE -> Component.translatable(text.value(), text.args());
-            case KEYBIND -> Component.keybind(text.value());
-        };
+        return NativeTextBridge.nativeComponent(text, Component.class);
     }
 
     public static final class ConfigCategoryBuilder {

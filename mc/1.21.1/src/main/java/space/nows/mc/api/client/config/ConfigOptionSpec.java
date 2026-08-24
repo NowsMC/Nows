@@ -18,6 +18,7 @@ package space.nows.mc.api.client.config;
 
 import net.minecraft.network.chat.Component;
 import space.nows.mc.api.text.McText;
+import space.nows.mc.api.text.NativeTextBridge;
 
 import java.util.function.Consumer;
 import java.util.function.IntConsumer;
@@ -135,14 +136,7 @@ public final class ConfigOptionSpec {
     }
 
     private static Component component(McText text) {
-        if (text == null) {
-            return Component.literal("");
-        }
-        return switch (text.type()) {
-            case LITERAL -> Component.literal(text.value());
-            case TRANSLATABLE -> Component.translatable(text.value(), text.args());
-            case KEYBIND -> Component.keybind(text.value());
-        };
+        return NativeTextBridge.nativeComponent(text, Component.class);
     }
 
     public Type type() {

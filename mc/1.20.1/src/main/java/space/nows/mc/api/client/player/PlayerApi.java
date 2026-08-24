@@ -24,6 +24,7 @@ import space.nows.mc.api.McVec3;
 import space.nows.mc.api.registry.ItemStackSpec;
 import space.nows.mc.api.registry.McItemStack;
 import space.nows.mc.api.text.McText;
+import space.nows.mc.api.text.NativeTextBridge;
 
 import java.util.Optional;
 
@@ -150,13 +151,6 @@ public interface PlayerApi {
     }
 
     private static Component component(McText text) {
-        if (text == null) {
-            return Component.literal("");
-        }
-        return switch (text.type()) {
-            case LITERAL -> Component.literal(text.value());
-            case TRANSLATABLE -> Component.translatable(text.value(), text.args());
-            case KEYBIND -> Component.keybind(text.value());
-        };
+        return NativeTextBridge.nativeComponent(text, Component.class);
     }
 }
