@@ -19,6 +19,10 @@ package space.nows.mc.api.recipe;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.inventory.MenuType;
 import net.minecraft.world.item.ItemStack;
+import space.nows.mc.api.registry.McItemStack;
+import space.nows.mc.api.registry.NativeItemStackBridge;
+import space.nows.mc.api.text.McText;
+import space.nows.mc.api.text.NativeTextBridge;
 
 import java.util.List;
 import java.util.Optional;
@@ -33,9 +37,32 @@ public interface RecipeViewerApi {
             RecipeViewerLayoutFactory<T> layoutFactory
     );
 
+    default <T> RecipeViewerCategory<T> registerCategory(
+            String id,
+            Class<T> recipeClass,
+            McText title,
+            McItemStack icon,
+            RecipeViewerLayoutFactory<T> layoutFactory
+    ) {
+        return registerCategory(
+                id,
+                recipeClass,
+                NativeTextBridge.nativeComponent(title, Component.class),
+                NativeItemStackBridge.nativeStack(icon, ItemStack.class),
+                layoutFactory);
+    }
+
     Optional<RecipeViewerCategory<?>> category(String id);
 
     void registerCatalyst(String categoryId, ItemStack stack);
+
+    default void registerCatalyst(String categoryId, McItemStack stack) {
+        registerCatalyst(categoryId, NativeItemStackBridge.nativeStack(stack, ItemStack.class));
+    }
+
+    default void registerCatalyst(String categoryId, String itemId) {
+        registerCatalyst(categoryId, McItemStack.of(itemId));
+    }
 
     void registerRecipeTransfer(String categoryId, MenuType<?> menuType);
 

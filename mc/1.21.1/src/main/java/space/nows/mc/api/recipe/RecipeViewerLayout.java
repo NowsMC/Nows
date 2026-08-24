@@ -19,6 +19,8 @@ package space.nows.mc.api.recipe;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.crafting.Ingredient;
 import org.jspecify.annotations.Nullable;
+import space.nows.mc.api.registry.McItemStack;
+import space.nows.mc.api.registry.NativeItemStackBridge;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -45,12 +47,28 @@ public record RecipeViewerLayout(List<RecipeViewerSlot> slots) {
             return slot(RecipeViewerRole.INPUT, x, y, null, List.of(copy(stack)));
         }
 
+        public Builder inputStack(int x, int y, McItemStack stack) {
+            return inputStack(x, y, nativeStack(stack));
+        }
+
+        public Builder inputStack(int x, int y, String itemId) {
+            return inputStack(x, y, McItemStack.of(itemId));
+        }
+
         public Builder inputStacks(int x, int y, List<ItemStack> stacks) {
             return slot(RecipeViewerRole.INPUT, x, y, null, stacks);
         }
 
         public Builder output(int x, int y, ItemStack stack) {
             return slot(RecipeViewerRole.OUTPUT, x, y, null, List.of(copy(stack)));
+        }
+
+        public Builder output(int x, int y, McItemStack stack) {
+            return output(x, y, nativeStack(stack));
+        }
+
+        public Builder output(int x, int y, String itemId) {
+            return output(x, y, McItemStack.of(itemId));
         }
 
         public Builder outputStacks(int x, int y, List<ItemStack> stacks) {
@@ -61,6 +79,14 @@ public record RecipeViewerLayout(List<RecipeViewerSlot> slots) {
             return slot(RecipeViewerRole.CATALYST, x, y, null, List.of(copy(stack)));
         }
 
+        public Builder catalyst(int x, int y, McItemStack stack) {
+            return catalyst(x, y, nativeStack(stack));
+        }
+
+        public Builder catalyst(int x, int y, String itemId) {
+            return catalyst(x, y, McItemStack.of(itemId));
+        }
+
         public Builder slot(RecipeViewerRole role, int x, int y, @Nullable Ingredient ingredient, List<ItemStack> stacks) {
             slots.add(new RecipeViewerSlot(role, x, y, ingredient, stacks));
             return this;
@@ -68,6 +94,10 @@ public record RecipeViewerLayout(List<RecipeViewerSlot> slots) {
 
         public RecipeViewerLayout build() {
             return new RecipeViewerLayout(slots);
+        }
+
+        private static ItemStack nativeStack(McItemStack stack) {
+            return NativeItemStackBridge.nativeStack(Objects.requireNonNull(stack, "stack"), ItemStack.class);
         }
 
         private static ItemStack copy(ItemStack stack) {

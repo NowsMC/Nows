@@ -33,13 +33,18 @@ import space.nows.mc.api.event.GameEvents;
 import space.nows.mc.api.nbt.NbtApi;
 import space.nows.mc.api.nbt.NbtCompound;
 import space.nows.mc.api.nbt.NbtValue;
+import space.nows.mc.api.recipe.RecipeViewerApi;
+import space.nows.mc.api.recipe.RecipeViewerLayout;
+import space.nows.mc.api.recipe.RecipeViewerLayoutFactory;
 import space.nows.mc.api.registry.BlockEntry;
 import space.nows.mc.api.registry.BlockMaterial;
 import space.nows.mc.api.registry.BlockSpec;
 import space.nows.mc.api.registry.ItemStackSpec;
 import space.nows.mc.api.registry.ItemSpec;
+import space.nows.mc.api.registry.McItemStack;
 import space.nows.mc.api.registry.RegistryApi;
 import space.nows.mc.api.text.McText;
+import space.nows.mc.api.text.NativeTextBridge;
 import space.nows.mc.api.text.TextApi;
 import space.nows.mc.internal.client.config.ConfigUiImpl;
 import space.nows.mc.internal.client.keybind.KeybindApiImpl;
@@ -48,6 +53,7 @@ import space.nows.mc.internal.command.CommandApiImpl;
 import space.nows.mc.internal.datapack.DataPacksImpl;
 import space.nows.mc.internal.event.GameEventsImpl;
 import space.nows.mc.internal.nbt.NbtApiImpl;
+import space.nows.mc.internal.recipe.RecipeViewerApiImpl;
 import space.nows.mc.internal.text.TextApiImpl;
 
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
@@ -94,8 +100,27 @@ class RegistryApiStableContractTest {
         assertDoesNotThrow(() -> NbtApiImpl.class.getMethod("compound", NbtCompound.class));
         assertDoesNotThrow(() -> TextApi.class.getMethod("component", McText.class));
         assertDoesNotThrow(() -> TextApiImpl.class.getMethod("component", McText.class));
+        assertDoesNotThrow(() -> NativeTextBridge.class.getMethod("nativeComponent", McText.class, Class.class));
         assertDoesNotThrow(() -> RegistryApi.class.getMethod("itemStack", ItemStackSpec.class));
         assertDoesNotThrow(() -> RegistryApiImpl.class.getMethod("itemStack", ItemStackSpec.class));
+        assertDoesNotThrow(() -> RecipeViewerApi.class.getMethod(
+                "registerCategory",
+                String.class,
+                Class.class,
+                McText.class,
+                McItemStack.class,
+                RecipeViewerLayoutFactory.class));
+        assertDoesNotThrow(() -> RecipeViewerApiImpl.class.getMethod(
+                "registerCategory",
+                String.class,
+                Class.class,
+                McText.class,
+                McItemStack.class,
+                RecipeViewerLayoutFactory.class));
+        assertDoesNotThrow(() -> RecipeViewerApi.class.getMethod("registerCatalyst", String.class, McItemStack.class));
+        assertDoesNotThrow(() -> RecipeViewerLayout.Builder.class.getMethod("inputStack", int.class, int.class, McItemStack.class));
+        assertDoesNotThrow(() -> RecipeViewerLayout.Builder.class.getMethod("output", int.class, int.class, McItemStack.class));
+        assertDoesNotThrow(() -> RecipeViewerLayout.Builder.class.getMethod("catalyst", int.class, int.class, McItemStack.class));
     }
 
     @SuppressWarnings("unused")
@@ -126,7 +151,8 @@ class RegistryApiStableContractTest {
             DataPacks packs,
             GameEvents events,
             NbtApi nbt,
-            TextApi text
+            TextApi text,
+            RecipeViewerApi recipes
     ) throws Exception {
         ConfigScreenBuilder screen = config.screen(McText.literal("Options"))
                 .category("General")
@@ -151,5 +177,16 @@ class RegistryApiStableContractTest {
                 .putInt("value", 1);
         Object nativeNbt = nbt.tag(NbtValue.compound(compound));
         Object nativeText = text.component(McText.translatable("nows.contract"));
+        recipes.registerCategory(
+                "nows_contract",
+                Object.class,
+                McText.literal("Contract"),
+                McItemStack.of("minecraft:stone"),
+                (recipe, layout) -> layout
+                        .inputStack(0, 0, McItemStack.of("minecraft:stone"))
+                        .output(18, 0, McItemStack.of("minecraft:stone"))
+                        .catalyst(36, 0, McItemStack.of("minecraft:crafting_table"))
+                        .build());
+        recipes.registerCatalyst("nows_contract", McItemStack.of("minecraft:stone"));
     }
 }
