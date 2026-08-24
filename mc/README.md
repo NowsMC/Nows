@@ -17,6 +17,7 @@ Common mod-facing and generator-facing code should prefer Nows stable wrapper/sp
 - Identity and geometry: `McId`, `McVec3`, `McBlockPos`, `McDirection`, `McWorldSnapshot` and `McEntitySnapshot`.
 - Items and blocks: `McItemStack`, `ItemSpec`, `FoodSpec`, `ToolSpec`, `ArmorSpec`, `BlockSpec`, `BlockSound`, `MapColor`, `LightSpec`, `BlockRenderType` and `BlockShapeSpec`.
 - Data, tags and recipes: `NbtCompound`, `NbtList`, `NbtValue`, `McDataComponent`, `McDataPatch`, `TagSpec`, `IngredientSpec` and `RecipeSpec`.
+- Machines and workstations: `MachineMenuSpec`, `MachineSlotSpec`, `MachineDataSpec`, `MachineScreenSpec`, `MachineProgressSpec` and `MachineRecipeSpec`.
 - Commands and events: `CommandSpec`, `CommandArgumentSpec`, `CommandExecutionContext`, `ClientTickContext`, `ServerTickContext`, `LevelTickContext`, `PlayerEventContext`, `BlockEventContext` and `EntityEventContext`.
 
 Use the `Mc` prefix for stable Nows-owned value or snapshot types that model Minecraft concepts directly and may otherwise collide with native or third-party names, such as `McText`, `McItemStack`, `McId` and `McVec3`. Do not use `Mc` just because a class lives in the Minecraft adapter area. Services, bridges, helpers and conversion utilities should use names that describe the role instead, such as `NativeTextBridge` or `NativeItemStackBridge`.
