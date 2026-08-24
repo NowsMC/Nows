@@ -51,6 +51,10 @@ public final class ClientHooks {
         return "Nows Loader " + nowsVersion;
     }
 
+    public static String minecraftLine() {
+        return minecraftVersion;
+    }
+
     public static String modLine() {
         return modCount + " Nows mod" + (modCount == 1 ? "" : "s") + " loaded";
     }

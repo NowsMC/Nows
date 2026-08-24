@@ -30,7 +30,7 @@ Runtime installs `space.nows.mc.internal.MinecraftIntegration` when it is presen
 
 ## Loading screen flow
 
-Keep Minecraft's loading/splash screen vanilla-owned. Do not hook it just to draw Nows progress over it. If a version needs detailed loader progress, attach Nows work to the same reload/loading lifecycle that vanilla already uses so the native progress screen reports real work. This rule should hold for older adapters such as 1.12.2 too, even when the native screen is not called `LoadingOverlay`.
+Keep Minecraft's loading/splash screen vanilla-owned. A version adapter may draw lightweight diagnostics on top of that splash, such as heap/offheap/CPU and the current Nows phase, but must not replace it with a Nows-owned panel or fake main progress screen. If a version needs detailed loader progress, attach Nows work to the same reload/loading lifecycle that vanilla already uses so the native progress screen reports real work. This rule should hold for older adapters such as 1.12.2 too, even when the native screen is not called `LoadingOverlay`.
 
 Minecraft versions that do not ship Mojang-named client jars, such as 1.20.1, need a remapped `.nows/minecraft/<version>/client-dev.jar` before their adapter module can compile.
 
