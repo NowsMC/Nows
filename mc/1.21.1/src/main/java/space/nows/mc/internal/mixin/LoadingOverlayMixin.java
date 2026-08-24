@@ -24,6 +24,7 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import space.nows.mc.internal.ClientHooks;
+import space.nows.platform.core.loading.NowsAsciiFont;
 import space.nows.platform.core.loading.NowsLoadingDiagnostics;
 import space.nows.platform.core.loading.NowsLoadingSnapshot;
 import space.nows.platform.core.loading.NowsLoadingState;
@@ -63,28 +64,47 @@ public abstract class LoadingOverlayMixin {
         if (!loading.history().isEmpty()) {
             drawLeft(graphics, minecraft, "Finished: " + loading.history().get(0), 20, y + 28, width - 160, 0xFFFFFFFF);
         }
-        String version = ClientHooks.minecraftLine();
-        graphics.drawString(minecraft.font, version, width - minecraft.font.width(version) - 20, height - 24, 0xFFFFFFFF, true);
+        drawRight(graphics, ClientHooks.minecraftLine(), width - 20, height - 24, 140, 0xFFFFFFFF);
     }
 
     private static void drawCentered(GuiGraphics graphics, Minecraft minecraft, String text, int centerX, int y, int maxWidth, int color) {
-        String fitted = fit(minecraft, text, maxWidth);
-        graphics.drawString(minecraft.font, fitted, centerX - minecraft.font.width(fitted) / 2, y, color, true);
+        String fitted = fit(text, maxWidth);
+        drawAscii(graphics, fitted, centerX - NowsAsciiFont.width(fitted, 1) / 2, y, color);
     }
 
     private static void drawLeft(GuiGraphics graphics, Minecraft minecraft, String text, int x, int y, int maxWidth, int color) {
-        graphics.drawString(minecraft.font, fit(minecraft, text, maxWidth), x, y, color, true);
+        drawAscii(graphics, fit(text, maxWidth), x, y, color);
     }
 
-    private static String fit(Minecraft minecraft, String text, int maxWidth) {
-        if (minecraft.font.width(text) <= maxWidth) {
+    private static void drawRight(GuiGraphics graphics, String text, int rightX, int y, int maxWidth, int color) {
+        String fitted = fit(text, maxWidth);
+        drawAscii(graphics, fitted, rightX - NowsAsciiFont.width(fitted, 1), y, color);
+    }
+
+    private static String fit(String text, int maxWidth) {
+        if (NowsAsciiFont.width(text, 1) <= maxWidth) {
             return text;
         }
         String value = text;
-        while (value.length() > 1 && minecraft.font.width(value + "...") > maxWidth) {
+        while (value.length() > 1 && NowsAsciiFont.width(value + "...", 1) > maxWidth) {
             value = value.substring(0, value.length() - 1);
         }
         return value + "...";
+    }
+
+    private static void drawAscii(GuiGraphics graphics, String text, int x, int y, int color) {
+        int cursor = x;
+        for (int index = 0; index < text.length(); index++) {
+            int[] glyph = NowsAsciiFont.glyph(text.charAt(index));
+            for (int row = 0; row < NowsAsciiFont.GLYPH_HEIGHT; row++) {
+                for (int column = 0; column < NowsAsciiFont.GLYPH_WIDTH; column++) {
+                    if (((glyph[row] >> (NowsAsciiFont.GLYPH_WIDTH - column - 1)) & 1) != 0) {
+                        graphics.fill(cursor + column, y + row, cursor + column + 1, y + row + 1, color);
+                    }
+                }
+            }
+            cursor += NowsAsciiFont.GLYPH_WIDTH + NowsAsciiFont.GLYPH_SPACING;
+        }
     }
 
     private static void drawFramedBar(GuiGraphics graphics, int x, int y, int width, int height, float progress, int color) {
