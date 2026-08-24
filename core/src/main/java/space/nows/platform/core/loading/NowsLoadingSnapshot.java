@@ -24,6 +24,9 @@ public record NowsLoadingSnapshot(
         String detail,
         int step,
         int totalSteps,
+        String subtask,
+        int subStep,
+        int subTotal,
         boolean failed,
         List<String> history
 ) {
@@ -32,5 +35,12 @@ public record NowsLoadingSnapshot(
             return failed ? 1.0F : 0.0F;
         }
         return Math.max(0.0F, Math.min(1.0F, step / (float) totalSteps));
+    }
+
+    public float subProgress() {
+        if (subTotal <= 0) {
+            return 0.0F;
+        }
+        return Math.max(0.0F, Math.min(1.0F, subStep / (float) subTotal));
     }
 }

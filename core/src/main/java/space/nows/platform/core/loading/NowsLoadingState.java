@@ -28,6 +28,9 @@ public final class NowsLoadingState {
     private static String detail = "";
     private static int step;
     private static int totalSteps = 1;
+    private static String subtask = "";
+    private static int subStep;
+    private static int subTotal;
     private static boolean failed;
     private static final ArrayDeque<String> history = new ArrayDeque<>();
 
@@ -41,6 +44,9 @@ public final class NowsLoadingState {
             NowsLoadingState.detail = "";
             NowsLoadingState.step = 0;
             NowsLoadingState.totalSteps = Math.max(1, totalSteps);
+            NowsLoadingState.subtask = "";
+            NowsLoadingState.subStep = 0;
+            NowsLoadingState.subTotal = 0;
             NowsLoadingState.failed = false;
             history.clear();
         }
@@ -50,12 +56,23 @@ public final class NowsLoadingState {
         synchronized (LOCK) {
             NowsLoadingState.stage = requireText(stage, "stage");
             NowsLoadingState.detail = "";
+            NowsLoadingState.subtask = "";
+            NowsLoadingState.subStep = 0;
+            NowsLoadingState.subTotal = 0;
         }
     }
 
     public static void detail(String detail) {
         synchronized (LOCK) {
             NowsLoadingState.detail = detail == null ? "" : detail.trim();
+        }
+    }
+
+    public static void subtask(String subtask, int step, int total) {
+        synchronized (LOCK) {
+            NowsLoadingState.subtask = subtask == null ? "" : subtask.trim();
+            NowsLoadingState.subStep = Math.max(0, step);
+            NowsLoadingState.subTotal = Math.max(0, total);
         }
     }
 
@@ -71,6 +88,9 @@ public final class NowsLoadingState {
             }
             NowsLoadingState.stage = completed;
             NowsLoadingState.detail = "Done";
+            NowsLoadingState.subtask = "";
+            NowsLoadingState.subStep = 0;
+            NowsLoadingState.subTotal = 0;
         }
     }
 
@@ -90,6 +110,9 @@ public final class NowsLoadingState {
                     detail,
                     step,
                     totalSteps,
+                    subtask,
+                    subStep,
+                    subTotal,
                     failed,
                     List.copyOf(new ArrayList<>(history)));
         }

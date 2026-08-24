@@ -31,6 +31,7 @@ class NowsLoadingStateTest {
         NowsLoadingState.detail("mods/example.jar");
         NowsLoadingState.complete("Discover Nows mods");
         NowsLoadingState.begin("Run mod entrypoints");
+        NowsLoadingState.subtask("Mod entrypoints", 1, 4);
 
         NowsLoadingSnapshot snapshot = NowsLoadingState.snapshot();
 
@@ -39,6 +40,8 @@ class NowsLoadingStateTest {
         assertEquals(1, snapshot.step());
         assertEquals(2, snapshot.totalSteps());
         assertEquals(0.5F, snapshot.progress());
+        assertEquals("Mod entrypoints", snapshot.subtask());
+        assertEquals(0.25F, snapshot.subProgress());
         assertFalse(snapshot.failed());
         assertEquals("Discover Nows mods", snapshot.history().get(0));
         assertThrows(UnsupportedOperationException.class, () -> snapshot.history().add("mutated"));

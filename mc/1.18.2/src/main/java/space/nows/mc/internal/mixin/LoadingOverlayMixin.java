@@ -35,28 +35,24 @@ public abstract class LoadingOverlayMixin {
         NowsLoadingSnapshot loading = ClientHooks.loadingSnapshot();
         int screenWidth = minecraft.getWindow().getGuiScaledWidth();
         int screenHeight = minecraft.getWindow().getGuiScaledHeight();
-        int width = Math.min(460, Math.max(280, screenWidth - 48));
+        int width = Math.max(180, Math.min(360, screenWidth - 48));
         int x = (screenWidth - width) / 2;
-        int y = Math.max(24, screenHeight - 118);
-        int progressWidth = Math.max(1, Math.round((width - 24) * loading.progress()));
+        int y = Math.max(24, screenHeight - 58);
 
-        GuiComponent.fill(graphics, x, y, x + width, y + 92, 0xAA05070C);
-        GuiComponent.fill(graphics, x, y, x + width, y + 1, 0xFF6D8CFF);
-        GuiComponent.drawString(graphics, minecraft.font, loading.title(), x + 12, y + 10, 0xFFFFFFFF);
-        GuiComponent.drawString(graphics, minecraft.font, loading.stage(), x + 12, y + 25, loading.failed() ? 0xFFFF7070 : 0xFFE8ECFF);
+        GuiComponent.drawString(graphics, minecraft.font, loading.title() + " - " + loading.stage(), x, y, loading.failed() ? 0xFFFF8080 : 0xFFFFFFFF);
+        GuiComponent.drawString(graphics, minecraft.font, loading.step() + " / " + loading.totalSteps(), x + width - 48, y, 0xFFE8E8E8);
+        drawBar(graphics, x, y + 13, width, loading.progress(), loading.failed() ? 0xFFFF8080 : 0xFFFFFFFF);
         if (!loading.detail().isBlank()) {
-            GuiComponent.drawString(graphics, minecraft.font, loading.detail(), x + 12, y + 40, 0xFFB8C0D8);
+            GuiComponent.drawString(graphics, minecraft.font, loading.detail(), x, y + 19, 0xFFD8D8D8);
         }
-        GuiComponent.fill(graphics, x + 12, y + 58, x + width - 12, y + 64, 0xFF242938);
-        GuiComponent.fill(graphics, x + 12, y + 58, x + 12 + progressWidth, y + 64, 0xFF6D8CFF);
-        GuiComponent.drawString(graphics, minecraft.font, loading.step() + " / " + loading.totalSteps(), x + width - 58, y + 69, 0xFFB8C0D8);
-        int lineY = y + 69;
-        for (String line : loading.history()) {
-            GuiComponent.drawString(graphics, minecraft.font, line, x + 12, lineY, 0xFF8F98B4);
-            lineY += 10;
-            if (lineY > y + 86) {
-                break;
-            }
+        if (loading.subTotal() > 0) {
+            GuiComponent.drawString(graphics, minecraft.font, loading.subtask() + " " + loading.subStep() + " / " + loading.subTotal(), x, y + 31, 0xFFE8E8E8);
+            drawBar(graphics, x, y + 44, width, loading.subProgress(), 0xFFE8E8E8);
         }
+    }
+
+    private static void drawBar(PoseStack graphics, int x, int y, int width, float progress, int color) {
+        GuiComponent.fill(graphics, x, y, x + width, y + 2, 0x55FFFFFF);
+        GuiComponent.fill(graphics, x, y, x + Math.max(1, Math.round(width * progress)), y + 2, color);
     }
 }

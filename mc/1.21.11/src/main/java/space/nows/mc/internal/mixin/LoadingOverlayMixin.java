@@ -34,28 +34,24 @@ public abstract class LoadingOverlayMixin {
         NowsLoadingSnapshot loading = ClientHooks.loadingSnapshot();
         int screenWidth = graphics.guiWidth();
         int screenHeight = graphics.guiHeight();
-        int width = Math.min(460, Math.max(280, screenWidth - 48));
+        int width = Math.max(180, Math.min(360, screenWidth - 48));
         int x = (screenWidth - width) / 2;
-        int y = Math.max(24, screenHeight - 118);
-        int progressWidth = Math.max(1, Math.round((width - 24) * loading.progress()));
+        int y = Math.max(24, screenHeight - 58);
 
-        graphics.fill(x, y, x + width, y + 92, 0xAA05070C);
-        graphics.fill(x, y, x + width, y + 1, 0xFF6D8CFF);
-        graphics.drawString(minecraft.font, loading.title(), x + 12, y + 10, 0xFFFFFFFF, true);
-        graphics.drawString(minecraft.font, loading.stage(), x + 12, y + 25, loading.failed() ? 0xFFFF7070 : 0xFFE8ECFF, true);
+        graphics.drawString(minecraft.font, loading.title() + " - " + loading.stage(), x, y, loading.failed() ? 0xFFFF8080 : 0xFFFFFFFF, true);
+        graphics.drawString(minecraft.font, loading.step() + " / " + loading.totalSteps(), x + width - 48, y, 0xFFE8E8E8, true);
+        drawBar(graphics, x, y + 13, width, loading.progress(), loading.failed() ? 0xFFFF8080 : 0xFFFFFFFF);
         if (!loading.detail().isBlank()) {
-            graphics.drawString(minecraft.font, loading.detail(), x + 12, y + 40, 0xFFB8C0D8, true);
+            graphics.drawString(minecraft.font, loading.detail(), x, y + 19, 0xFFD8D8D8, true);
         }
-        graphics.fill(x + 12, y + 58, x + width - 12, y + 64, 0xFF242938);
-        graphics.fill(x + 12, y + 58, x + 12 + progressWidth, y + 64, 0xFF6D8CFF);
-        graphics.drawString(minecraft.font, loading.step() + " / " + loading.totalSteps(), x + width - 58, y + 69, 0xFFB8C0D8, true);
-        int lineY = y + 69;
-        for (String line : loading.history()) {
-            graphics.drawString(minecraft.font, line, x + 12, lineY, 0xFF8F98B4, true);
-            lineY += 10;
-            if (lineY > y + 86) {
-                break;
-            }
+        if (loading.subTotal() > 0) {
+            graphics.drawString(minecraft.font, loading.subtask() + " " + loading.subStep() + " / " + loading.subTotal(), x, y + 31, 0xFFE8E8E8, true);
+            drawBar(graphics, x, y + 44, width, loading.subProgress(), 0xFFE8E8E8);
         }
+    }
+
+    private static void drawBar(GuiGraphics graphics, int x, int y, int width, float progress, int color) {
+        graphics.fill(x, y, x + width, y + 2, 0x55FFFFFF);
+        graphics.fill(x, y, x + Math.max(1, Math.round(width * progress)), y + 2, color);
     }
 }

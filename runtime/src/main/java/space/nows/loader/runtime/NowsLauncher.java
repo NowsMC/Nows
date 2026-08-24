@@ -371,18 +371,24 @@ public final class NowsLauncher {
             NowsEvents events
     ) throws Exception {
         int count = 0;
+        int total = 0;
+        for (ModContainer mod : mods) {
+            total += mod.descriptor().declarations("entrypoint").size();
+        }
         events.post(new NowsEntrypointsStartingEvent(context));
         for (ModContainer mod : mods) {
             for (String className : mod.descriptor().declarations("entrypoint")) {
                 LOG.info("Running entrypoint: {} -> {}", mod.descriptor().id(), className);
                 events.post(new NowsModEntrypointStartingEvent(context, mod, className));
                 NowsLoadingState.detail(mod.descriptor().id() + " -> " + className);
+                NowsLoadingState.subtask("Mod entrypoints", count, total);
                 Object instance = Class.forName(className, true, loader).getDeclaredConstructor().newInstance();
                 if (!(instance instanceof ModInitializer initializer)) {
                     throw new IllegalStateException(className + " does not implement " + ModInitializer.class.getName());
                 }
                 initializer.onInitialize(context);
                 count++;
+                NowsLoadingState.subtask("Mod entrypoints", count, total);
                 events.post(new NowsModEntrypointCompletedEvent(context, mod, className));
                 LOG.info("Loaded {} {}", mod.descriptor().id(), mod.descriptor().version());
             }
