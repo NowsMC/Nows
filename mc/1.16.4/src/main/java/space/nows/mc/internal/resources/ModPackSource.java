@@ -108,12 +108,24 @@ public final class ModPackSource implements RepositorySource {
     }
 
     private static boolean isClientResourceRepository(RepositorySource[] sources) {
+        Class<?> clientPackSource = clientPackSourceClass();
+        if (clientPackSource == null) {
+            return false;
+        }
         for (RepositorySource source : sources) {
-            if (source.getClass().getName().equals("net.minecraft.client.resources.ClientPackSource")) {
+            if (source != null && clientPackSource.isInstance(source)) {
                 return true;
             }
         }
         return false;
+    }
+
+    private static Class<?> clientPackSourceClass() {
+        try {
+            return Class.forName("net.minecraft.client.resources.ClientPackSource", false, ModPackSource.class.getClassLoader());
+        } catch (ClassNotFoundException ignored) {
+            return null;
+        }
     }
 
     private static PackResources open(String id, Path jar) {
