@@ -5,7 +5,7 @@
 - Added stable recipe-viewer overloads for category titles, icons, catalysts and common slot builders using `McText` and `McItemStack`.
 - Added stable container layout, screen and workstation recipe specs for slots, synced data, progress bars and custom cooking recipe shapes.
 - Hardened client resource-pack repository hooks by pinning modern `PackRepository` constructor descriptors and detecting `ClientPackSource` by type instead of exact class-name equality.
-- Added a lightweight Fabric/Forge-style loading diagnostics overlay with heap/offheap/CPU stats and Nows phase text while keeping Minecraft's splash screen and main progress bar vanilla-owned.
+- Added a lightweight loading diagnostics overlay with heap/offheap/CPU stats and Nows phase text while keeping Minecraft's splash screen and main progress bar vanilla-owned.
 - Bumped Nows release metadata to 0.9.1.
 
 ## 0.9.0
