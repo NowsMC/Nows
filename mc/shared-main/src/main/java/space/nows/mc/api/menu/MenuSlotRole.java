@@ -14,13 +14,15 @@
  * limitations under the License.
  */
 
-package space.nows.mc.api.machine;
+package space.nows.mc.api.menu;
 
-/** Direction used when a machine progress texture is filled. */
-public enum MachineProgressDirection {
-    LEFT_TO_RIGHT,
-    RIGHT_TO_LEFT,
-    TOP_TO_BOTTOM,
-    BOTTOM_TO_TOP
+/** Stable role for a slot in a menu or recipe display. */
+public enum MenuSlotRole {
+    INPUT,
+    FUEL,
+    OUTPUT,
+    BYPRODUCT,
+    CATALYST,
+    PLAYER_INVENTORY,
+    PLAYER_HOTBAR
 }
-

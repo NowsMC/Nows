@@ -14,13 +14,12 @@
  * limitations under the License.
  */
 
-package space.nows.mc.api.machine;
+package space.nows.mc.api.menu;
 
-/** Stable placement rule for a machine slot. */
-public enum MachineSlotRule {
+/** Stable placement rule for a container menu slot. */
+public enum MenuSlotRule {
     ANY,
     FUEL,
     NONE,
     CUSTOM
 }
-

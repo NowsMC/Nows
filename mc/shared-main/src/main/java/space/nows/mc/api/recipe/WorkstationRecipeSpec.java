@@ -14,17 +14,16 @@
  * limitations under the License.
  */
 
-package space.nows.mc.api.machine;
+package space.nows.mc.api.recipe;
 
-import space.nows.mc.api.recipe.IngredientSpec;
 import space.nows.mc.api.registry.ItemSpec;
 import space.nows.mc.api.registry.McItemStack;
 
 import java.util.ArrayList;
 import java.util.List;
 
-/** Stable custom machine recipe shape for cooking/workstation mods. */
-public final class MachineRecipeSpec {
+/** Stable custom recipe shape for cooking and workstation mods. */
+public final class WorkstationRecipeSpec {
     private final String id;
     private final String typeId;
     private final List<IngredientSpec> ingredients;
@@ -36,7 +35,7 @@ public final class MachineRecipeSpec {
     private final int cookingTime;
     private final boolean combined;
 
-    private MachineRecipeSpec(Builder builder) {
+    private WorkstationRecipeSpec(Builder builder) {
         this.id = ItemSpec.requireId(builder.id);
         this.typeId = ItemSpec.requireId(builder.typeId);
         this.ingredients = List.copyOf(builder.ingredients);
@@ -161,9 +160,8 @@ public final class MachineRecipeSpec {
             return this;
         }
 
-        public MachineRecipeSpec build() {
-            return new MachineRecipeSpec(this);
+        public WorkstationRecipeSpec build() {
+            return new WorkstationRecipeSpec(this);
         }
     }
 }
-

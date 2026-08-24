@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package space.nows.mc.api.machine;
+package space.nows.mc.api.client.ui;
 
 import space.nows.mc.api.registry.ItemSpec;
 import space.nows.mc.api.text.McText;
@@ -23,17 +23,17 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
-/** Stable texture-backed screen description for a machine menu. */
-public final class MachineScreenSpec {
+/** Stable texture-backed screen description for a container menu. */
+public final class ScreenSpec {
     private final String menuId;
     private final McText title;
     private final String backgroundTextureId;
     private final int width;
     private final int height;
     private final int inventoryLabelY;
-    private final List<MachineProgressSpec> progressBars;
+    private final List<ScreenProgressSpec> progressBars;
 
-    private MachineScreenSpec(Builder builder) {
+    private ScreenSpec(Builder builder) {
         this.menuId = ItemSpec.requireId(builder.menuId);
         this.title = Objects.requireNonNull(builder.title, "title");
         this.backgroundTextureId = ItemSpec.requireId(builder.backgroundTextureId);
@@ -74,7 +74,7 @@ public final class MachineScreenSpec {
         return inventoryLabelY;
     }
 
-    public List<MachineProgressSpec> progressBars() {
+    public List<ScreenProgressSpec> progressBars() {
         return progressBars;
     }
 
@@ -85,7 +85,7 @@ public final class MachineScreenSpec {
         private int width = 176;
         private int height = 166;
         private int inventoryLabelY = 72;
-        private final List<MachineProgressSpec> progressBars = new ArrayList<>();
+        private final List<ScreenProgressSpec> progressBars = new ArrayList<>();
 
         private Builder(String menuId, McText title, String backgroundTextureId) {
             this.menuId = menuId;
@@ -104,14 +104,13 @@ public final class MachineScreenSpec {
             return this;
         }
 
-        public Builder progress(MachineProgressSpec progress) {
+        public Builder progress(ScreenProgressSpec progress) {
             progressBars.add(progress);
             return this;
         }
 
-        public MachineScreenSpec build() {
-            return new MachineScreenSpec(this);
+        public ScreenSpec build() {
+            return new ScreenSpec(this);
         }
     }
 }
-

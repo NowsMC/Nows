@@ -14,19 +14,19 @@
  * limitations under the License.
  */
 
-package space.nows.mc.api.machine;
+package space.nows.mc.api.menu;
 
 import java.util.Objects;
 
-/** Stable machine menu slot description with screen coordinates. */
-public record MachineSlotSpec(
+/** Stable container menu slot description with screen coordinates. */
+public record MenuSlotSpec(
         int index,
         int x,
         int y,
-        MachineSlotRole role,
-        MachineSlotRule rule
+        MenuSlotRole role,
+        MenuSlotRule rule
 ) {
-    public MachineSlotSpec {
+    public MenuSlotSpec {
         if (index < 0) {
             throw new IllegalArgumentException("index must be >= 0");
         }
@@ -34,20 +34,19 @@ public record MachineSlotSpec(
         rule = Objects.requireNonNull(rule, "rule");
     }
 
-    public static MachineSlotSpec input(int index, int x, int y) {
-        return new MachineSlotSpec(index, x, y, MachineSlotRole.INPUT, MachineSlotRule.ANY);
+    public static MenuSlotSpec input(int index, int x, int y) {
+        return new MenuSlotSpec(index, x, y, MenuSlotRole.INPUT, MenuSlotRule.ANY);
     }
 
-    public static MachineSlotSpec fuel(int index, int x, int y) {
-        return new MachineSlotSpec(index, x, y, MachineSlotRole.FUEL, MachineSlotRule.FUEL);
+    public static MenuSlotSpec fuel(int index, int x, int y) {
+        return new MenuSlotSpec(index, x, y, MenuSlotRole.FUEL, MenuSlotRule.FUEL);
     }
 
-    public static MachineSlotSpec output(int index, int x, int y) {
-        return new MachineSlotSpec(index, x, y, MachineSlotRole.OUTPUT, MachineSlotRule.NONE);
+    public static MenuSlotSpec output(int index, int x, int y) {
+        return new MenuSlotSpec(index, x, y, MenuSlotRole.OUTPUT, MenuSlotRule.NONE);
     }
 
-    public static MachineSlotSpec byproduct(int index, int x, int y) {
-        return new MachineSlotSpec(index, x, y, MachineSlotRole.BYPRODUCT, MachineSlotRule.NONE);
+    public static MenuSlotSpec byproduct(int index, int x, int y) {
+        return new MenuSlotSpec(index, x, y, MenuSlotRole.BYPRODUCT, MenuSlotRule.NONE);
     }
 }
-

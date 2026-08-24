@@ -30,12 +30,12 @@ import space.nows.mc.api.command.CommandSpec;
 import space.nows.mc.api.datapack.DataPacks;
 import space.nows.mc.api.datapack.PackTarget;
 import space.nows.mc.api.event.GameEvents;
-import space.nows.mc.api.machine.MachineMenuSpec;
-import space.nows.mc.api.machine.MachineProgressSpec;
-import space.nows.mc.api.machine.MachineRecipeSpec;
-import space.nows.mc.api.machine.MachineScreenSpec;
-import space.nows.mc.api.machine.MachineSlotRule;
-import space.nows.mc.api.machine.MachineSlotSpec;
+import space.nows.mc.api.menu.MenuSpec;
+import space.nows.mc.api.client.ui.ScreenProgressSpec;
+import space.nows.mc.api.recipe.WorkstationRecipeSpec;
+import space.nows.mc.api.client.ui.ScreenSpec;
+import space.nows.mc.api.menu.MenuSlotRule;
+import space.nows.mc.api.menu.MenuSlotSpec;
 import space.nows.mc.api.nbt.NbtApi;
 import space.nows.mc.api.nbt.NbtCompound;
 import space.nows.mc.api.nbt.NbtValue;
@@ -128,11 +128,11 @@ class RegistryApiStableContractTest {
         assertDoesNotThrow(() -> RecipeViewerLayout.Builder.class.getMethod("inputStack", int.class, int.class, McItemStack.class));
         assertDoesNotThrow(() -> RecipeViewerLayout.Builder.class.getMethod("output", int.class, int.class, McItemStack.class));
         assertDoesNotThrow(() -> RecipeViewerLayout.Builder.class.getMethod("catalyst", int.class, int.class, McItemStack.class));
-        assertDoesNotThrow(() -> MachineMenuSpec.class.getMethod("builder", String.class));
-        assertDoesNotThrow(() -> MachineScreenSpec.class.getMethod("builder", String.class, McText.class, String.class));
-        assertDoesNotThrow(() -> MachineRecipeSpec.class.getMethod("builder", String.class, String.class));
-        assertDoesNotThrow(() -> MachineSlotSpec.class.getMethod("fuel", int.class, int.class, int.class));
-        assertDoesNotThrow(() -> MachineProgressSpec.class.getMethod(
+        assertDoesNotThrow(() -> MenuSpec.class.getMethod("builder", String.class));
+        assertDoesNotThrow(() -> ScreenSpec.class.getMethod("builder", String.class, McText.class, String.class));
+        assertDoesNotThrow(() -> WorkstationRecipeSpec.class.getMethod("builder", String.class, String.class));
+        assertDoesNotThrow(() -> MenuSlotSpec.class.getMethod("fuel", int.class, int.class, int.class));
+        assertDoesNotThrow(() -> ScreenProgressSpec.class.getMethod(
                 "horizontal",
                 String.class,
                 int.class,
@@ -208,9 +208,9 @@ class RegistryApiStableContractTest {
                         .catalyst(36, 0, McItemStack.of("minecraft:crafting_table"))
                         .build());
         recipes.registerCatalyst("nows_contract", McItemStack.of("minecraft:stone"));
-        MachineMenuSpec menu = MachineMenuSpec.builder("nows_contract:stove")
+        MenuSpec menu = MenuSpec.builder("nows_contract:stove")
                 .block("nows_contract:stove")
-                .machineSlotCount(4)
+                .containerSlotCount(4)
                 .input(0, 44, 17)
                 .fuel(1, 44, 49)
                 .output(2, 116, 17)
@@ -220,11 +220,11 @@ class RegistryApiStableContractTest {
                 .data("cooking_progress", 2)
                 .data("cooking_total_time", 3)
                 .build();
-        MachineScreenSpec machineScreen = MachineScreenSpec
+        ScreenSpec screenSpec = ScreenSpec
                 .builder("nows_contract:stove", McText.translatable("screen.nows_contract.stove"), "nows_contract:textures/gui/stove.png")
-                .progress(MachineProgressSpec.horizontal("cooking", 79, 35, 24, 17, 2, 3))
+                .progress(ScreenProgressSpec.horizontal("cooking", 79, 35, 24, 17, 2, 3))
                 .build();
-        MachineRecipeSpec machineRecipe = MachineRecipeSpec.builder("nows_contract:fried_stone", "nows_contract:stove_cooking")
+        WorkstationRecipeSpec workstationRecipe = WorkstationRecipeSpec.builder("nows_contract:fried_stone", "nows_contract:stove_cooking")
                 .ingredient(IngredientSpec.item("minecraft:stone"))
                 .fuel(IngredientSpec.tag("minecraft:logs_that_burn"))
                 .result(McItemStack.of("minecraft:smooth_stone"))
@@ -233,6 +233,6 @@ class RegistryApiStableContractTest {
                 .cookingTime(100)
                 .combined(false)
                 .build();
-        MachineSlotRule outputRule = menu.slots().get(2).rule();
+        MenuSlotRule outputRule = menu.slots().get(2).rule();
     }
 }

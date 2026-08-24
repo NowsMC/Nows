@@ -14,16 +14,12 @@
  * limitations under the License.
  */
 
-package space.nows.mc.api.machine;
+package space.nows.mc.api.client.ui;
 
-/** Stable role for a slot in a machine menu or recipe display. */
-public enum MachineSlotRole {
-    INPUT,
-    FUEL,
-    OUTPUT,
-    BYPRODUCT,
-    CATALYST,
-    PLAYER_INVENTORY,
-    PLAYER_HOTBAR
+/** Direction used when a progress texture is filled. */
+public enum ProgressDirection {
+    LEFT_TO_RIGHT,
+    RIGHT_TO_LEFT,
+    TOP_TO_BOTTOM,
+    BOTTOM_TO_TOP
 }
-

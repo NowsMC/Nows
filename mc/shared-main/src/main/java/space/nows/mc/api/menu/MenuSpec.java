@@ -14,33 +14,33 @@
  * limitations under the License.
  */
 
-package space.nows.mc.api.machine;
+package space.nows.mc.api.menu;
 
 import space.nows.mc.api.registry.ItemSpec;
 
 import java.util.ArrayList;
 import java.util.List;
 
-/** Stable container menu layout for machine blocks. */
-public final class MachineMenuSpec {
+/** Stable container menu layout for workstation and inventory-backed blocks. */
+public final class MenuSpec {
     private final String id;
     private final String blockId;
-    private final int machineSlotCount;
-    private final List<MachineSlotSpec> slots;
-    private final List<MachineDataSpec> data;
+    private final int containerSlotCount;
+    private final List<MenuSlotSpec> slots;
+    private final List<MenuDataSpec> data;
 
-    private MachineMenuSpec(Builder builder) {
+    private MenuSpec(Builder builder) {
         this.id = ItemSpec.requireId(builder.id);
         this.blockId = builder.blockId == null ? null : ItemSpec.requireId(builder.blockId);
-        this.machineSlotCount = builder.machineSlotCount;
+        this.containerSlotCount = builder.containerSlotCount;
         this.slots = List.copyOf(builder.slots);
         this.data = List.copyOf(builder.data);
-        if (machineSlotCount < 0) {
-            throw new IllegalArgumentException("machineSlotCount must be >= 0");
+        if (containerSlotCount < 0) {
+            throw new IllegalArgumentException("containerSlotCount must be >= 0");
         }
-        for (MachineSlotSpec slot : slots) {
-            if (slot.index() >= machineSlotCount) {
-                throw new IllegalArgumentException("machine slot index must be < machineSlotCount");
+        for (MenuSlotSpec slot : slots) {
+            if (slot.index() >= containerSlotCount) {
+                throw new IllegalArgumentException("slot index must be < containerSlotCount");
             }
         }
     }
@@ -57,15 +57,15 @@ public final class MachineMenuSpec {
         return blockId;
     }
 
-    public int machineSlotCount() {
-        return machineSlotCount;
+    public int containerSlotCount() {
+        return containerSlotCount;
     }
 
-    public List<MachineSlotSpec> slots() {
+    public List<MenuSlotSpec> slots() {
         return slots;
     }
 
-    public List<MachineDataSpec> data() {
+    public List<MenuDataSpec> data() {
         return data;
     }
 
@@ -76,9 +76,9 @@ public final class MachineMenuSpec {
     public static final class Builder {
         private final String id;
         private String blockId;
-        private int machineSlotCount;
-        private final List<MachineSlotSpec> slots = new ArrayList<>();
-        private final List<MachineDataSpec> data = new ArrayList<>();
+        private int containerSlotCount;
+        private final List<MenuSlotSpec> slots = new ArrayList<>();
+        private final List<MenuDataSpec> data = new ArrayList<>();
 
         private Builder(String id) {
             this.id = id;
@@ -89,40 +89,39 @@ public final class MachineMenuSpec {
             return this;
         }
 
-        public Builder machineSlotCount(int machineSlotCount) {
-            this.machineSlotCount = machineSlotCount;
+        public Builder containerSlotCount(int containerSlotCount) {
+            this.containerSlotCount = containerSlotCount;
             return this;
         }
 
-        public Builder slot(MachineSlotSpec slot) {
+        public Builder slot(MenuSlotSpec slot) {
             slots.add(slot);
             return this;
         }
 
         public Builder input(int index, int x, int y) {
-            return slot(MachineSlotSpec.input(index, x, y));
+            return slot(MenuSlotSpec.input(index, x, y));
         }
 
         public Builder fuel(int index, int x, int y) {
-            return slot(MachineSlotSpec.fuel(index, x, y));
+            return slot(MenuSlotSpec.fuel(index, x, y));
         }
 
         public Builder output(int index, int x, int y) {
-            return slot(MachineSlotSpec.output(index, x, y));
+            return slot(MenuSlotSpec.output(index, x, y));
         }
 
         public Builder byproduct(int index, int x, int y) {
-            return slot(MachineSlotSpec.byproduct(index, x, y));
+            return slot(MenuSlotSpec.byproduct(index, x, y));
         }
 
         public Builder data(String name, int index) {
-            data.add(new MachineDataSpec(name, index));
+            data.add(new MenuDataSpec(name, index));
             return this;
         }
 
-        public MachineMenuSpec build() {
-            return new MachineMenuSpec(this);
+        public MenuSpec build() {
+            return new MenuSpec(this);
         }
     }
 }
-
