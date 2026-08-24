@@ -30,6 +30,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 class PackRepositoryMixinContractTest {
     private static final String PACK_CONSTRUCTOR_DESCRIPTOR =
             "<init>(Lnet/minecraft/server/packs/repository/Pack$PackConstructor;[Lnet/minecraft/server/packs/repository/RepositorySource;)V";
+    private static final String REPOSITORY_SOURCES_DESCRIPTOR =
+            "<init>([Lnet/minecraft/server/packs/repository/RepositorySource;)V";
 
     @Test
     void constructorInjectionTargetsMinecraftConstructorShape() throws Exception {
@@ -44,8 +46,8 @@ class PackRepositoryMixinContractTest {
             assertTrue(targets.contains(PACK_CONSTRUCTOR_DESCRIPTOR),
                     "PackRepositoryMixin must target the Pack$PackConstructor overload explicitly");
         } else {
-            assertTrue(targets.contains("<init>") || targets.stream().anyMatch(target -> target.startsWith("<init>(")),
-                    "PackRepositoryMixin must target a PackRepository constructor");
+            assertTrue(targets.contains(REPOSITORY_SOURCES_DESCRIPTOR),
+                    "PackRepositoryMixin must target the RepositorySource varargs constructor explicitly");
         }
     }
 

@@ -36,7 +36,11 @@ public abstract class PackRepositoryMixin {
     @Mutable
     private Set<RepositorySource> sources;
 
-    @Inject(method = "<init>", at = @At("TAIL"), remap = false)
+    @Inject(
+            method = "<init>([Lnet/minecraft/server/packs/repository/RepositorySource;)V",
+            at = @At("TAIL"),
+            remap = false
+    )
     private void nows$installModResourcePackSource(RepositorySource[] repositorySources, CallbackInfo ci) {
         sources = ClientHooks.withModResourcePackSource(sources, repositorySources);
     }

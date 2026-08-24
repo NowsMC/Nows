@@ -4,6 +4,7 @@
 - Centralized repeated `McText` conversion across text, config and player APIs so stable text wrappers stay the common path while native component overloads remain available as escape hatches.
 - Added stable recipe-viewer overloads for category titles, icons, catalysts and common slot builders using `McText` and `McItemStack`.
 - Added stable container layout, screen and workstation recipe specs for slots, synced data, progress bars and custom cooking recipe shapes.
+- Hardened client resource-pack repository hooks by pinning modern `PackRepository` constructor descriptors and detecting `ClientPackSource` by type instead of exact class-name equality.
 - Bumped Nows release metadata to 0.9.1.
 
 ## 0.9.0
