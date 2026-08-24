@@ -9,6 +9,7 @@
   "client": [
     "MinecraftClientMixin",
     "PackRepositoryMixin",
+    "LoadingOverlayMixin",
     "TitleScreenMixin"
   ],
   "injectors": {
