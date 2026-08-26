@@ -22,6 +22,7 @@ import space.nows.mc.api.registry.McItemStack;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 
 /** Stable recipe description for generator/datagen code. */
 public final class RecipeSpec {
@@ -35,16 +36,30 @@ public final class RecipeSpec {
     private final int cookingTime;
 
     private RecipeSpec(Builder builder) {
-        this.kind = builder.kind;
+        this.kind = Objects.requireNonNull(builder.kind, "kind");
         this.id = ItemSpec.requireId(builder.id);
-        this.result = builder.result;
+        this.result = Objects.requireNonNull(builder.result, "result");
         this.pattern = List.copyOf(builder.pattern);
         this.keys = Map.copyOf(builder.keys);
         this.ingredients = List.copyOf(builder.ingredients);
         this.experience = builder.experience;
         this.cookingTime = builder.cookingTime;
-        if (result == null) {
-            throw new IllegalArgumentException("result must not be null");
+        if (experience < 0.0F) {
+            throw new IllegalArgumentException("experience must be >= 0.0");
+        }
+        if (cookingTime < 1) {
+            throw new IllegalArgumentException("cookingTime must be >= 1");
+        }
+        if (kind == RecipeKind.SHAPED_CRAFTING && pattern.isEmpty()) {
+            throw new IllegalArgumentException("shaped recipe must have at least one pattern row");
+        }
+        if (kind == RecipeKind.SHAPELESS_CRAFTING && ingredients.isEmpty()) {
+            throw new IllegalArgumentException("shapeless recipe must have at least one ingredient");
+        }
+        if (kind != RecipeKind.SHAPED_CRAFTING
+                && kind != RecipeKind.SHAPELESS_CRAFTING
+                && ingredients.isEmpty()) {
+            throw new IllegalArgumentException(kind + " recipe must have at least one ingredient");
         }
     }
 
@@ -123,17 +138,23 @@ public final class RecipeSpec {
         }
 
         public Builder pattern(String row) {
+            if (row == null || row.isBlank()) {
+                throw new IllegalArgumentException("pattern row must not be blank");
+            }
             pattern.add(row);
             return this;
         }
 
         public Builder key(char key, IngredientSpec ingredient) {
-            keys.put(key, ingredient);
+            if (Character.isWhitespace(key)) {
+                throw new IllegalArgumentException("recipe key must not be whitespace");
+            }
+            keys.put(key, Objects.requireNonNull(ingredient, "ingredient"));
             return this;
         }
 
         public Builder ingredient(IngredientSpec ingredient) {
-            ingredients.add(ingredient);
+            ingredients.add(Objects.requireNonNull(ingredient, "ingredient"));
             return this;
         }
 

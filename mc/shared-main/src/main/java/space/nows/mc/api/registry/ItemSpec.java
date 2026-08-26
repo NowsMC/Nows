@@ -16,6 +16,8 @@
 
 package space.nows.mc.api.registry;
 
+import space.nows.mc.api.McId;
+
 import java.util.Objects;
 
 /** Stable Nows item registration data, translated by each Minecraft adapter. */
@@ -84,10 +86,7 @@ public final class ItemSpec {
 
     public static String requireId(String id) {
         Objects.requireNonNull(id, "id");
-        if (id.isBlank()) {
-            throw new IllegalArgumentException("id must not be blank");
-        }
-        return id;
+        return McId.requireId(id);
     }
 
     public static final class Builder {

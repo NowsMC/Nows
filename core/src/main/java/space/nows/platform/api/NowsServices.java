@@ -37,6 +37,18 @@ public final class NowsServices {
         }
     }
 
+    public <T> boolean registerIfAbsent(Class<T> type, T service) {
+        Objects.requireNonNull(type, "type");
+        Objects.requireNonNull(service, "service");
+        return services.putIfAbsent(type, type.cast(service)) == null;
+    }
+
+    public <T> Optional<T> replace(Class<T> type, T service) {
+        Objects.requireNonNull(type, "type");
+        Objects.requireNonNull(service, "service");
+        return Optional.ofNullable(services.put(type, type.cast(service))).map(type::cast);
+    }
+
     public <T> Optional<T> find(Class<T> type) {
         Objects.requireNonNull(type, "type");
         return Optional.ofNullable(services.get(type)).map(type::cast);

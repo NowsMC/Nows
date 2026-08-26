@@ -20,6 +20,8 @@ Common mod-facing and generator-facing code should prefer Nows stable wrapper/sp
 - Containers and UI: `LayoutSpec`, `SlotSpec`, `DataSlotSpec`, `ScreenSpec` and `ScreenProgressSpec`.
 - Commands and events: `CommandSpec`, `CommandArgumentSpec`, `CommandExecutionContext`, `ClientTickContext`, `ServerTickContext`, `LevelTickContext`, `PlayerEventContext`, `BlockEventContext` and `EntityEventContext`.
 
+Stable wrapper/spec types should fail fast on invalid Nows-owned input. Identifiers accepted by these APIs follow Minecraft resource-location rules (`namespace:path`, or `path` with the implicit `minecraft` namespace): lowercase letters, numbers, `_`, `-`, `.`, and `/` in paths. Do this validation in shared Nows types before data reaches a version adapter, so every `mc/<version>/` artifact rejects bad generated/mod input the same way.
+
 Use the `Mc` prefix for stable Nows-owned value or snapshot types that model Minecraft concepts directly and may otherwise collide with native or third-party names, such as `McText`, `McItemStack`, `McId` and `McVec3`. Do not use `Mc` just because a class lives in the Minecraft adapter area. Services, bridges, helpers and conversion utilities should use names that describe the role instead, such as `NativeTextBridge` or `NativeItemStackBridge`.
 
 Raw Minecraft types can still appear in version adapter APIs for internal escape hatches, but generated code and examples should use the stable wrappers where an overload exists.

@@ -21,13 +21,19 @@ import java.util.Objects;
 /** Stable namespaced identifier independent of Minecraft's Identifier/ResourceLocation classes. */
 public record McId(String namespace, String path) {
     public McId {
-        namespace = requirePart(namespace, "namespace");
-        path = requirePart(path, "path");
+        namespace = requireNamespace(namespace);
+        path = requirePath(path);
     }
 
     public static McId of(String id) {
         Objects.requireNonNull(id, "id");
+        if (id.isBlank()) {
+            throw new IllegalArgumentException("id must not be blank");
+        }
         int separator = id.indexOf(':');
+        if (separator != id.lastIndexOf(':')) {
+            throw new IllegalArgumentException("id must contain at most one namespace separator: " + id);
+        }
         if (separator < 0) {
             return new McId("minecraft", id);
         }
@@ -43,11 +49,51 @@ public record McId(String namespace, String path) {
         return namespace + ":" + path;
     }
 
+    public static String requireId(String id) {
+        McId.of(id);
+        return id;
+    }
+
+    private static String requireNamespace(String value) {
+        String namespace = requirePart(value, "namespace");
+        for (int i = 0; i < namespace.length(); i++) {
+            char character = namespace.charAt(i);
+            if (!isNamespaceCharacter(character)) {
+                throw new IllegalArgumentException("namespace contains invalid character '" + character + "': " + namespace);
+            }
+        }
+        return namespace;
+    }
+
+    private static String requirePath(String value) {
+        String path = requirePart(value, "path");
+        for (int i = 0; i < path.length(); i++) {
+            char character = path.charAt(i);
+            if (!isPathCharacter(character)) {
+                throw new IllegalArgumentException("path contains invalid character '" + character + "': " + path);
+            }
+        }
+        return path;
+    }
+
     private static String requirePart(String value, String name) {
         Objects.requireNonNull(value, name);
         if (value.isBlank()) {
             throw new IllegalArgumentException(name + " must not be blank");
         }
+        if (!value.equals(value.trim())) {
+            throw new IllegalArgumentException(name + " must not have leading or trailing whitespace");
+        }
         return value;
+    }
+
+    private static boolean isNamespaceCharacter(char character) {
+        return character >= 'a' && character <= 'z'
+                || character >= '0' && character <= '9'
+                || character == '_' || character == '-' || character == '.';
+    }
+
+    private static boolean isPathCharacter(char character) {
+        return isNamespaceCharacter(character) || character == '/';
     }
 }

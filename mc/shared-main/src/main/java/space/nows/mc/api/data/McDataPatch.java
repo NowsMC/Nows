@@ -18,6 +18,9 @@ package space.nows.mc.api.data;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
+
+import space.nows.mc.api.registry.ItemSpec;
 
 /** Stable set of data mutations for generated item/entity/block-entity code. */
 public final class McDataPatch {
@@ -48,12 +51,12 @@ public final class McDataPatch {
         private Builder() {}
 
         public Builder set(McDataComponent component) {
-            set.add(component);
+            set.add(Objects.requireNonNull(component, "component"));
             return this;
         }
 
         public Builder remove(String componentId) {
-            remove.add(componentId);
+            remove.add(ItemSpec.requireId(componentId));
             return this;
         }
 

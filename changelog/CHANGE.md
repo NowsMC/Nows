@@ -6,6 +6,8 @@
 - Changed `publishMavenLayout` so `.publishing/maven` is updated in place instead of deleting older local Maven versions first.
 - Added wildcard equality matching for dependency constraints such as `1.2.x` and `1.2.*`.
 - Added JUnit coverage for the broader dependency version forms and deterministic prerelease/build label ordering.
+- Hardened stable Minecraft wrapper/spec validation so bad resource ids, empty recipes and null recipe/data parts fail in Nows shared APIs before reaching version adapters.
+- Added explicit service registry replacement/optional-registration helpers for integrations that need a controlled lifecycle.
 - Bumped Nows release metadata to 0.9.2.
 
 ## 0.9.1

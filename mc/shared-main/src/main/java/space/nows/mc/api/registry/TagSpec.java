@@ -26,6 +26,7 @@ public record TagSpec(TagTarget target, String id, List<String> values) {
         }
         ItemSpec.requireId(id);
         values = values == null ? List.of() : List.copyOf(values);
+        values.forEach(ItemSpec::requireId);
     }
 
     public static TagSpec items(String id, List<String> values) {

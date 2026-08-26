@@ -21,6 +21,7 @@ import space.nows.mc.api.registry.McItemStack;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 
 /** Stable custom recipe shape for cooking and workstation mods. */
 public final class WorkstationRecipeSpec {
@@ -125,22 +126,22 @@ public final class WorkstationRecipeSpec {
         }
 
         public Builder ingredient(IngredientSpec ingredient) {
-            ingredients.add(ingredient);
+            ingredients.add(Objects.requireNonNull(ingredient, "ingredient"));
             return this;
         }
 
         public Builder fuel(IngredientSpec fuel) {
-            this.fuel = fuel;
+            this.fuel = Objects.requireNonNull(fuel, "fuel");
             return this;
         }
 
         public Builder result(McItemStack result) {
-            results.add(result);
+            results.add(Objects.requireNonNull(result, "result"));
             return this;
         }
 
         public Builder byproduct(McItemStack byproduct, float chance) {
-            this.byproduct = byproduct;
+            this.byproduct = Objects.requireNonNull(byproduct, "byproduct");
             this.byproductChance = chance;
             return this;
         }

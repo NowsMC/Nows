@@ -20,6 +20,8 @@ import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 
 class NowsServicesTest {
     @Test
@@ -40,5 +42,25 @@ class NowsServicesTest {
 
         assertThrows(IllegalStateException.class, () -> services.register(String.class, "second"));
         assertSame("first", services.require(String.class));
+    }
+
+    @Test
+    void canRegisterOptionalServiceWithoutReplacingExistingOne() {
+        NowsServices services = new NowsServices();
+
+        assertTrue(services.registerIfAbsent(String.class, "first"));
+        assertFalse(services.registerIfAbsent(String.class, "second"));
+
+        assertSame("first", services.require(String.class));
+    }
+
+    @Test
+    void canReplaceServiceWhenIntegrationOwnsTheDecision() {
+        NowsServices services = new NowsServices();
+
+        assertTrue(services.replace(String.class, "first").isEmpty());
+
+        assertSame("first", services.replace(String.class, "second").orElseThrow());
+        assertSame("second", services.require(String.class));
     }
 }
