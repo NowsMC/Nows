@@ -20,9 +20,13 @@ import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /** Small version constraint matcher for loader metadata. */
 public final class ModVersionConstraint {
+    private static final Pattern TOKEN_PATTERN = Pattern.compile("\\d+|[a-z]+");
+
     private ModVersionConstraint() {
     }
 
@@ -63,6 +67,9 @@ public final class ModVersionConstraint {
         }
         if (expected.isBlank()) {
             return false;
+        }
+        if ((operator.equals("=") || operator.equals("==")) && matchesWildcard(expected, actualVersion)) {
+            return true;
         }
         int comparison = compare(actualVersion, expected);
         return switch (operator) {
@@ -110,12 +117,12 @@ public final class ModVersionConstraint {
     }
 
     static int compare(String left, String right) {
-        List<String> leftParts = parts(left);
-        List<String> rightParts = parts(right);
-        int length = Math.max(leftParts.size(), rightParts.size());
+        VersionKey leftKey = VersionKey.parse(left);
+        VersionKey rightKey = VersionKey.parse(right);
+        int length = Math.max(leftKey.parts().size(), rightKey.parts().size());
         for (int index = 0; index < length; index++) {
-            String leftPart = index < leftParts.size() ? leftParts.get(index) : "0";
-            String rightPart = index < rightParts.size() ? rightParts.get(index) : "0";
+            VersionPart leftPart = leftKey.partOrDefault(index);
+            VersionPart rightPart = rightKey.partOrDefault(index);
             int comparison = comparePart(leftPart, rightPart);
             if (comparison != 0) {
                 return comparison;
@@ -124,10 +131,33 @@ public final class ModVersionConstraint {
         return 0;
     }
 
-    private static List<String> parts(String version) {
-        String normalized = version == null ? "" : version.trim().toLowerCase(Locale.ROOT);
+    private static boolean matchesWildcard(String expected, String actual) {
+        List<String> expectedParts = rawParts(expected);
+        if (expectedParts.stream().noneMatch(ModVersionConstraint::isWildcardPart)) {
+            return false;
+        }
+        List<String> actualParts = rawParts(actual);
+        for (int index = 0; index < expectedParts.size(); index++) {
+            String expectedPart = expectedParts.get(index);
+            if (isWildcardPart(expectedPart)) {
+                return true;
+            }
+            String actualPart = index < actualParts.size() ? actualParts.get(index) : "0";
+            if (compareRawPart(actualPart, expectedPart) != 0) {
+                return false;
+            }
+        }
+        return actualParts.size() <= expectedParts.size();
+    }
+
+    private static boolean isWildcardPart(String part) {
+        return part.equals("*") || part.equals("x");
+    }
+
+    private static List<String> rawParts(String version) {
+        String normalized = normalize(version);
         List<String> result = new ArrayList<>();
-        for (String raw : normalized.split("[._+\\-]")) {
+        for (String raw : normalized.split("[\\s._+\\-/]+")) {
             if (!raw.isBlank()) {
                 result.add(raw);
             }
@@ -135,15 +165,85 @@ public final class ModVersionConstraint {
         return result.isEmpty() ? List.of("0") : result;
     }
 
-    private static int comparePart(String left, String right) {
-        boolean leftNumber = left.matches("\\d+");
-        boolean rightNumber = right.matches("\\d+");
-        if (leftNumber && rightNumber) {
-            return new BigInteger(left).compareTo(new BigInteger(right));
+    private static int compareRawPart(String left, String right) {
+        return comparePart(VersionPart.parse(left), VersionPart.parse(right));
+    }
+
+    private static int comparePart(VersionPart left, VersionPart right) {
+        if (left.number() && right.number()) {
+            return new BigInteger(left.value()).compareTo(new BigInteger(right.value()));
         }
-        if (leftNumber != rightNumber) {
-            return leftNumber ? 1 : -1;
+        if (left.number() != right.number()) {
+            VersionPart number = left.number() ? left : right;
+            VersionPart label = left.number() ? right : left;
+            if (number.value().matches("0+") && qualifierRank(label.value()) == 0) {
+                return 0;
+            }
+            return left.number() ? 1 : -1;
         }
-        return left.compareTo(right);
+        int leftRank = qualifierRank(left.value());
+        int rightRank = qualifierRank(right.value());
+        if (leftRank != rightRank) {
+            return Integer.compare(leftRank, rightRank);
+        }
+        if (leftRank != -5) {
+            return 0;
+        }
+        return left.value().compareTo(right.value());
+    }
+
+    private static int qualifierRank(String value) {
+        return switch (value) {
+            case "" -> 0;
+            case "snapshot", "nightly", "dev", "devel", "development", "canary" -> -60;
+            case "alpha", "a" -> -50;
+            case "beta", "b" -> -40;
+            case "milestone", "m" -> -30;
+            case "preview", "pre" -> -25;
+            case "rc", "cr" -> -20;
+            case "build" -> -10;
+            case "release", "final", "ga", "stable" -> 0;
+            default -> -5;
+        };
+    }
+
+    private static String normalize(String version) {
+        String normalized = version == null ? "" : version.trim().toLowerCase(Locale.ROOT);
+        if (normalized.length() > 1 && normalized.charAt(0) == 'v' && Character.isDigit(normalized.charAt(1))) {
+            normalized = normalized.substring(1);
+        }
+        return normalized;
+    }
+
+    private record VersionKey(List<VersionPart> parts) {
+        private static VersionKey parse(String version) {
+            String normalized = normalize(version);
+            int metadata = normalized.indexOf('+');
+            if (metadata >= 0) {
+                normalized = normalized.substring(0, metadata);
+            }
+            normalized = normalized.replaceAll("\"[^\"]*\"|'[^']*'", " ");
+            Matcher matcher = TOKEN_PATTERN.matcher(normalized);
+            List<VersionPart> parts = new ArrayList<>();
+            while (matcher.find()) {
+                parts.add(VersionPart.parse(matcher.group()));
+            }
+            return new VersionKey(parts.isEmpty() ? List.of(VersionPart.zero()) : List.copyOf(parts));
+        }
+
+        private VersionPart partOrDefault(int index) {
+            return index < parts.size() ? parts.get(index) : VersionPart.zero();
+        }
+    }
+
+    private record VersionPart(String value, boolean number) {
+        private static VersionPart parse(String value) {
+            String normalized = value == null ? "" : value.toLowerCase(Locale.ROOT);
+            return new VersionPart(normalized, normalized.matches("\\d+"));
+        }
+
+        private static VersionPart zero() {
+            return new VersionPart("0", true);
+        }
     }
 }
