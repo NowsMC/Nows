@@ -22,14 +22,19 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Properties;
 
+import space.nows.platform.api.NowsSide;
+
 /** Version-specific Minecraft launch policy loaded from mc/<minecraft-version>. */
 public record MinecraftVersionPolicy(
         String minecraftVersion,
         String clientMainClass,
+        String serverMainClass,
         List<String> builtInMixinConfigs,
+        List<String> builtInServerMixinConfigs,
         String resourcePath,
         boolean bundled) {
     private static final String DEFAULT_CLIENT_MAIN_CLASS = "net.minecraft.client.main.Main";
+    private static final String DEFAULT_SERVER_MAIN_CLASS = "net.minecraft.server.Main";
 
     public static MinecraftVersionPolicy load(String minecraftVersion) throws IOException {
         String normalized = normalizeVersion(minecraftVersion);
@@ -39,7 +44,14 @@ public record MinecraftVersionPolicy(
         ClassLoader loader = MinecraftVersionPolicy.class.getClassLoader();
         try (InputStream input = loader.getResourceAsStream(resourcePath)) {
             if (input == null) {
-                return new MinecraftVersionPolicy(normalized, DEFAULT_CLIENT_MAIN_CLASS, List.of(), resourcePath, false);
+                return new MinecraftVersionPolicy(
+                        normalized,
+                        DEFAULT_CLIENT_MAIN_CLASS,
+                        DEFAULT_SERVER_MAIN_CLASS,
+                        List.of(),
+                        List.of(),
+                        resourcePath,
+                        false);
             }
             properties.load(input);
         }
@@ -53,9 +65,21 @@ public record MinecraftVersionPolicy(
         return new MinecraftVersionPolicy(
                 normalized,
                 read(properties, "client.mainClass", DEFAULT_CLIENT_MAIN_CLASS),
-                readList(properties, "runtime.builtinMixinConfigs"),
+                read(properties, "server.mainClass", DEFAULT_SERVER_MAIN_CLASS),
+                readList(properties, "runtime.builtinClientMixinConfigs",
+                        read(properties, "runtime.builtinMixinConfigs", "")),
+                readList(properties, "runtime.builtinServerMixinConfigs",
+                        read(properties, "server.builtinMixinConfigs", "")),
                 resourcePath,
                 true);
+    }
+
+    public String mainClass(NowsSide side) {
+        return side == NowsSide.SERVER ? serverMainClass : clientMainClass;
+    }
+
+    public List<String> builtInMixinConfigs(NowsSide side) {
+        return side == NowsSide.SERVER ? builtInServerMixinConfigs : builtInMixinConfigs;
     }
 
     private static String normalizeVersion(String minecraftVersion) {
@@ -78,7 +102,11 @@ public record MinecraftVersionPolicy(
     }
 
     private static List<String> readList(Properties properties, String key) {
-        String value = properties.getProperty(key);
+        return readList(properties, key, "");
+    }
+
+    private static List<String> readList(Properties properties, String key, String fallback) {
+        String value = properties.getProperty(key, fallback);
         if (value == null || value.isBlank()) {
             return List.of();
         }

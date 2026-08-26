@@ -45,6 +45,21 @@ class MinecraftCompatibilityTest {
                 MinecraftCompatibility.validate(List.of(mod), "26.2", NowsSide.CLIENT));
     }
 
+    @Test
+    void acceptsServerOnlyModsOnServerRuntime() {
+        ModContainer mod = mod("server_mod", NowsSide.SERVER);
+
+        assertDoesNotThrow(() -> MinecraftCompatibility.validate(List.of(mod), "26.2", NowsSide.SERVER));
+    }
+
+    @Test
+    void rejectsClientOnlyModsOnServerRuntime() {
+        ModContainer mod = mod("client_mod", NowsSide.CLIENT);
+
+        assertThrows(IOException.class, () ->
+                MinecraftCompatibility.validate(List.of(mod), "26.2", NowsSide.SERVER));
+    }
+
     private static ModContainer mod(String id, NowsSide side) {
         return new ModContainer(
                 Path.of("mods/" + id + ".jar"),

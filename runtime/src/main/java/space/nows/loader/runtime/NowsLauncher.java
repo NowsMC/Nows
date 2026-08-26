@@ -65,7 +65,6 @@ import java.util.Properties;
 
 public final class NowsLauncher {
     private static final Logger LOG = NowsLog.get(NowsLauncher.class);
-    private static final NowsSide RUNTIME_SIDE = NowsSide.CLIENT;
     private static final int BOOTSTRAP_PHASES = 18;
     private static final String MINECRAFT_ADAPTER_PATH_PROPERTY = "nows.minecraftAdapterPath";
     private static final String MINECRAFT_ADAPTER_MARKER =
@@ -91,8 +90,9 @@ public final class NowsLauncher {
     private static void launch(String[] args) throws Exception {
         NowsLoadingState.start("Nows Loader", BOOTSTRAP_PHASES);
         LaunchArguments launch = phase("Parse launch arguments", () -> LaunchArguments.parse(args));
+        NowsSide runtimeSide = launch.side();
         LOG.info("Launch target: Minecraft {}, side {}, game directory {}",
-                launch.minecraftVersion(), RUNTIME_SIDE.metadataName(), launch.gameDirectory());
+                launch.minecraftVersion(), runtimeSide.metadataName(), launch.gameDirectory());
         LOG.info("Launcher profile id: {}", launch.profileId() == null ? "<unknown>" : launch.profileId());
         LOG.info("Minecraft root directory: {}", launch.minecraftDirectory());
         LOG.info("Minecraft argument summary: {} forwarded argument(s), access token hidden",
@@ -100,14 +100,17 @@ public final class NowsLauncher {
 
         MinecraftVersionPolicy policy = phase("Load Minecraft version policy", () ->
                 MinecraftVersionPolicy.load(launch.minecraftVersion()));
-        LOG.info("Minecraft policy: {} main class {} ({})",
-                policy.minecraftVersion(), policy.clientMainClass(),
+        String minecraftMainClass = policy.mainClass(runtimeSide);
+        List<String> builtInMixinConfigs = policy.builtInMixinConfigs(runtimeSide);
+        LOG.info("Minecraft policy: {} {} main class {} ({})",
+                policy.minecraftVersion(), runtimeSide.metadataName(), minecraftMainClass,
                 policy.bundled() ? policy.resourcePath() : "default policy");
         LOG.info("Built-in Mixin configs from policy: {}",
-                policy.builtInMixinConfigs().isEmpty() ? "<none>" : String.join(", ", policy.builtInMixinConfigs()));
+                builtInMixinConfigs.isEmpty() ? "<none>" : String.join(", ", builtInMixinConfigs));
 
-        Path gameJar = phase("Locate Minecraft client JAR", GameJarLocator::locateClientJar);
-        LOG.info("Minecraft client JAR: {}", gameJar);
+        Path gameJar = phase("Locate Minecraft " + runtimeSide.metadataName() + " JAR", () ->
+                GameJarLocator.locate(runtimeSide));
+        LOG.info("Minecraft {} JAR: {}", runtimeSide.metadataName(), gameJar);
 
         Path gameModsDirectory = launch.gameDirectory().resolve("mods");
         Path profileModsDirectory = optionalProfileModsDirectory(launch);
@@ -115,6 +118,8 @@ public final class NowsLauncher {
         phase("Inspect Nows mods directories", () -> logModDirectories(gameModsDirectory, profileModsDirectory));
         List<ModContainer> discoveredMods = phase("Discover Nows mods", () ->
                 ModDiscovery.scan(modsDirectories, new KdlModMetadataReader()));
+        phase("Validate Minecraft compatibility", () ->
+                MinecraftCompatibility.validate(discoveredMods, launch.minecraftVersion(), runtimeSide));
         List<ModContainer> mods = phase("Resolve mod dependencies", () ->
                 ModDependencyResolver.resolve(discoveredMods, Map.of(
                         "minecraft", launch.minecraftVersion(),
@@ -122,19 +127,16 @@ public final class NowsLauncher {
                         "nows-loader", nowsVersion())));
         logDiscoveredMods(mods);
 
-        phase("Validate Minecraft compatibility", () ->
-                MinecraftCompatibility.validate(mods, launch.minecraftVersion(), RUNTIME_SIDE));
-
         List<URL> urls = new ArrayList<>();
         urls.add(gameJar.toUri().toURL());
-        Optional<URL> adapterUrl = minecraftAdapterUrl(policy);
+        Optional<URL> adapterUrl = runtimeSide == NowsSide.CLIENT ? minecraftAdapterUrl(policy) : Optional.empty();
         adapterUrl.ifPresent(urls::add);
         for (ModContainer mod : mods) urls.add(mod.path().toUri().toURL());
         adapterUrl.ifPresentOrElse(
                 url -> LOG.info("Minecraft API adapter classpath: {}", url),
                 () -> LOG.info("No Minecraft API adapter classpath found for {}", launch.minecraftVersion()));
-        LOG.info("Game classloader URLs: {} total (1 Minecraft client + {} adapter + {} mod jar(s))",
-                urls.size(), adapterUrl.isPresent() ? 1 : 0, mods.size());
+        LOG.info("Game classloader URLs: {} total (1 Minecraft {} + {} adapter + {} mod jar(s))",
+                urls.size(), runtimeSide.metadataName(), adapterUrl.isPresent() ? 1 : 0, mods.size());
 
         try (NowsClassLoader gameLoader = new NowsClassLoader(urls.toArray(URL[]::new), NowsLauncher.class.getClassLoader())) {
             try {
@@ -143,27 +145,31 @@ public final class NowsLauncher {
                 Thread.currentThread().setContextClassLoader(gameLoader);
                 LOG.info("Thread context classloader switched to {}", gameLoader.getName());
 
-                phase("Configure Minecraft client hooks", () ->
-                        configureMinecraftClientHooks(gameLoader, launch.minecraftVersion(), mods));
+                if (runtimeSide == NowsSide.CLIENT) {
+                    phase("Configure Minecraft client hooks", () ->
+                            configureMinecraftClientHooks(gameLoader, launch.minecraftVersion(), mods));
+                }
                 phase("Install Mixin integration", () ->
-                        NowsMixinBootstrap.install(gameLoader, policy.builtInMixinConfigs(), mods));
+                        NowsMixinBootstrap.install(gameLoader, builtInMixinConfigs, mods));
                 phase("Load class transformers", () -> loadTransformers(gameLoader, mods));
 
                 NowsServices services = new NowsServices();
                 services.register(NowsConfigFiles.class,
                         new NowsConfigFiles(launch.gameDirectory().resolve("config").resolve("nows")));
                 phase("Install Minecraft API adapter", () ->
-                        installMinecraftApiAdapter(gameLoader, services, launch.gameDirectory(), launch.minecraftVersion()));
-                phase("Install network integration", () -> NowsNetworking.install(services, RUNTIME_SIDE));
+                        installMinecraftApiAdapter(gameLoader, services, launch.gameDirectory(), launch.minecraftVersion(), runtimeSide));
+                phase("Install network integration", () -> NowsNetworking.install(services, runtimeSide));
                 LOG.info("Service registered: {} -> {}", "NowsNetworking",
                         services.require(NowsNetworking.class).getClass().getName());
                 phase("Install GEB integration", () -> GebIntegration.install(services, gameLoader));
                 LOG.info("Service registered: {} -> {}", "GEB", services.require(foo.zaaarf.geb.GEB.class).getClass().getName());
 
                 NowsContext context = new NowsContext(
-                        launch.minecraftVersion(), RUNTIME_SIDE, launch.gameDirectory(), mods, gameLoader, services);
-                phase("Install built-in Minecraft UI", () ->
-                        installBuiltInMinecraftUi(gameLoader, context, launch.minecraftVersion()));
+                        launch.minecraftVersion(), runtimeSide, launch.gameDirectory(), mods, gameLoader, services);
+                if (runtimeSide == NowsSide.CLIENT) {
+                    phase("Install built-in Minecraft UI", () ->
+                            installBuiltInMinecraftUi(gameLoader, context, launch.minecraftVersion()));
+                }
                 NowsNetworking networking = NowsNetworking.service(context);
                 int networkChannelCount = phase("Register network channels", () ->
                         networking.registerDeclaredChannels(mods));
@@ -179,9 +185,9 @@ public final class NowsLauncher {
 
                 LOG.info("Starting Minecraft {} with {} Nows mod(s)", launch.minecraftVersion(), mods.size());
                 events.post(new NowsMinecraftStartingEvent(
-                        context, policy.clientMainClass(), launch.minecraftArguments().size()));
+                        context, minecraftMainClass, launch.minecraftArguments().size()));
                 phase("Invoke Minecraft main", () ->
-                        invokeMinecraftMain(gameLoader, policy.clientMainClass(),
+                        invokeMinecraftMain(gameLoader, minecraftMainClass,
                                 launch.minecraftArguments().toArray(String[]::new)));
             } finally {
                 LOG.info("Detaching Nows integrations and restoring launcher classloader");
@@ -249,8 +255,13 @@ public final class NowsLauncher {
             ClassLoader loader,
             NowsServices services,
             Path gameDirectory,
-            String minecraftVersion
+            String minecraftVersion,
+            NowsSide runtimeSide
     ) throws Exception {
+        if (runtimeSide == NowsSide.SERVER) {
+            LOG.info("Skipping Minecraft API adapter on server runtime; current adapters are client-classpath scoped");
+            return;
+        }
         String integrationClassName = "space.nows.mc.internal.MinecraftIntegration";
         try {
             Class<?> integrationClass = Class.forName(integrationClassName, true, loader);

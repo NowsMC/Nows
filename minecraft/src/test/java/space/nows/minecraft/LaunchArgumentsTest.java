@@ -18,14 +18,17 @@ package space.nows.minecraft;
 
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
+import space.nows.platform.api.NowsSide;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 class LaunchArgumentsTest {
     @AfterEach
     void clearProperties() {
         System.clearProperty("nows.minecraftVersion");
         System.clearProperty("nows.profileId");
+        System.clearProperty("nows.side");
     }
 
     @Test
@@ -39,5 +42,40 @@ class LaunchArgumentsTest {
 
         assertEquals("1.20.1", arguments.minecraftVersion());
         assertEquals("nows-0.9.0-1.20.1", arguments.profileId());
+        assertEquals(NowsSide.CLIENT, arguments.side());
+    }
+
+    @Test
+    void readsServerSideFromSystemProperty() {
+        System.setProperty("nows.minecraftVersion", "1.20.1");
+        System.setProperty("nows.side", "server");
+
+        LaunchArguments arguments = LaunchArguments.parse(new String[] {
+                "--nowsGameDir", "server"
+        });
+
+        assertEquals(NowsSide.SERVER, arguments.side());
+        assertEquals(0, arguments.minecraftArguments().size());
+    }
+
+    @Test
+    void readsServerSideFromNowsArgumentWithoutForwardingIt() {
+        LaunchArguments arguments = LaunchArguments.parse(new String[] {
+                "--nowsMinecraftVersion", "1.20.1",
+                "--nowsSide", "server",
+                "nogui"
+        });
+
+        assertEquals(NowsSide.SERVER, arguments.side());
+        assertEquals(1, arguments.minecraftArguments().size());
+        assertEquals("nogui", arguments.minecraftArguments().get(0));
+    }
+
+    @Test
+    void rejectsBothAsPhysicalRuntimeSide() {
+        assertThrows(IllegalArgumentException.class, () -> LaunchArguments.parse(new String[] {
+                "--nowsMinecraftVersion", "1.20.1",
+                "--nowsSide", "both"
+        }));
     }
 }
