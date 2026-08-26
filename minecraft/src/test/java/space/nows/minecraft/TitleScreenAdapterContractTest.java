@@ -151,8 +151,10 @@ class TitleScreenAdapterContractTest {
                 version + " LoadingOverlayMixin must render loader diagnostics");
         assertTrue(loadingOverlayMixin.contains("drawFramedBar"),
                 version + " LoadingOverlayMixin must draw a small diagnostics bar");
-        assertFalse(loadingOverlayMixin.contains("loading.progress()"),
-                version + " LoadingOverlayMixin must not draw a fake Nows main progress bar");
+        assertTrue(loadingOverlayMixin.contains("loading.overallProgress()"),
+                version + " LoadingOverlayMixin must draw a real Nows progress bar without replacing vanilla loading");
+        assertTrue(loadingOverlayMixin.contains("drawLabelValue"),
+                version + " LoadingOverlayMixin must keep changing counters in fixed positions");
         if (version.startsWith("26.")) {
             assertTrue(loadingOverlayMixin.contains("extractRenderState(Lnet/minecraft/client/gui/GuiGraphicsExtractor;IIF)V"),
                     version + " LoadingOverlayMixin must hook the extract render-state lifecycle");

@@ -24,6 +24,7 @@ import net.minecraft.server.packs.repository.Pack;
 import net.minecraft.server.packs.repository.PackSource;
 import net.minecraft.server.packs.repository.RepositorySource;
 import net.minecraft.world.flag.FeatureFlagSet;
+import space.nows.platform.core.loading.NowsLoadingState;
 import space.nows.platform.core.mod.ModContainer;
 
 import java.io.IOException;
@@ -74,17 +75,33 @@ public final class ModPackSource implements RepositorySource {
 
     @Override
     public void loadPacks(Consumer<Pack> output) {
+        int total = resourcePackCount();
+        int loaded = 0;
+        NowsLoadingState.beginExternal("Load Nows resource packs");
+        NowsLoadingState.subtask("Resource packs", loaded, total);
         if (loaderResources != null && hasResources(loaderResources)) {
+            NowsLoadingState.detail("Nows loader resources");
             output.accept(pack("nows/loader", Component.literal("Nows loader resources"), loaderResources));
+            loaded++;
+            NowsLoadingState.subtask("Resource packs", loaded, total);
         }
         for (ModContainer mod : mods) {
             if (!hasResources(mod.path())) {
                 continue;
             }
             String id = "nows/" + mod.descriptor().id();
-            System.out.println("[Nows] Loading mod resource pack: " + mod.descriptor().id());
+            NowsLoadingState.detail(mod.descriptor().name() + " resources");
+            System.out.println("[Nows] Loading mod resource pack: " + mod.descriptor().id() + " (" + mod.path() + ")");
             output.accept(pack(id, Component.literal(mod.descriptor().name()), mod.path()));
+            loaded++;
+            NowsLoadingState.subtask("Resource packs", loaded, total);
         }
+        NowsLoadingState.completeExternal("Load Nows resource packs");
+    }
+
+    private int resourcePackCount() {
+        int count = loaderResources != null && hasResources(loaderResources) ? 1 : 0;
+        return count + countResourceMods(mods);
     }
 
     private static Pack pack(String id, Component title, Path jar) {

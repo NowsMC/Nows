@@ -17,6 +17,7 @@
 package space.nows.platform.core.loading;
 
 import java.util.List;
+import java.util.Locale;
 
 public record NowsLoadingSnapshot(
         String title,
@@ -42,5 +43,36 @@ public record NowsLoadingSnapshot(
             return 0.0F;
         }
         return Math.max(0.0F, Math.min(1.0F, subStep / (float) subTotal));
+    }
+
+    public float overallProgress() {
+        if (totalSteps <= 0) {
+            return failed ? 1.0F : 0.0F;
+        }
+        float activeStep = Math.min(totalSteps, step + subProgress());
+        return Math.max(0.0F, Math.min(1.0F, activeStep / (float) totalSteps));
+    }
+
+    public String progressLabel() {
+        return String.format(Locale.ROOT, "%d/%d", Math.max(0, step), Math.max(0, totalSteps));
+    }
+
+    public String subProgressLabel() {
+        if (subTotal <= 0) {
+            return "";
+        }
+        return String.format(Locale.ROOT, "%d/%d", Math.max(0, subStep), Math.max(0, subTotal));
+    }
+
+    public boolean hasDetail() {
+        return detail != null && !detail.isBlank() && !"Done".equals(detail);
+    }
+
+    public String currentDetailLine() {
+        return hasDetail() ? detail : latestCompletedLine();
+    }
+
+    public String latestCompletedLine() {
+        return history.isEmpty() ? "" : "Finished: " + history.get(0);
     }
 }

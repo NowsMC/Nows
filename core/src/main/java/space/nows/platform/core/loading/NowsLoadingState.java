@@ -94,6 +94,31 @@ public final class NowsLoadingState {
         }
     }
 
+    public static void beginExternal(String stage) {
+        synchronized (LOCK) {
+            NowsLoadingState.stage = requireText(stage, "stage");
+            NowsLoadingState.detail = "";
+            NowsLoadingState.subtask = "";
+            NowsLoadingState.subStep = 0;
+            NowsLoadingState.subTotal = 0;
+        }
+    }
+
+    public static void completeExternal(String stage) {
+        synchronized (LOCK) {
+            String completed = requireText(stage, "stage");
+            history.addFirst(completed);
+            while (history.size() > HISTORY_LIMIT) {
+                history.removeLast();
+            }
+            NowsLoadingState.stage = completed;
+            NowsLoadingState.detail = "Done";
+            NowsLoadingState.subtask = "";
+            NowsLoadingState.subStep = 0;
+            NowsLoadingState.subTotal = 0;
+        }
+    }
+
     public static void fail(String stage, Throwable failure) {
         synchronized (LOCK) {
             failed = true;

@@ -40,40 +40,34 @@ public abstract class LoadingOverlayMixin {
         int width = minecraft.getWindow().getGuiScaledWidth();
         int height = minecraft.getWindow().getGuiScaledHeight();
 
-        int topBarWidth = Math.max(140, Math.min(460, width - 120));
-        int topX = (width - topBarWidth) / 2;
-        drawFramedBar(graphics, topX, 24, topBarWidth, 9, diagnostics.heapProgress(), 0xFF00A000);
-        drawCentered(graphics, minecraft, diagnostics.summary(), width / 2, 45, width - 40, 0xFFFFFFFF);
+        int statusColor = loading.failed() ? 0xFFFF8080 : 0xFFFFFFFF;
+        drawLeft(graphics, ClientHooks.loaderLine() + " | " + ClientHooks.modLine(), 20, 20, width - 220, 0xCCFFFFFF);
+        drawRight(graphics, "Minecraft " + ClientHooks.minecraftLine(), width - 20, 20, 180, 0xCCFFFFFF);
+        drawRight(graphics, diagnostics.compactSummary(), width - 20, 34, Math.max(180, width - 40), 0x99FFFFFF);
 
-        String stage = loading.stage();
-        if (!loading.detail().isBlank() && !"Done".equals(loading.detail())) {
-            stage += ": " + loading.detail();
+        int panelWidth = Math.max(180, Math.min(460, width - 40));
+        int panelX = (width - panelWidth) / 2;
+        int panelY = Math.max(54, height - (loading.subTotal() > 0 ? 82 : 62));
+        drawLabelValue(graphics, "Nows", loading.progressLabel(), panelX, panelY - 13, panelWidth, statusColor);
+        drawFramedBar(graphics, panelX, panelY, panelWidth, 10, loading.overallProgress(), loading.failed() ? 0xFFFF4040 : 0xFF40BFFF);
+        String detail = loading.currentDetailLine();
+        if (!detail.isBlank()) {
+            drawLeft(graphics, detail, panelX, panelY + 14, panelWidth, 0xDDFFFFFF);
         }
-        int centerY = Math.max(86, height - 190);
-        drawCentered(graphics, minecraft, stage, width / 2, centerY, width - 80,
-                loading.failed() ? 0xFFFF8080 : 0xFFFFFFFF);
         if (loading.subTotal() > 0) {
-            drawCentered(graphics, minecraft,
-                    loading.subtask() + " " + loading.subStep() + "/" + loading.subTotal(),
-                    width / 2, centerY + 12, width - 80, 0xFFFFFFFF);
+            int subY = panelY + 29;
+            drawLabelValue(graphics, loading.subtask().isBlank() ? "Work" : loading.subtask(),
+                    loading.subProgressLabel(), panelX, subY, panelWidth, 0xDDFFFFFF);
+            drawFramedBar(graphics, panelX, subY + 13, panelWidth, 8, loading.subProgress(), 0xFFA0E65C);
         }
-
-        int y = Math.max(20, height - 64);
-        drawLeft(graphics, minecraft, ClientHooks.loaderLine(), 20, y, width - 160, 0x88FFFFFF);
-        drawLeft(graphics, minecraft, "Nows setup: " + loading.stage(), 20, y + 14, width - 160,
-                loading.failed() ? 0xFFFF8080 : 0xFFFFFFFF);
-        if (!loading.history().isEmpty()) {
-            drawLeft(graphics, minecraft, "Finished: " + loading.history().get(0), 20, y + 28, width - 160, 0xFFFFFFFF);
-        }
-        drawRight(graphics, ClientHooks.minecraftLine(), width - 20, height - 24, 140, 0xFFFFFFFF);
     }
 
-    private static void drawCentered(PoseStack graphics, Minecraft minecraft, String text, int centerX, int y, int maxWidth, int color) {
-        String fitted = fit(text, maxWidth);
-        drawAscii(graphics, fitted, centerX - NowsAsciiFont.width(fitted, 1) / 2, y, color);
+    private static void drawLabelValue(PoseStack graphics, String label, String value, int x, int y, int width, int color) {
+        drawLeft(graphics, label, x, y, Math.max(24, width - 72), color);
+        drawRight(graphics, value, x + width, y, 68, color);
     }
 
-    private static void drawLeft(PoseStack graphics, Minecraft minecraft, String text, int x, int y, int maxWidth, int color) {
+    private static void drawLeft(PoseStack graphics, String text, int x, int y, int maxWidth, int color) {
         drawAscii(graphics, fit(text, maxWidth), x, y, color);
     }
 
@@ -110,6 +104,7 @@ public abstract class LoadingOverlayMixin {
 
     private static void drawFramedBar(PoseStack graphics, int x, int y, int width, int height, float progress, int color) {
         GuiComponent.fill(graphics, x, y, x + width, y + height, 0xFFFFFFFF);
+        GuiComponent.fill(graphics, x + 2, y + 2, x + width - 2, y + height - 2, 0xAA000000);
         int fillWidth = Math.round((width - 6) * Math.max(0.0F, Math.min(1.0F, progress)));
         if (fillWidth > 0) {
             GuiComponent.fill(graphics, x + 3, y + 3, x + 3 + fillWidth, y + height - 3, color);

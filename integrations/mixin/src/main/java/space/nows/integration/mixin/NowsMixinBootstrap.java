@@ -22,6 +22,7 @@ import org.spongepowered.asm.mixin.Mixins;
 import org.spongepowered.asm.mixin.transformer.IMixinTransformer;
 import reactor.util.Logger;
 import space.nows.platform.core.classloading.NowsClassLoader;
+import space.nows.platform.core.loading.NowsLoadingState;
 import space.nows.platform.core.mod.ModContainer;
 import space.nows.integration.logging.NowsLog;
 
@@ -55,23 +56,35 @@ public final class NowsMixinBootstrap {
                 defaultEnvironment, defaultEnvironment.getPhase(), defaultEnvironment.getSide());
 
         Set<String> configs = new LinkedHashSet<>();
+        int declaredConfigCount = builtInConfigs.size()
+                + mods.stream().mapToInt(mod -> mod.descriptor().declarations("mixin").size()).sum();
+        int processedConfigCount = 0;
+        NowsLoadingState.subtask("Mixin configs", 0, declaredConfigCount);
         for (String config : builtInConfigs) {
+            NowsLoadingState.detail("built-in -> " + config);
             validateBuiltInMixinConfig(loader, config);
+            processedConfigCount++;
             if (!configs.add(config)) {
+                NowsLoadingState.subtask("Mixin configs", processedConfigCount, declaredConfigCount);
                 LOG.warn("Duplicate built-in Mixin config declaration ignored after first registration: {}", config);
                 continue;
             }
             addConfiguration(currentEnvironment, config);
+            NowsLoadingState.subtask("Mixin configs", processedConfigCount, declaredConfigCount);
             LOG.info("Built-in Mixin config: {} ({})", config, currentEnvironment);
         }
         for (ModContainer mod : mods) {
             for (String config : mod.descriptor().declarations("mixin")) {
+                NowsLoadingState.detail(mod.descriptor().id() + " -> " + config);
                 validateMixinConfig(loader, mod, config);
+                processedConfigCount++;
                 if (!configs.add(config)) {
+                    NowsLoadingState.subtask("Mixin configs", processedConfigCount, declaredConfigCount);
                     LOG.warn("Duplicate Mixin config declaration ignored after first registration: {}", config);
                     continue;
                 }
                 addConfiguration(currentEnvironment, config);
+                NowsLoadingState.subtask("Mixin configs", processedConfigCount, declaredConfigCount);
                 LOG.info("Mixin config: {} -> {} ({})", mod.descriptor().id(), config, currentEnvironment);
             }
         }

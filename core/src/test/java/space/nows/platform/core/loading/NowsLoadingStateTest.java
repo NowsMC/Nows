@@ -40,10 +40,15 @@ class NowsLoadingStateTest {
         assertEquals(1, snapshot.step());
         assertEquals(2, snapshot.totalSteps());
         assertEquals(0.5F, snapshot.progress());
+        assertEquals(0.625F, snapshot.overallProgress());
+        assertEquals("1/2", snapshot.progressLabel());
         assertEquals("Mod entrypoints", snapshot.subtask());
         assertEquals(0.25F, snapshot.subProgress());
+        assertEquals("1/4", snapshot.subProgressLabel());
+        assertFalse(snapshot.hasDetail());
         assertFalse(snapshot.failed());
         assertEquals("Discover Nows mods", snapshot.history().get(0));
+        assertEquals("Finished: Discover Nows mods", snapshot.currentDetailLine());
         assertThrows(UnsupportedOperationException.class, () -> snapshot.history().add("mutated"));
     }
 
@@ -59,5 +64,20 @@ class NowsLoadingStateTest {
         assertEquals(0, snapshot.step());
         assertEquals("Install Mixin integration", snapshot.stage());
         assertTrue(snapshot.detail().contains("IllegalStateException"));
+    }
+
+    @Test
+    void externalActivitiesDoNotAdvanceBootstrapStepCount() {
+        NowsLoadingState.start("Nows Loader", 4);
+        NowsLoadingState.complete("Install Mixin integration");
+        NowsLoadingState.beginExternal("Load Nows resource packs");
+        NowsLoadingState.subtask("Resource packs", 1, 2);
+        NowsLoadingState.completeExternal("Load Nows resource packs");
+
+        NowsLoadingSnapshot snapshot = NowsLoadingState.snapshot();
+
+        assertEquals(1, snapshot.step());
+        assertEquals("Load Nows resource packs", snapshot.history().get(0));
+        assertEquals(0.25F, snapshot.progress());
     }
 }

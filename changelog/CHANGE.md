@@ -8,6 +8,8 @@
 - Added JUnit coverage for the broader dependency version forms and deterministic prerelease/build label ordering.
 - Hardened stable Minecraft wrapper/spec validation so bad resource ids, empty recipes and null recipe/data parts fail in Nows shared APIs before reaching version adapters.
 - Added explicit service registry replacement/optional-registration helpers for integrations that need a controlled lifecycle.
+- Improved Mixin bootstrap observability with loading-screen progress for built-in and mod-declared config registration.
+- Reworked the Minecraft loading overlay so vanilla keeps its game loading bar while Nows renders a separate stable-position progress bar for loader phases, mod entrypoints, Mixin configs and resource packs.
 - Bumped Nows release metadata to 0.9.2.
 
 ## 0.9.1

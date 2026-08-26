@@ -57,6 +57,16 @@ public record NowsLoadingDiagnostics(
                 cpu);
     }
 
+    public String compactSummary() {
+        String cpu = cpuPercent < 0.0D ? "--" : String.format(Locale.ROOT, "%.1f%%", cpuPercent);
+        return String.format(Locale.ROOT,
+                "Heap %d/%d MB  OffHeap %d MB  CPU %s",
+                heapUsedMb,
+                heapMaxMb,
+                offHeapMb,
+                cpu);
+    }
+
     private static long toMb(long bytes) {
         return bytes / (1024L * 1024L);
     }

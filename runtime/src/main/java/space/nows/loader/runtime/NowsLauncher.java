@@ -173,10 +173,12 @@ public final class NowsLauncher {
                 NowsNetworking networking = NowsNetworking.service(context);
                 int networkChannelCount = phase("Register network channels", () ->
                         networking.registerDeclaredChannels(mods));
+                NowsLoadingState.detail(networkChannelCount + " channel(s)");
                 LOG.info("Registered {} declared network channel(s)", networkChannelCount);
                 NowsEvents events = GebIntegration.events(context);
                 int listenerCount = phase("Register GEB listeners", () ->
                         GebIntegration.registerDeclaredListeners(context));
+                NowsLoadingState.detail(listenerCount + " listener(s)");
                 LOG.info("Registered {} declared GEB listener(s)", listenerCount);
                 events.post(new NowsBootstrapReadyEvent(context));
                 events.post(new NowsRegisterEvent(context));
@@ -359,6 +361,7 @@ public final class NowsLauncher {
         int count = 0;
         for (ModContainer mod : mods) {
             for (String className : mod.descriptor().declarations("transformer")) {
+                NowsLoadingState.detail(mod.descriptor().id() + " -> " + className);
                 Object instance = Class.forName(className, true, loader).getDeclaredConstructor().newInstance();
                 if (!(instance instanceof ClassTransformer transformer)) {
                     throw new IllegalStateException(className + " does not implement " + ClassTransformer.class.getName());
@@ -391,7 +394,7 @@ public final class NowsLauncher {
             for (String className : mod.descriptor().declarations("entrypoint")) {
                 LOG.info("Running entrypoint: {} -> {}", mod.descriptor().id(), className);
                 events.post(new NowsModEntrypointStartingEvent(context, mod, className));
-                NowsLoadingState.detail(mod.descriptor().id() + " -> " + className);
+                NowsLoadingState.detail(mod.descriptor().name() + " -> " + className);
                 NowsLoadingState.subtask("Mod entrypoints", count, total);
                 Object instance = Class.forName(className, true, loader).getDeclaredConstructor().newInstance();
                 if (!(instance instanceof ModInitializer initializer)) {
