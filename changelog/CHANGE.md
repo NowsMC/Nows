@@ -1,3 +1,13 @@
+## 0.9.2
+
+- Hardened loader dependency version matching for SemVer prereleases, build metadata, Windows/.NET versions, Java update versions, CalVer, serial versions, codenames, commit hashes and loose development/build labels.
+- Added side-aware runtime launch handling so server launches use the server main class, skip client hooks/UI and keep client-only built-in mixin configs off dedicated server runs.
+- Added NowsInstaller dedicated-server installs that generate runnable `run-nows-server.sh` and `run-nows-server.bat` scripts, server config folders and an EULA placeholder without requiring a client JAR.
+- Changed `publishMavenLayout` so `.publishing/maven` is updated in place instead of deleting older local Maven versions first.
+- Added wildcard equality matching for dependency constraints such as `1.2.x` and `1.2.*`.
+- Added JUnit coverage for the broader dependency version forms and deterministic prerelease/build label ordering.
+- Bumped Nows release metadata to 0.9.2.
+
 ## 0.9.1
 
 - Added shared Nows-owned bridges for converting `McText` and `McItemStack` into the selected Minecraft adapter's native component and item stack types.
