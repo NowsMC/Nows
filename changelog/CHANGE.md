@@ -10,6 +10,8 @@
 - Added explicit service registry replacement/optional-registration helpers for integrations that need a controlled lifecycle.
 - Improved Mixin bootstrap observability with loading-screen progress for built-in and mod-declared config registration.
 - Reworked the Minecraft loading overlay so vanilla keeps its game loading bar while Nows renders a separate stable-position progress bar for loader phases, mod entrypoints, Mixin configs and resource packs.
+- Improved large-mod-set startup reporting with discovery progress, skipped non-Nows jar reporting and declaration summaries instead of unbounded per-mod log spam.
+- Hardened generated dedicated-server scripts so they run from the installed server directory, check for the Minecraft server JAR, require `eula=true` before launch and include a server README with the installed files and first-run steps.
 - Bumped Nows release metadata to 0.9.2.
 
 ## 0.9.1

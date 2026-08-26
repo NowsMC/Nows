@@ -30,17 +30,32 @@ import java.util.Set;
 public final class ModDiscovery {
     private ModDiscovery() {}
 
+    public interface ScanObserver {
+        ScanObserver NONE = new ScanObserver() {};
+
+        default void onDirectory(Path modsDirectory, int candidateCount) {}
+        default void onCandidate(Path jar, int index, int total) {}
+        default void onDiscovered(ModContainer mod) {}
+        default void onIgnored(Path jar) {}
+    }
+
     public static List<ModContainer> scan(Path modsDirectory, ModMetadataReader reader) throws IOException {
         Objects.requireNonNull(reader, "reader");
         List<ModContainer> result = new ArrayList<>();
         Set<String> ids = new HashSet<>();
-        scanInto(Objects.requireNonNull(modsDirectory, "modsDirectory"), reader, result, ids);
+        scanInto(Objects.requireNonNull(modsDirectory, "modsDirectory"), reader, result, ids, ScanObserver.NONE);
         return List.copyOf(result);
     }
 
     public static List<ModContainer> scan(List<Path> modsDirectories, ModMetadataReader reader) throws IOException {
+        return scan(modsDirectories, reader, ScanObserver.NONE);
+    }
+
+    public static List<ModContainer> scan(List<Path> modsDirectories, ModMetadataReader reader, ScanObserver observer)
+            throws IOException {
         Objects.requireNonNull(modsDirectories, "modsDirectories");
         Objects.requireNonNull(reader, "reader");
+        Objects.requireNonNull(observer, "observer");
         List<ModContainer> result = new ArrayList<>();
         Set<String> ids = new HashSet<>();
         Set<Path> scanned = new HashSet<>();
@@ -49,7 +64,7 @@ public final class ModDiscovery {
                     .toAbsolutePath()
                     .normalize();
             if (scanned.add(normalized)) {
-                scanInto(normalized, reader, result, ids);
+                scanInto(normalized, reader, result, ids, observer);
             }
         }
         return List.copyOf(result);
@@ -59,20 +74,30 @@ public final class ModDiscovery {
             Path modsDirectory,
             ModMetadataReader reader,
             List<ModContainer> result,
-            Set<String> ids
+            Set<String> ids,
+            ScanObserver observer
     ) throws IOException {
         Files.createDirectories(modsDirectory);
         try (var paths = Files.list(modsDirectory)) {
-            for (Path jar : paths.filter(Files::isRegularFile)
+            List<Path> jars = paths.filter(Files::isRegularFile)
                     .filter(path -> path.getFileName().toString().toLowerCase(Locale.ROOT).endsWith(".jar"))
                     .sorted(Comparator.comparing(path -> path.getFileName().toString().toLowerCase(Locale.ROOT)))
-                    .toList()) {
+                    .toList();
+            observer.onDirectory(modsDirectory, jars.size());
+            for (int index = 0; index < jars.size(); index++) {
+                Path jar = jars.get(index);
+                observer.onCandidate(jar, index + 1, jars.size());
                 var descriptor = reader.read(jar);
-                if (descriptor.isEmpty()) continue;
+                if (descriptor.isEmpty()) {
+                    observer.onIgnored(jar);
+                    continue;
+                }
                 if (!ids.add(descriptor.get().id())) {
                     throw new IOException("Duplicate Nows mod id '" + descriptor.get().id() + "' in " + jar);
                 }
-                result.add(new ModContainer(jar.toAbsolutePath().normalize(), descriptor.get()));
+                ModContainer mod = new ModContainer(jar.toAbsolutePath().normalize(), descriptor.get());
+                result.add(mod);
+                observer.onDiscovered(mod);
             }
         }
     }

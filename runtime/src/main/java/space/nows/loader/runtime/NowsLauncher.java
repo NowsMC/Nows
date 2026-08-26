@@ -66,6 +66,7 @@ import java.util.Properties;
 public final class NowsLauncher {
     private static final Logger LOG = NowsLog.get(NowsLauncher.class);
     private static final int BOOTSTRAP_PHASES = 18;
+    private static final int DETAILED_MOD_LOG_LIMIT = 50;
     private static final String MINECRAFT_ADAPTER_PATH_PROPERTY = "nows.minecraftAdapterPath";
     private static final String MINECRAFT_ADAPTER_MARKER =
             "space/nows/mc/internal/MinecraftIntegration.class";
@@ -117,7 +118,7 @@ public final class NowsLauncher {
         List<Path> modsDirectories = List.of(gameModsDirectory, profileModsDirectory);
         phase("Inspect Nows mods directories", () -> logModDirectories(gameModsDirectory, profileModsDirectory));
         List<ModContainer> discoveredMods = phase("Discover Nows mods", () ->
-                ModDiscovery.scan(modsDirectories, new KdlModMetadataReader()));
+                discoverMods(modsDirectories));
         phase("Validate Minecraft compatibility", () ->
                 MinecraftCompatibility.validate(discoveredMods, launch.minecraftVersion(), runtimeSide));
         List<ModContainer> mods = phase("Resolve mod dependencies", () ->
@@ -126,6 +127,7 @@ public final class NowsLauncher {
                         "nows", nowsVersion(),
                         "nows-loader", nowsVersion())));
         logDiscoveredMods(mods);
+        logDeclarationSummary(mods);
 
         List<URL> urls = new ArrayList<>();
         urls.add(gameJar.toUri().toURL());
@@ -434,9 +436,77 @@ public final class NowsLauncher {
             return;
         }
         LOG.info("Discovered {} Nows mod(s)", mods.size());
-        for (ModContainer mod : mods) {
+        int detailCount = Math.min(mods.size(), DETAILED_MOD_LOG_LIMIT);
+        for (int index = 0; index < detailCount; index++) {
+            ModContainer mod = mods.get(index);
             LOG.info("Mod: {} {} ({})", mod.descriptor().id(), mod.descriptor().version(), mod.path());
         }
+        if (mods.size() > detailCount) {
+            LOG.info("Mod log truncated after {} entries; {} additional mod(s) are loaded",
+                    detailCount, mods.size() - detailCount);
+        }
+    }
+
+    private static List<ModContainer> discoverMods(List<Path> modsDirectories) throws IOException {
+        KdlModMetadataReader reader = new KdlModMetadataReader();
+        int[] ignored = {0};
+        List<ModContainer> discovered = ModDiscovery.scan(modsDirectories, reader, new ModDiscovery.ScanObserver() {
+            @Override
+            public void onDirectory(Path modsDirectory, int candidateCount) {
+                LOG.info("Scanning {} jar candidate(s) in {}", candidateCount, modsDirectory);
+                NowsLoadingState.subtask("Mod jars", 0, candidateCount);
+            }
+
+            @Override
+            public void onCandidate(Path jar, int index, int total) {
+                NowsLoadingState.detail(jar.getFileName().toString());
+                NowsLoadingState.subtask("Mod jars", index, total);
+            }
+
+            @Override
+            public void onDiscovered(ModContainer mod) {
+                LOG.info("Discovered Nows mod candidate: {} {} ({})",
+                        mod.descriptor().id(), mod.descriptor().version(), mod.path());
+            }
+
+            @Override
+            public void onIgnored(Path jar) {
+                ignored[0]++;
+                if (ignored[0] <= DETAILED_MOD_LOG_LIMIT) {
+                    LOG.info("Skipping non-Nows jar candidate without nows.mod.kdl: {}", jar);
+                }
+            }
+        });
+        if (ignored[0] > DETAILED_MOD_LOG_LIMIT) {
+            LOG.info("Skipped {} additional non-Nows jar candidate(s) without nows.mod.kdl",
+                    ignored[0] - DETAILED_MOD_LOG_LIMIT);
+        }
+        if (discovered.isEmpty() && ignored[0] > 0) {
+            LOG.warn("Found {} jar candidate(s), but none contained nows.mod.kdl metadata", ignored[0]);
+        }
+        return discovered;
+    }
+
+    private static void logDeclarationSummary(List<ModContainer> mods) {
+        int entrypoints = 0;
+        int mixins = 0;
+        int transformers = 0;
+        int listeners = 0;
+        int networks = 0;
+        for (ModContainer mod : mods) {
+            entrypoints += mod.descriptor().declarations("entrypoint").size();
+            mixins += mod.descriptor().declarations("mixin").size();
+            transformers += mod.descriptor().declarations("transformer").size();
+            listeners += mod.descriptor().declarations("listener").size();
+            listeners += mod.descriptor().declarations("geb-listener").size();
+            networks += mod.descriptor().declarations("network").size();
+            networks += mod.descriptor().declarations("network-channel").size();
+            networks += mod.descriptor().declarations("clientbound-channel").size();
+            networks += mod.descriptor().declarations("serverbound-channel").size();
+        }
+        LOG.info("Nows mod declaration summary: {} entrypoint(s), {} mixin config(s), {} transformer(s), "
+                        + "{} listener(s), {} network channel(s)",
+                entrypoints, mixins, transformers, listeners, networks);
     }
 
     private static Path optionalProfileModsDirectory(LaunchArguments launch) {
