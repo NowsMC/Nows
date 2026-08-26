@@ -34,6 +34,8 @@ Build only the local Maven repository for mod developers:
 ./gradlew publishMavenLayout
 ```
 
+`publishMavenLayout` updates `.publishing/maven` in place. It overwrites files for the same coordinates but keeps older published versions in the local Maven tree.
+
 Build/test the Gradle plugin:
 
 ```bash
@@ -82,7 +84,7 @@ docker compose up nows-web
 Update the coordinated project version:
 
 ```bash
-./gradlew setNowsVersion -Pnew_nows_version=0.9.1
+./gradlew setNowsVersion -Pnew_nows_version=0.9.2
 ```
 
 Inspect the coordinated version state:
@@ -227,7 +229,7 @@ repositories {
 }
 ```
 
-Maven publishing always uses local GPG signing, even for `.publishing/maven/`. Make sure `gpg` has a usable default signing key before running `publishMavenLayout`.
+Maven publishing always uses local GPG signing, even for `.publishing/maven/`. Make sure `gpg` has a usable default signing key before running `publishMavenLayout`. The local Maven tree is updated in place so older versions remain available unless you delete them manually.
 
 ## Gradle plugin
 
@@ -235,12 +237,12 @@ Plugin id:
 
 ```kotlin
 plugins {
-    id("space.nows.gradle") version "0.9.1"
+    id("space.nows.gradle") version "0.9.2"
 }
 
 nows {
     minecraftVersion.set("26.2")
-    nowsVersion.set("0.9.1")
+    nowsVersion.set("0.9.2")
 }
 ```
 

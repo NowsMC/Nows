@@ -28,10 +28,6 @@ val gpgSigningService = gradle.sharedServices.registerIfAbsent("gpgSigningServic
     maxParallelUsages.set(1)
 }
 
-val cleanPublishingMavenLayout by tasks.registering(Delete::class) {
-    delete(publishingMavenDir)
-}
-
 val mavenPublishedProjectPaths = setOf(
     ":core",
     ":minecraft",
@@ -189,11 +185,6 @@ subprojects {
                         }
                     }
                 }
-                tasks.withType<PublishToMavenRepository>().configureEach {
-                    if (name.endsWith("ToPublishingMavenRepository")) {
-                        dependsOn(rootProject.tasks.named("cleanPublishingMavenLayout"))
-                    }
-                }
             }
             plugins.withId("signing") {
                 extensions.configure<SigningExtension> {
@@ -249,11 +240,6 @@ project(":repos:NowsGradlePlugin") {
                 }
             }
         }
-        tasks.withType<PublishToMavenRepository>().configureEach {
-            if (name.endsWith("ToPublishingMavenRepository")) {
-                dependsOn(rootProject.tasks.named("cleanPublishingMavenLayout"))
-            }
-        }
         plugins.withId("signing") {
             extensions.configure<SigningExtension> {
                 isRequired = true
@@ -285,11 +271,6 @@ project(":repos:NowsApiMod") {
                     name = "PublishingMaven"
                     url = rootProject.uri(publishingMavenDir.asFile)
                 }
-            }
-        }
-        tasks.withType<PublishToMavenRepository>().configureEach {
-            if (name.endsWith("ToPublishingMavenRepository")) {
-                dependsOn(rootProject.tasks.named("cleanPublishingMavenLayout"))
             }
         }
         extensions.configure<SigningExtension> {
