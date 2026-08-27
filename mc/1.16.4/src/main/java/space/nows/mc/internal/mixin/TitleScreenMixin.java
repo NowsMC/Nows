@@ -26,7 +26,11 @@ import net.minecraft.client.gui.screens.TitleScreen;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.TextComponent;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.Util;
+import net.minecraft.util.Mth;
+import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
+import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
@@ -39,6 +43,13 @@ import space.nows.mc.internal.client.UiImpl;
 
 @Mixin(value = TitleScreen.class, remap = false)
 public abstract class TitleScreenMixin extends Screen {
+    @Shadow
+    @Final
+    private boolean fading;
+
+    @Shadow
+    private long fadeInStart;
+
     protected TitleScreenMixin(Component title) {
         super(title);
     }
@@ -90,10 +101,14 @@ public abstract class TitleScreenMixin extends Screen {
     )
     private void nows$renderTitleBadge(PoseStack graphics, int mouseX, int mouseY, float delta, CallbackInfo ci) {
         Minecraft minecraft = Minecraft.getInstance();
+        float alpha = nows$titleAlpha();
+        if (alpha <= 0.0F) {
+            return;
+        }
         int x = 2;
         int y = height - 30;
-        GuiComponent.drawString(graphics, minecraft.font, ClientHooks.loaderLine(), x, y, 0xFFFFFFFF);
-        GuiComponent.drawString(graphics, minecraft.font, ClientHooks.modLine(), x, y + 10, 0xFFB8B8B8);
+        GuiComponent.drawString(graphics, minecraft.font, ClientHooks.loaderLine(), x, y, fadeColor(0xFFFFFFFF, alpha));
+        GuiComponent.drawString(graphics, minecraft.font, ClientHooks.modLine(), x, y + 10, fadeColor(0xFFB8B8B8, alpha));
         UiImpl.INSTANCE.titleScreenImpl().renderAll(
                 new RenderContext(
                         width,
@@ -101,24 +116,40 @@ public abstract class TitleScreenMixin extends Screen {
                         mouseX,
                         mouseY,
                         delta,
-                        new TitleRenderSink(graphics)));
+                        new TitleRenderSink(graphics, alpha)));
     }
 
-    private record TitleRenderSink(PoseStack graphics)
+    private float nows$titleAlpha() {
+        if (!fading) {
+            return 1.0F;
+        }
+        if (fadeInStart == 0L) {
+            fadeInStart = Util.getMillis();
+        }
+        return Mth.clamp((float) (Util.getMillis() - fadeInStart) / 1000.0F, 0.0F, 1.0F);
+    }
+
+    private static int fadeColor(int color, float alpha) {
+        int baseAlpha = color >>> 24;
+        int fadedAlpha = Mth.clamp(Math.round(baseAlpha * alpha), 0, 255);
+        return (color & 0x00FFFFFF) | (fadedAlpha << 24);
+    }
+
+    private record TitleRenderSink(PoseStack graphics, float alpha)
             implements space.nows.mc.api.client.ui.RenderSink {
         @Override
         public void fill(int x1, int y1, int x2, int y2, int color) {
-            GuiComponent.fill(graphics, x1, y1, x2, y2, color);
+            GuiComponent.fill(graphics, x1, y1, x2, y2, fadeColor(color, alpha));
         }
 
         @Override
         public void text(String text, int x, int y, int color) {
-            GuiComponent.drawString(graphics, Minecraft.getInstance().font, text, x, y, color);
+            GuiComponent.drawString(graphics, Minecraft.getInstance().font, text, x, y, fadeColor(color, alpha));
         }
 
         @Override
         public void centeredText(String text, int x, int y, int color) {
-            GuiComponent.drawCenteredString(graphics, Minecraft.getInstance().font, new TextComponent(text), x, y, color);
+            GuiComponent.drawCenteredString(graphics, Minecraft.getInstance().font, new TextComponent(text), x, y, fadeColor(color, alpha));
         }
 
         @Override
