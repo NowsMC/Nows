@@ -17,6 +17,7 @@
 package space.nows.mc.api;
 
 import space.nows.platform.api.NowsContext;
+import space.nows.mc.api.client.render.shader.ShaderApi;
 import space.nows.mc.api.client.config.ConfigUi;
 import space.nows.mc.api.client.keybind.KeybindApi;
 import space.nows.mc.api.client.player.PlayerApi;
@@ -84,5 +85,9 @@ public final class MinecraftApi {
 
     public static PlayerApi player(NowsContext context) {
         return players(context);
+    }
+
+    public static ShaderApi shaders(NowsContext context) {
+        return context.service(ShaderApi.class);
     }
 }
