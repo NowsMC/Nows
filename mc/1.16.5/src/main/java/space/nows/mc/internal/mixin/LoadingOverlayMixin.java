@@ -20,7 +20,11 @@ import com.mojang.blaze3d.vertex.PoseStack;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiComponent;
 import net.minecraft.client.gui.screens.LoadingOverlay;
+import net.minecraft.Util;
+import net.minecraft.util.Mth;
+import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
+import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
@@ -32,6 +36,16 @@ import space.nows.platform.core.loading.NowsLoadingState;
 
 @Mixin(value = LoadingOverlay.class, remap = false)
 public abstract class LoadingOverlayMixin {
+    @Shadow
+    @Final
+    private boolean fadeIn;
+
+    @Shadow
+    private long fadeOutStart;
+
+    @Shadow
+    private long fadeInStart;
+
     @Inject(method = "render(Lcom/mojang/blaze3d/vertex/PoseStack;IIF)V", at = @At("TAIL"), remap = false)
     private void nows$renderLoaderDiagnostics(PoseStack graphics, int mouseX, int mouseY, float delta, CallbackInfo ci) {
         Minecraft minecraft = Minecraft.getInstance();
@@ -39,26 +53,31 @@ public abstract class LoadingOverlayMixin {
         NowsLoadingDiagnostics diagnostics = NowsLoadingDiagnostics.capture();
         int width = minecraft.getWindow().getGuiScaledWidth();
         int height = minecraft.getWindow().getGuiScaledHeight();
+        float alpha = nows$loadingAlpha();
+        if (alpha <= 0.0F) {
+            return;
+        }
 
-        int statusColor = loading.failed() ? 0xFFFF8080 : 0xFFFFFFFF;
-        drawLeft(graphics, ClientHooks.loaderLine() + " | " + ClientHooks.modLine(), 20, 20, width - 220, 0xCCFFFFFF);
-        drawRight(graphics, "Minecraft " + ClientHooks.minecraftLine(), width - 20, 20, 180, 0xCCFFFFFF);
-        drawRight(graphics, diagnostics.compactSummary(), width - 20, 34, Math.max(180, width - 40), 0x99FFFFFF);
+        int statusColor = fadeColor(loading.failed() ? 0xFFFF8080 : 0xFFFFFFFF, alpha);
+        drawLeft(graphics, ClientHooks.loaderLine() + " | " + ClientHooks.modLine(), 20, 20, width - 220, fadeColor(0xCCFFFFFF, alpha));
+        drawRight(graphics, "Minecraft " + ClientHooks.minecraftLine(), width - 20, 20, 180, fadeColor(0xCCFFFFFF, alpha));
+        drawRight(graphics, diagnostics.compactSummary(), width - 20, 34, Math.max(180, width - 40), fadeColor(0x99FFFFFF, alpha));
 
-        int panelWidth = Math.max(180, Math.min(460, width - 40));
-        int panelX = (width - panelWidth) / 2;
-        int panelY = Math.max(54, height - (loading.subTotal() > 0 ? 82 : 62));
+        int panelWidth = Math.max(160, Math.min(300, width - 40));
+        int panelX = 20;
+        int panelY = Math.max(54, height - (loading.subTotal() > 0 ? 54 : 36));
         drawLabelValue(graphics, "Nows", loading.progressLabel(), panelX, panelY - 13, panelWidth, statusColor);
-        drawFramedBar(graphics, panelX, panelY, panelWidth, 10, loading.overallProgress(), loading.failed() ? 0xFFFF4040 : 0xFF40BFFF);
+        drawStatusStrip(graphics, panelX, panelY, panelWidth, loading.overallProgress(),
+                fadeColor(loading.failed() ? 0xFFFF4040 : 0xFF40BFFF, alpha));
         String detail = loading.currentDetailLine();
         if (!detail.isBlank()) {
-            drawLeft(graphics, detail, panelX, panelY + 14, panelWidth, 0xDDFFFFFF);
+            drawLeft(graphics, detail, panelX, panelY + 7, panelWidth, fadeColor(0xDDFFFFFF, alpha));
         }
         if (loading.subTotal() > 0) {
-            int subY = panelY + 29;
+            int subY = panelY + 22;
             drawLabelValue(graphics, loading.subtask().isBlank() ? "Work" : loading.subtask(),
-                    loading.subProgressLabel(), panelX, subY, panelWidth, 0xDDFFFFFF);
-            drawFramedBar(graphics, panelX, subY + 13, panelWidth, 8, loading.subProgress(), 0xFFA0E65C);
+                    loading.subProgressLabel(), panelX, subY, panelWidth, fadeColor(0xDDFFFFFF, alpha));
+            drawStatusStrip(graphics, panelX, subY + 13, panelWidth, loading.subProgress(), fadeColor(0xFFA0E65C, alpha));
         }
     }
 
@@ -102,12 +121,29 @@ public abstract class LoadingOverlayMixin {
         }
     }
 
-    private static void drawFramedBar(PoseStack graphics, int x, int y, int width, int height, float progress, int color) {
-        GuiComponent.fill(graphics, x, y, x + width, y + height, 0xFFFFFFFF);
-        GuiComponent.fill(graphics, x + 2, y + 2, x + width - 2, y + height - 2, 0xAA000000);
-        int fillWidth = Math.round((width - 6) * Math.max(0.0F, Math.min(1.0F, progress)));
+    private static void drawStatusStrip(PoseStack graphics, int x, int y, int width, float progress, int color) {
+        GuiComponent.fill(graphics, x, y, x + width, y + 2, color & 0x44FFFFFF);
+        int fillWidth = Math.round(width * Math.max(0.0F, Math.min(1.0F, progress)));
         if (fillWidth > 0) {
-            GuiComponent.fill(graphics, x + 3, y + 3, x + 3 + fillWidth, y + height - 3, color);
+            GuiComponent.fill(graphics, x, y, x + fillWidth, y + 2, color);
         }
+    }
+
+    private float nows$loadingAlpha() {
+        long now = Util.getMillis();
+        float alpha = 1.0F;
+        if (fadeOutStart > -1L) {
+            alpha = 1.0F - Mth.clamp((float) (now - fadeOutStart) / 1000.0F, 0.0F, 1.0F);
+        }
+        if (fadeIn && fadeInStart > -1L) {
+            alpha = Math.min(alpha, Mth.clamp((float) (now - fadeInStart) / 500.0F, 0.0F, 1.0F));
+        }
+        return alpha;
+    }
+
+    private static int fadeColor(int color, float alpha) {
+        int baseAlpha = color >>> 24;
+        int fadedAlpha = Mth.clamp(Math.round(baseAlpha * alpha), 0, 255);
+        return (color & 0x00FFFFFF) | (fadedAlpha << 24);
     }
 }
