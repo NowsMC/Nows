@@ -16,13 +16,22 @@
 
 package space.nows.mc.internal.client;
 
+import net.minecraft.client.Minecraft;
+import net.minecraft.network.chat.Component;
+import space.nows.mc.api.client.ui.RenderContext;
+import space.nows.mc.api.client.ui.ScreenInitializer;
+import space.nows.mc.api.client.ui.ScreenRenderer;
 import space.nows.mc.api.client.ui.TitleScreenUi;
 import space.nows.mc.api.client.ui.Ui;
+
+import java.util.List;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 public final class UiImpl implements Ui {
     public static final UiImpl INSTANCE = new UiImpl();
 
     private final TitleScreenUiImpl titleScreen = new TitleScreenUiImpl();
+    private final List<ScreenRenderer> overlays = new CopyOnWriteArrayList<>();
 
     private UiImpl() {}
 
@@ -31,7 +40,38 @@ public final class UiImpl implements Ui {
         return titleScreen;
     }
 
+    @Override
+    public void showSimpleScreen(String title, ScreenInitializer initializer, ScreenRenderer renderer) {
+        Minecraft.getInstance().setScreenAndShow(new SimpleScreen(Component.literal(title), initializer, renderer));
+    }
+
+    @Override
+    public void closeScreen() {
+        Minecraft.getInstance().setScreenAndShow(null);
+    }
+
+    @Override
+    public void overlay(ScreenRenderer renderer) {
+        overlays.add(renderer);
+    }
+
+    @Override
+    public int screenWidth() {
+        return Minecraft.getInstance().getWindow().getGuiScaledWidth();
+    }
+
+    @Override
+    public int screenHeight() {
+        return Minecraft.getInstance().getWindow().getGuiScaledHeight();
+    }
+
     public TitleScreenUiImpl titleScreenImpl() {
         return titleScreen;
+    }
+
+    public void renderOverlays(RenderContext context) {
+        for (ScreenRenderer overlay : overlays) {
+            overlay.render(context);
+        }
     }
 }

@@ -10,6 +10,7 @@
     "MinecraftClientMixin",
     "PackRepositoryMixin",
     "LoadingOverlayMixin",
+    "HudMixin",
     "TitleScreenMixin"
   ],
   "injectors": {
