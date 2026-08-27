@@ -41,7 +41,9 @@ class NowsLoadingStateTest {
         assertEquals(2, snapshot.totalSteps());
         assertEquals(0.5F, snapshot.progress());
         assertEquals(0.625F, snapshot.overallProgress());
+        assertEquals(0.625F, snapshot.displayProgress());
         assertEquals("1/2", snapshot.progressLabel());
+        assertEquals("1/2", snapshot.displayProgressLabel());
         assertEquals("Mod entrypoints", snapshot.subtask());
         assertEquals(0.25F, snapshot.subProgress());
         assertEquals("1/4", snapshot.subProgressLabel());
@@ -79,5 +81,20 @@ class NowsLoadingStateTest {
         assertEquals(1, snapshot.step());
         assertEquals("Load Nows resource packs", snapshot.history().get(0));
         assertEquals(0.25F, snapshot.progress());
+    }
+
+    @Test
+    void displaysExternalSubtaskProgressAfterBootstrapCompletes() {
+        NowsLoadingState.start("Nows Loader", 2);
+        NowsLoadingState.complete("Discover Nows mods");
+        NowsLoadingState.complete("Run mod entrypoints");
+        NowsLoadingState.beginExternal("Load Nows resource packs");
+        NowsLoadingState.subtask("Resource packs", 1, 4);
+
+        NowsLoadingSnapshot snapshot = NowsLoadingState.snapshot();
+
+        assertEquals(1.0F, snapshot.overallProgress());
+        assertEquals(0.25F, snapshot.displayProgress());
+        assertEquals("1/4", snapshot.displayProgressLabel());
     }
 }

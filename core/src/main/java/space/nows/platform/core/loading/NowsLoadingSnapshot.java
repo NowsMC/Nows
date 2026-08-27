@@ -53,6 +53,13 @@ public record NowsLoadingSnapshot(
         return Math.max(0.0F, Math.min(1.0F, activeStep / (float) totalSteps));
     }
 
+    public float displayProgress() {
+        if (subTotal > 0 && step >= totalSteps) {
+            return subProgress();
+        }
+        return overallProgress();
+    }
+
     public String progressLabel() {
         return String.format(Locale.ROOT, "%d/%d", Math.max(0, step), Math.max(0, totalSteps));
     }
@@ -62,6 +69,13 @@ public record NowsLoadingSnapshot(
             return "";
         }
         return String.format(Locale.ROOT, "%d/%d", Math.max(0, subStep), Math.max(0, subTotal));
+    }
+
+    public String displayProgressLabel() {
+        if (subTotal > 0 && step >= totalSteps) {
+            return subProgressLabel();
+        }
+        return progressLabel();
     }
 
     public boolean hasDetail() {
