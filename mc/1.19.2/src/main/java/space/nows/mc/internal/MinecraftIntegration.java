@@ -21,6 +21,7 @@ import space.nows.platform.api.NowsContext;
 import space.nows.mc.api.client.config.ConfigUi;
 import space.nows.mc.api.client.keybind.KeybindApi;
 import space.nows.mc.api.client.player.PlayerApi;
+import space.nows.mc.api.client.render.shader.ShaderApi;
 import space.nows.mc.api.client.ui.Ui;
 import space.nows.mc.api.command.CommandApi;
 import space.nows.mc.api.datapack.DataPacks;
@@ -33,6 +34,7 @@ import space.nows.mc.api.text.TextApi;
 import space.nows.mc.internal.client.config.ConfigUiImpl;
 import space.nows.mc.internal.client.keybind.KeybindApiImpl;
 import space.nows.mc.internal.client.player.PlayerApiImpl;
+import space.nows.mc.internal.client.render.shader.ShaderApiImpl;
 import space.nows.mc.internal.client.LoaderMenu;
 import space.nows.mc.internal.client.UiImpl;
 import space.nows.mc.internal.command.CommandApiImpl;
@@ -63,6 +65,7 @@ public final class MinecraftIntegration {
         services.register(KeybindApi.class, new KeybindApiImpl());
         services.register(GameEvents.class, GameEventsImpl.INSTANCE);
         services.register(PlayerApi.class, new PlayerApiImpl());
+        services.register(ShaderApi.class, new ShaderApiImpl("1.19.2"));
     }
 
     public static void installBuiltInUi(NowsContext context) {
