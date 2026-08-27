@@ -1,3 +1,10 @@
+## 0.9.3
+
+- Expanded Minecraft registry adapter coverage across every supported `mc/<version>` artifact with stable Nows entrypoints for entity types, mob effects, potions, attributes, particle types, fluids, bucket items, fixed-range sounds and villager professions.
+- Added version-specific registry helpers where Minecraft exposes matching built-in registries, including enchantments on older adapters and painting variants/banner patterns on adapters that still own those registries directly.
+- Updated the Minecraft adapter policy docs to define `mc/` as the stable Nows-owned wrapper/adapter layer over version-specific Minecraft APIs.
+- Bumped Nows release metadata to 0.9.3.
+
 ## 0.9.2
 
 - Hardened loader dependency version matching for SemVer prereleases, build metadata, Windows/.NET versions, Java update versions, CalVer, serial versions, codenames, commit hashes and loose development/build labels.
