@@ -1,6 +1,9 @@
-# Minecraft version adapters
+# Minecraft stable adapter layer
 
-This directory owns version-specific code that talks directly to Minecraft APIs.
+This directory owns the stable Nows-owned wrapper/adapter layer over Minecraft
+APIs. Mods and generators should see Nows names, values and specs at this
+boundary; each version directory owns the adapter code that attaches to that
+Minecraft version's real API and maps stable Nows inputs onto it.
 
 Use `mc/<minecraft-version>/` for API surfaces that depend on the exact Minecraft version, such as block registration, client UI/screen helpers, mod-menu hooks or future game integration points. Keep those direct `net.minecraft.*` references out of `core/`, `runtime/` and generic integrations.
 
@@ -16,6 +19,7 @@ Common mod-facing and generator-facing code should prefer Nows stable wrapper/sp
 
 - Identity and geometry: `McId`, `McVec3`, `McBlockPos`, `McDirection`, `McWorldSnapshot` and `McEntitySnapshot`.
 - Items and blocks: `McItemStack`, `ItemSpec`, `FoodSpec`, `ToolSpec`, `ArmorSpec`, `BlockSpec`, `BlockSound`, `MapColor`, `LightSpec`, `BlockRenderType` and `BlockShapeSpec`.
+- Registry-backed content: entity types, mob effects, potions, attributes, enchantments, particle types, fluids, sounds, paintings, villager professions, banner patterns, creative tabs, menus, block entities and recipe serializers/types.
 - Data, tags and recipes: `NbtCompound`, `NbtList`, `NbtValue`, `McDataComponent`, `McDataPatch`, `TagSpec`, `IngredientSpec`, `RecipeSpec` and `WorkstationRecipeSpec`.
 - Containers and UI: `LayoutSpec`, `SlotSpec`, `DataSlotSpec`, `ScreenSpec` and `ScreenProgressSpec`.
 - Commands and events: `CommandSpec`, `CommandArgumentSpec`, `CommandExecutionContext`, `ClientTickContext`, `ServerTickContext`, `LevelTickContext`, `PlayerEventContext`, `BlockEventContext` and `EntityEventContext`.
