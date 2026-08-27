@@ -18,4 +18,14 @@ package space.nows.mc.api.client.ui;
 
 public interface Ui {
     TitleScreenUi titleScreen();
+
+    void showSimpleScreen(String title, ScreenInitializer initializer, ScreenRenderer renderer);
+
+    void closeScreen();
+
+    void overlay(ScreenRenderer renderer);
+
+    int screenWidth();
+
+    int screenHeight();
 }
