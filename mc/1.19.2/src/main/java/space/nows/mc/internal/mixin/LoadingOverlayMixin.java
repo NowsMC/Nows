@@ -63,11 +63,11 @@ public abstract class LoadingOverlayMixin {
         drawRight(graphics, "Minecraft " + ClientHooks.minecraftLine(), width - 20, 20, 180, fadeColor(0xCCFFFFFF, alpha));
         drawRight(graphics, diagnostics.compactSummary(), width - 20, 34, Math.max(180, width - 40), fadeColor(0x99FFFFFF, alpha));
 
-        int panelWidth = Math.max(160, Math.min(300, width - 40));
-        int panelX = 20;
-        int panelY = Math.max(54, height - (loading.subTotal() > 0 ? 54 : 36));
-        drawLabelValue(graphics, "Nows", loading.progressLabel(), panelX, panelY - 13, panelWidth, statusColor);
-        drawStatusStrip(graphics, panelX, panelY, panelWidth, loading.overallProgress(),
+        int panelWidth = Math.max(180, Math.min(480, width - 40));
+        int panelX = (width - panelWidth) / 2;
+        int panelY = Math.max(54, height - (height < 540 ? (loading.subTotal() > 0 ? 66 : 46) : (loading.subTotal() > 0 ? 88 : 68)));
+        drawLabelValue(graphics, "Nows", loading.displayProgressLabel(), panelX, panelY - 13, panelWidth, statusColor);
+        drawStatusStrip(graphics, panelX, panelY, panelWidth, loading.displayProgress(),
                 fadeColor(loading.failed() ? 0xFFFF4040 : 0xFF40BFFF, alpha));
         String detail = loading.currentDetailLine();
         if (!detail.isBlank()) {
