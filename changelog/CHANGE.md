@@ -1,6 +1,7 @@
 ## 0.9.3
 
 - Expanded Minecraft registry adapter coverage across every supported `mc/<version>` artifact with stable Nows entrypoints for entity types, mob effects, potions, attributes, particle types, fluids, bucket items, fixed-range sounds and villager professions.
+- Added an initial Nows-owned shader/render wrapper layer inspired by APIs shader mods commonly touch in Iris, covering render-stage macros, item light providers, GL environment queries, lightmap access, core shader loading, render targets, uniforms and render-thread calls.
 - Added version-specific registry helpers where Minecraft exposes matching built-in registries, including enchantments on older adapters and painting variants/banner patterns on adapters that still own those registries directly.
 - Updated the Minecraft adapter policy docs to define `mc/` as the stable Nows-owned wrapper/adapter layer over version-specific Minecraft APIs.
 - Bumped Nows release metadata to 0.9.3.
