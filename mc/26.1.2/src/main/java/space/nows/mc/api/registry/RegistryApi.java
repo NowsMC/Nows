@@ -17,6 +17,21 @@
 package space.nows.mc.api.registry;
 
 import net.minecraft.network.chat.Component;
+import net.minecraft.core.particles.ParticleOptions;
+import net.minecraft.core.particles.ParticleType;
+import net.minecraft.core.particles.SimpleParticleType;
+import net.minecraft.world.effect.MobEffect;
+import net.minecraft.world.effect.MobEffectCategory;
+import net.minecraft.world.effect.MobEffectInstance;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.entity.MobCategory;
+import net.minecraft.world.entity.ai.attributes.Attribute;
+import net.minecraft.world.entity.ai.attributes.RangedAttribute;
+import net.minecraft.world.item.BucketItem;
+import net.minecraft.world.item.alchemy.Potion;
+import net.minecraft.world.level.material.Fluid;
+import net.minecraft.world.entity.npc.villager.VillagerProfession;
 import net.minecraft.core.Registry;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.Identifier;
@@ -176,6 +191,52 @@ public interface RegistryApi {
 
     SoundEvent registerVariableRangeSound(String id);
 
+    SoundEvent registerFixedRangeSound(String id, float range);
+
+    <T extends Entity> EntityType<T> registerEntityType(
+            String id,
+            EntityType.EntityFactory<T> factory,
+            MobCategory category,
+            float width,
+            float height
+    );
+
+    <T extends Entity> EntityType<T> registerEntityType(String id, EntityType.Builder<T> builder);
+
+    MobEffect registerMobEffect(String id, MobEffect effect);
+
+    MobEffect registerSimpleMobEffect(String id, MobEffectCategory category, int color);
+
+    Potion registerPotion(String id, Potion potion);
+
+    default Potion registerPotion(String id, MobEffectInstance... effects) {
+        return registerPotion(id, new Potion(id, effects));
+    }
+
+    Attribute registerAttribute(String id, Attribute attribute);
+
+    default Attribute registerRangedAttribute(
+            String id,
+            String translationKey,
+            double defaultValue,
+            double minValue,
+            double maxValue
+    ) {
+        return registerAttribute(id, new RangedAttribute(translationKey, defaultValue, minValue, maxValue));
+    }
+
+    <T extends ParticleOptions> ParticleType<T> registerParticleType(String id, ParticleType<T> particleType);
+
+    SimpleParticleType registerSimpleParticleType(String id, boolean overrideLimiter);
+
+    Fluid registerFluid(String id, Fluid fluid);
+
+    BucketItem registerBucketItem(String id, Fluid fluid);
+
+    BucketItem registerBucketItem(String id, Fluid fluid, Function<Item.Properties, Item.Properties> configure);
+
+    VillagerProfession registerVillagerProfession(String id, VillagerProfession profession);
+
     CreativeModeTab registerCreativeTab(
             String id,
             Component title,
@@ -201,6 +262,55 @@ public interface RegistryApi {
 
     default Block getBlock(String id) {
         return block(id).orElseThrow(() -> new IllegalArgumentException("Unknown Minecraft block: " + id));
+    }
+
+
+    Optional<EntityType<?>> entityType(String id);
+
+    default EntityType<?> getEntityType(String id) {
+        return entityType(id).orElseThrow(() -> new IllegalArgumentException("Unknown Minecraft entity type: " + id));
+    }
+
+    Optional<SoundEvent> sound(String id);
+
+    default SoundEvent getSound(String id) {
+        return sound(id).orElseThrow(() -> new IllegalArgumentException("Unknown Minecraft sound event: " + id));
+    }
+
+    Optional<MobEffect> mobEffect(String id);
+
+    default MobEffect getMobEffect(String id) {
+        return mobEffect(id).orElseThrow(() -> new IllegalArgumentException("Unknown Minecraft mob effect: " + id));
+    }
+
+    Optional<Potion> potion(String id);
+
+    default Potion getPotion(String id) {
+        return potion(id).orElseThrow(() -> new IllegalArgumentException("Unknown Minecraft potion: " + id));
+    }
+
+    Optional<Attribute> attribute(String id);
+
+    default Attribute getAttribute(String id) {
+        return attribute(id).orElseThrow(() -> new IllegalArgumentException("Unknown Minecraft attribute: " + id));
+    }
+
+    Optional<ParticleType<?>> particleType(String id);
+
+    default ParticleType<?> getParticleType(String id) {
+        return particleType(id).orElseThrow(() -> new IllegalArgumentException("Unknown Minecraft particle type: " + id));
+    }
+
+    Optional<Fluid> fluid(String id);
+
+    default Fluid getFluid(String id) {
+        return fluid(id).orElseThrow(() -> new IllegalArgumentException("Unknown Minecraft fluid: " + id));
+    }
+
+    Optional<VillagerProfession> villagerProfession(String id);
+
+    default VillagerProfession getVillagerProfession(String id) {
+        return villagerProfession(id).orElseThrow(() -> new IllegalArgumentException("Unknown Minecraft villager profession: " + id));
     }
 
     Optional<CreativeModeTab> creativeTab(String id);
