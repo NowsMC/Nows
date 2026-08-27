@@ -17,6 +17,22 @@
 package space.nows.mc.internal.registry;
 
 import net.minecraft.core.Registry;
+import net.minecraft.core.particles.ParticleOptions;
+import net.minecraft.core.particles.ParticleType;
+import net.minecraft.core.particles.SimpleParticleType;
+import net.minecraft.world.effect.MobEffect;
+import net.minecraft.world.effect.MobEffectCategory;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.entity.MobCategory;
+import net.minecraft.world.entity.ai.attributes.Attribute;
+import net.minecraft.world.item.BucketItem;
+import net.minecraft.world.item.alchemy.Potion;
+import net.minecraft.world.level.material.Fluid;
+import net.minecraft.world.entity.npc.VillagerProfession;
+import net.minecraft.world.item.enchantment.Enchantment;
+import net.minecraft.world.entity.decoration.PaintingVariant;
+import net.minecraft.world.level.block.entity.BannerPattern;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceKey;
@@ -272,6 +288,93 @@ public final class RegistryApiImpl implements RegistryApi {
     }
 
     @Override
+    public SoundEvent registerFixedRangeSound(String id, float range) {
+        var value = location(id);
+        return register(BuiltInRegistries.SOUND_EVENT, id, SoundEvent.createFixedRangeEvent(value, range));
+    }
+
+    @Override
+    public <T extends Entity> EntityType<T> registerEntityType(
+            String id,
+            EntityType.EntityFactory<T> factory,
+            MobCategory category,
+            float width,
+            float height
+    ) {
+        return registerEntityType(id, EntityType.Builder.of(factory, category).sized(width, height));
+    }
+
+    @Override
+    public <T extends Entity> EntityType<T> registerEntityType(String id, EntityType.Builder<T> builder) {
+        return register(BuiltInRegistries.ENTITY_TYPE, id, builder.build(id));
+    }
+
+    @Override
+    public MobEffect registerMobEffect(String id, MobEffect effect) {
+        return register(BuiltInRegistries.MOB_EFFECT, id, effect);
+    }
+
+    @Override
+    public MobEffect registerSimpleMobEffect(String id, MobEffectCategory category, int color) {
+        return registerMobEffect(id, new SimpleNowsMobEffect(category, color));
+    }
+
+    @Override
+    public Potion registerPotion(String id, Potion potion) {
+        return register(BuiltInRegistries.POTION, id, potion);
+    }
+
+    @Override
+    public Attribute registerAttribute(String id, Attribute attribute) {
+        return register(BuiltInRegistries.ATTRIBUTE, id, attribute);
+    }
+
+    @Override
+    public Enchantment registerEnchantment(String id, Enchantment enchantment) {
+        return register(BuiltInRegistries.ENCHANTMENT, id, enchantment);
+    }
+
+    @Override
+    public <T extends ParticleOptions> ParticleType<T> registerParticleType(String id, ParticleType<T> particleType) {
+        return register(BuiltInRegistries.PARTICLE_TYPE, id, particleType);
+    }
+
+    @Override
+    public SimpleParticleType registerSimpleParticleType(String id, boolean overrideLimiter) {
+        return register(BuiltInRegistries.PARTICLE_TYPE, id, createSimpleParticleType(overrideLimiter));
+    }
+
+    @Override
+    public Fluid registerFluid(String id, Fluid fluid) {
+        return register(BuiltInRegistries.FLUID, id, fluid);
+    }
+
+    @Override
+    public BucketItem registerBucketItem(String id, Fluid fluid) {
+        return registerBucketItem(id, fluid, Function.identity());
+    }
+
+    @Override
+    public BucketItem registerBucketItem(String id, Fluid fluid, Function<Item.Properties, Item.Properties> configure) {
+        return register(BuiltInRegistries.ITEM, id, new BucketItem(fluid, apply(configure, new Item.Properties())));
+    }
+
+    @Override
+    public VillagerProfession registerVillagerProfession(String id, VillagerProfession profession) {
+        return register(BuiltInRegistries.VILLAGER_PROFESSION, id, profession);
+    }
+
+    @Override
+    public PaintingVariant registerPaintingVariant(String id, PaintingVariant variant) {
+        return register(BuiltInRegistries.PAINTING_VARIANT, id, variant);
+    }
+
+    @Override
+    public BannerPattern registerBannerPattern(String id, BannerPattern pattern) {
+        return register(BuiltInRegistries.BANNER_PATTERN, id, pattern);
+    }
+
+    @Override
     public CreativeModeTab registerCreativeTab(
             String id,
             Component title,
@@ -294,6 +397,61 @@ public final class RegistryApiImpl implements RegistryApi {
     @Override
     public Optional<Block> block(String id) {
         return BuiltInRegistries.BLOCK.getOptional(location(id));
+    }
+
+    @Override
+    public Optional<EntityType<?>> entityType(String id) {
+        return BuiltInRegistries.ENTITY_TYPE.getOptional(location(id));
+    }
+
+    @Override
+    public Optional<SoundEvent> sound(String id) {
+        return BuiltInRegistries.SOUND_EVENT.getOptional(location(id));
+    }
+
+    @Override
+    public Optional<MobEffect> mobEffect(String id) {
+        return BuiltInRegistries.MOB_EFFECT.getOptional(location(id));
+    }
+
+    @Override
+    public Optional<Potion> potion(String id) {
+        return BuiltInRegistries.POTION.getOptional(location(id));
+    }
+
+    @Override
+    public Optional<Attribute> attribute(String id) {
+        return BuiltInRegistries.ATTRIBUTE.getOptional(location(id));
+    }
+
+    @Override
+    public Optional<Enchantment> enchantment(String id) {
+        return BuiltInRegistries.ENCHANTMENT.getOptional(location(id));
+    }
+
+    @Override
+    public Optional<ParticleType<?>> particleType(String id) {
+        return BuiltInRegistries.PARTICLE_TYPE.getOptional(location(id));
+    }
+
+    @Override
+    public Optional<Fluid> fluid(String id) {
+        return BuiltInRegistries.FLUID.getOptional(location(id));
+    }
+
+    @Override
+    public Optional<VillagerProfession> villagerProfession(String id) {
+        return BuiltInRegistries.VILLAGER_PROFESSION.getOptional(location(id));
+    }
+
+    @Override
+    public Optional<PaintingVariant> paintingVariant(String id) {
+        return BuiltInRegistries.PAINTING_VARIANT.getOptional(location(id));
+    }
+
+    @Override
+    public Optional<BannerPattern> bannerPattern(String id) {
+        return BuiltInRegistries.BANNER_PATTERN.getOptional(location(id));
     }
 
     @Override
@@ -367,6 +525,17 @@ public final class RegistryApiImpl implements RegistryApi {
             case "equals" -> proxy == args[0];
             default -> null;
         };
+    }
+
+    private static SimpleParticleType createSimpleParticleType(boolean overrideLimiter) {
+        try {
+            Constructor<SimpleParticleType> constructor = SimpleParticleType.class.getDeclaredConstructor(boolean.class);
+            constructor.setAccessible(true);
+            return constructor.newInstance(overrideLimiter);
+        }
+        catch (ReflectiveOperationException exception) {
+            throw new IllegalStateException("Unable to create simple particle type", exception);
+        }
     }
 
     private static Item.Properties applyItemSpec(Item.Properties properties, ItemSpec spec) {
@@ -494,5 +663,12 @@ public final class RegistryApiImpl implements RegistryApi {
     private static <T> T apply(Function<T, T> configure, T value) {
         T configured = configure.apply(value);
         return configured == null ? value : configured;
+    }
+
+
+    private static final class SimpleNowsMobEffect extends MobEffect {
+        private SimpleNowsMobEffect(MobEffectCategory category, int color) {
+            super(category, color);
+        }
     }
 }
