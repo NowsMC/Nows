@@ -15,6 +15,10 @@ Each version directory can contain:
 
 Prefer stable Nows-owned inputs in `space.nows.mc.api` when Minecraft changes class names, enum names, packages or constructor/property requirements between versions. For example, `ItemSpec`, `BlockSpec` and `BlockMaterial` describe basic item/block registration once, while each `mc/<version>/internal` adapter maps those specs onto that version's item properties, block properties, material model and registry rules.
 
+Do not use Java reflection to bridge normal Minecraft API drift in production adapter code. Reflection is too loose for this layer: it hides broken constructor, method and field contracts from `javac`, then lets failures escape into runtime. Prefer direct typed calls in each version adapter so compile and adapter tests catch breakage early. When Minecraft keeps the needed member private or package-private, use a version-local Mixin accessor, invoker, injection point or helper class instead of string-based lookup. Any unavoidable dynamic boundary must be small, reviewed, explicitly allowlisted and covered by a version-specific test.
+
+Mixin is an acceptable adapter tool here. Nows is already running in a modded Minecraft environment, so version adapters may use Mixins where they make the stable Nows API easier for mod developers or generators to use, including client UI and other integration points. Keep the public contract Nows-owned; let each `mc/<version>/` artifact own the native hook needed to implement it.
+
 Common mod-facing and generator-facing code should prefer Nows stable wrapper/spec types before reaching for raw Minecraft classes:
 
 - Identity and geometry: `McId`, `McVec3`, `McBlockPos`, `McDirection`, `McWorldSnapshot` and `McEntitySnapshot`.
