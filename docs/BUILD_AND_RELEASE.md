@@ -84,7 +84,7 @@ docker compose up nows-web
 Update the coordinated project version:
 
 ```bash
-./gradlew setNowsVersion -Pnew_nows_version=0.9.3
+./gradlew setNowsVersion -Pnew_nows_version=0.10.0
 ```
 
 Inspect the coordinated version state:
@@ -237,12 +237,12 @@ Plugin id:
 
 ```kotlin
 plugins {
-    id("space.nows.gradle") version "0.9.3"
+    id("space.nows.gradle") version "0.10.0"
 }
 
 nows {
     minecraftVersion.set("26.2")
-    nowsVersion.set("0.9.3")
+    nowsVersion.set("0.10.0")
 }
 ```
 
