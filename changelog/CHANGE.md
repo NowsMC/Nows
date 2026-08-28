@@ -5,6 +5,8 @@
 - Split native `McText` and `McItemStack` bridges into version-specific implementations so Minecraft constructor and registry drift is caught by adapter compilation.
 - Hardened modern registry adapters by replacing loose reflective item/block/particle property calls with direct typed mappings where Minecraft exposes a stable callable API.
 - Added a production reflection guard and shared keybind constructor contract test across all Minecraft adapters, with the test runtime classpath filled out enough to execute Minecraft key mapping smoke tests.
+- Hardened NowsRemapper so failed remap attempts keep the previous prepared client jar until a replacement has been written successfully.
+- Added NowsGradlePlugin unit coverage for Minecraft preparation/Java compilation wiring and corrected the plugin id/version examples in its README.
 - Updated Minecraft adapter policy docs to keep `mc/` as the stable Nows-owned wrapper layer, prefer direct typed adapters or Mixins, and block normal Minecraft API drift from being bridged with reflection.
 - Bumped Nows release metadata to 0.10.0.
 
