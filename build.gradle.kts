@@ -11,6 +11,70 @@ import org.gradle.plugins.signing.SigningExtension
 
 plugins { base }
 
+val reflectionPatterns = listOf(
+    "Class.forName(",
+    ".getConstructor(",
+    ".getDeclaredConstructor(",
+    ".getMethod(",
+    ".getDeclaredMethod(",
+    ".getField(",
+    ".getDeclaredField(",
+    "setAccessible("
+)
+
+val productionReflectionAllowlist = setOf(
+    "runtime/src/main/java/space/nows/loader/runtime/NowsLauncher.java",
+    "integrations/geb/src/main/java/space/nows/integration/geb/GebIntegration.java",
+    "integrations/mixin/src/main/java/space/nows/integration/mixin/NowsMixinBootstrap.java",
+    "integrations/mixin/src/main/java/space/nows/integration/mixin/NowsMixinService.java",
+    "repos/NowsMCreatorGenerator/src/main/java/space/nows/mcreator/NowsMCreatorPlugin.java"
+)
+
+val productionReflectionAllowedSuffixes = listOf(
+    "/src/main/java/space/nows/mc/internal/registry/RegistryApiImpl.java",
+    "/src/main/java/space/nows/mc/internal/client/render/shader/ShaderApiImpl.java",
+    "/src/main/java/space/nows/mc/internal/client/render/shader/ShaderReflection.java"
+)
+
+val forbidProductionReflection by tasks.registering {
+    group = "verification"
+    description = "Fails when new production reflection is introduced outside reviewed compatibility boundaries."
+
+    inputs.files(fileTree(layout.projectDirectory) {
+        include("**/src/main/java/**/*.java")
+        exclude("**/build/**")
+    })
+
+    doLast {
+        val root = layout.projectDirectory.asFile.toPath()
+        val violations = inputs.files.files
+            .filter { it.isFile }
+            .mapNotNull { file ->
+                val relative = root.relativize(file.toPath()).toString().replace(File.separatorChar, '/')
+                val allowed = relative in productionReflectionAllowlist ||
+                        productionReflectionAllowedSuffixes.any(relative::endsWith)
+                if (allowed) {
+                    null
+                } else {
+                    val lines = file.readLines()
+                    val hits = lines.mapIndexedNotNull { index, line ->
+                        if (reflectionPatterns.any(line::contains)) "${relative}:${index + 1}: ${line.trim()}" else null
+                    }
+                    hits.takeIf { it.isNotEmpty() }
+                }
+            }
+            .flatten()
+        if (violations.isNotEmpty()) {
+            throw GradleException("Production reflection is blocked outside the reviewed allowlist:\n" +
+                    violations.joinToString("\n"))
+        }
+    }
+}
+
+tasks.named("check") {
+    dependsOn(forbidProductionReflection)
+}
+
 abstract class GpgSigningService : BuildService<BuildServiceParameters.None>
 
 val nowsVersion = providers.gradleProperty("nows_version")
@@ -211,6 +275,12 @@ subprojects {
                 dependencies.add("testImplementation", dependencies.platform("org.junit:junit-bom:5.12.2"))
                 dependencies.add("testImplementation", "org.junit.jupiter:junit-jupiter")
                 dependencies.add("testRuntimeOnly", "org.junit.platform:junit-platform-launcher")
+                dependencies.add("testRuntimeOnly", "com.mojang:authlib:7.0.61")
+                dependencies.add("testRuntimeOnly", "com.mojang:logging:1.0.0")
+                dependencies.add("testRuntimeOnly", "org.apache.logging.log4j:log4j-api:2.24.3")
+                dependencies.add("testRuntimeOnly", "org.apache.logging.log4j:log4j-core:2.24.3")
+                dependencies.add("testRuntimeOnly", "io.netty:netty-codec:${providers.gradleProperty("netty_version").get()}")
+                dependencies.add("testRuntimeOnly", "org.joml:joml:1.10.8")
                 dependencies.add("testCompileOnly", files(minecraftDevJar))
                 dependencies.add("testRuntimeOnly", files(minecraftDevJar))
                 tasks.withType<Test>().configureEach {
