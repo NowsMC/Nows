@@ -16,6 +16,8 @@
 
 package space.nows.mc.api.client.keybind;
 
+import net.minecraft.client.KeyMapping;
+
 import java.util.Objects;
 
 /** Registered key mapping plus its stable Nows metadata. */
@@ -23,7 +25,7 @@ public record KeybindRegistration(
         String id,
         String category,
         int defaultKeyCode,
-        Object nativeKeyMapping
+        KeyMapping nativeKeyMapping
 ) {
     public KeybindRegistration {
         if (id == null || id.isBlank()) {
@@ -40,18 +42,10 @@ public record KeybindRegistration(
     }
 
     public boolean consumeClick() {
-        return invokeBoolean("consumeClick");
+        return nativeKeyMapping.consumeClick();
     }
 
     public boolean isDown() {
-        return invokeBoolean("isDown");
-    }
-
-    private boolean invokeBoolean(String methodName) {
-        try {
-            return (Boolean) nativeKeyMapping.getClass().getMethod(methodName).invoke(nativeKeyMapping);
-        } catch (ReflectiveOperationException exception) {
-            throw new IllegalStateException("Unable to call native key mapping method: " + methodName, exception);
-        }
+        return nativeKeyMapping.isDown();
     }
 }

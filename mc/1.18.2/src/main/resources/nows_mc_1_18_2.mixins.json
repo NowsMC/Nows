@@ -8,6 +8,8 @@
   ],
   "client": [
     "MinecraftClientMixin",
+    "KeyMappingAccessor",
+    "OptionsAccessor",
     "PackRepositoryMixin",
     "LoadingOverlayMixin",
     "GuiMixin",
