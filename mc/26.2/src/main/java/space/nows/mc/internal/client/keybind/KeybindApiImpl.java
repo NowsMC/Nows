@@ -16,15 +16,16 @@
 
 package space.nows.mc.internal.client.keybind;
 
+import com.mojang.blaze3d.platform.InputConstants;
 import net.minecraft.client.KeyMapping;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.Options;
+import net.minecraft.resources.Identifier;
 import space.nows.mc.api.client.keybind.KeybindApi;
 import space.nows.mc.api.client.keybind.KeybindRegistration;
 import space.nows.mc.internal.event.GameEventsImpl;
+import space.nows.mc.internal.mixin.OptionsAccessor;
 
-import java.lang.reflect.Constructor;
-import java.lang.reflect.Field;
-import java.lang.reflect.Modifier;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -33,7 +34,7 @@ import java.util.concurrent.CopyOnWriteArrayList;
 
 public final class KeybindApiImpl implements KeybindApi {
     private final Map<String, KeybindRegistration> keybinds = new LinkedHashMap<>();
-    private final Map<String, Integer> categories = new LinkedHashMap<>();
+    private final Map<String, KeyMapping.Category> categories = new LinkedHashMap<>();
     private final Map<String, List<Runnable>> pressListeners = new LinkedHashMap<>();
 
     public KeybindApiImpl() {
@@ -51,8 +52,7 @@ public final class KeybindApiImpl implements KeybindApi {
         if (category == null || category.isBlank()) {
             throw new IllegalArgumentException("Keybind category must not be blank");
         }
-        categories.putIfAbsent(category, sortOrder);
-        registerMinecraftCategory(category, sortOrder);
+        categories.computeIfAbsent(category, ignored -> KeyMapping.Category.register(categoryId(category)));
     }
 
     @Override
@@ -121,87 +121,45 @@ public final class KeybindApiImpl implements KeybindApi {
         }
     }
 
-    @SuppressWarnings({"unchecked", "rawtypes"})
-    private static KeyMapping createKeyboardMapping(String id, String category, int glfwKeyCode) {
-        try {
-            Class<?> typeClass = Class.forName("com.mojang.blaze3d.platform.InputConstants$Type");
-            Object keysym = Enum.valueOf((Class<Enum>) typeClass.asSubclass(Enum.class), "KEYSYM");
-            Constructor<KeyMapping> constructor = KeyMapping.class
-                    .getConstructor(String.class, typeClass, int.class, String.class);
-            return constructor.newInstance(id, keysym, glfwKeyCode, category);
-        } catch (ReflectiveOperationException ignored) {
-            try {
-                Constructor<KeyMapping> constructor = KeyMapping.class
-                        .getConstructor(String.class, int.class, String.class);
-                return constructor.newInstance(id, glfwKeyCode, category);
-            } catch (ReflectiveOperationException exception) {
-                throw new IllegalStateException("Unsupported KeyMapping constructor", exception);
-            }
-        }
+    static KeyMapping createKeyboardMapping(String id, String category, int glfwKeyCode) {
+        return new KeyMapping(id, InputConstants.Type.KEYSYM, glfwKeyCode, category(category));
     }
 
     private static void appendToMinecraftOptions(KeyMapping mapping) {
-        Object options = Minecraft.getInstance().options;
+        Options options = Minecraft.getInstance().options;
         if (options == null) {
             return;
         }
-        for (Field field : options.getClass().getDeclaredFields()) {
-            if (field.getType().isArray() && field.getType().getComponentType() == KeyMapping.class) {
-                appendMapping(options, field, mapping);
-                resetMapping();
+        appendMapping((OptionsAccessor) options, mapping);
+        KeyMapping.resetMapping();
+    }
+
+    private static void appendMapping(OptionsAccessor options, KeyMapping mapping) {
+        KeyMapping[] current = options.nows$getKeyMappings();
+        for (KeyMapping existing : current) {
+            if (existing == mapping || existing.getName().equals(mapping.getName())) {
                 return;
             }
         }
+        KeyMapping[] next = new KeyMapping[current.length + 1];
+        System.arraycopy(current, 0, next, 0, current.length);
+        next[current.length] = mapping;
+        options.nows$setKeyMappings(next);
     }
 
-    private static void appendMapping(Object options, Field field, KeyMapping mapping) {
-        try {
-            field.setAccessible(true);
-            KeyMapping[] current = (KeyMapping[]) field.get(options);
-            for (KeyMapping existing : current) {
-                if (existing == mapping || existing.getName().equals(mapping.getName())) {
-                    return;
-                }
-            }
-            KeyMapping[] next = new KeyMapping[current.length + 1];
-            System.arraycopy(current, 0, next, 0, current.length);
-            next[current.length] = mapping;
-            field.set(options, next);
-        } catch (ReflectiveOperationException exception) {
-            throw new IllegalStateException("Unable to register keybind with Minecraft options", exception);
+    private static KeyMapping.Category category(String category) {
+        KeyMapping.Category value = KeyMapping.Category.register(categoryId(category));
+        return value == null ? KeyMapping.Category.MISC : value;
+    }
+
+    private static Identifier categoryId(String category) {
+        if (category.indexOf(':') >= 0) {
+            return Identifier.parse(category);
         }
+        String path = category.startsWith("key.categories.")
+                ? category.substring("key.categories.".length())
+                : category;
+        return Identifier.fromNamespaceAndPath("nows", path.replace('.', '/'));
     }
 
-    private static void registerMinecraftCategory(String category, int sortOrder) {
-        for (Field field : KeyMapping.class.getDeclaredFields()) {
-            if (!Map.class.isAssignableFrom(field.getType()) || !Modifier.isStatic(field.getModifiers())) {
-                continue;
-            }
-            try {
-                field.setAccessible(true);
-                Object value = field.get(null);
-                if (value instanceof Map<?, ?> map && isCategorySortMap(map)) {
-                    @SuppressWarnings("unchecked")
-                    Map<String, Integer> categories = (Map<String, Integer>) map;
-                    categories.putIfAbsent(category, sortOrder);
-                    return;
-                }
-            } catch (ReflectiveOperationException ignored) {
-            }
-        }
-    }
-
-    private static boolean isCategorySortMap(Map<?, ?> map) {
-        return map.entrySet().stream()
-                .filter(entry -> entry.getKey() instanceof String && entry.getValue() instanceof Integer)
-                .map(entry -> (String) entry.getKey())
-                .anyMatch(key -> key.startsWith("key.categories."));
-    }
-
-    private static void resetMapping() {
-        try {
-            KeyMapping.class.getMethod("resetMapping").invoke(null);
-        } catch (ReflectiveOperationException ignored) {
-        }
-    }
 }

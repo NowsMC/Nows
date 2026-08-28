@@ -11,6 +11,7 @@
     "PackRepositoryMixin",
     "LoadingOverlayMixin",
     "HudMixin",
+    "OptionsAccessor",
     "TitleScreenMixin"
   ],
   "injectors": {
