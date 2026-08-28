@@ -1,0 +1,41 @@
+/*
+ * Copyright 2026 TamKungZ_ (Nows MC — https://nows.space)
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package space.nows.mc.api.registry;
+
+import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.world.item.Item;
+import net.minecraft.world.item.ItemStack;
+
+/** Converts stable Nows item stack values to this adapter's native item stack. */
+public final class NativeItemStackBridge {
+    private NativeItemStackBridge() {
+    }
+
+    public static <T> T nativeStack(McItemStack stack, Class<T> stackType) {
+        return nativeStack(stack.toSpec(), stackType);
+    }
+
+    public static <T> T nativeStack(ItemStackSpec spec, Class<T> stackType) {
+        return stackType.cast(new ItemStack(item(spec.itemId()), spec.count()));
+    }
+
+    private static Item item(String itemId) {
+        return BuiltInRegistries.ITEM.getOptional(ResourceLocation.parse(itemId))
+                .orElseThrow(() -> new IllegalArgumentException("Unknown Minecraft item: " + itemId));
+    }
+}
