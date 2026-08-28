@@ -17,6 +17,7 @@
 package space.nows.mc.internal.resources;
 
 import net.minecraft.network.chat.Component;
+import net.minecraft.client.resources.ClientPackSource;
 import net.minecraft.server.packs.PackLocationInfo;
 import net.minecraft.server.packs.PackResources;
 import net.minecraft.server.packs.PackSelectionConfig;
@@ -144,24 +145,12 @@ public final class ModPackSource implements RepositorySource {
     }
 
     private static boolean isClientResourceRepository(RepositorySource[] sources) {
-        Class<?> clientPackSource = clientPackSourceClass();
-        if (clientPackSource == null) {
-            return false;
-        }
         for (RepositorySource source : sources) {
-            if (source != null && clientPackSource.isInstance(source)) {
+            if (source instanceof ClientPackSource) {
                 return true;
             }
         }
         return false;
-    }
-
-    private static Class<?> clientPackSourceClass() {
-        try {
-            return Class.forName("net.minecraft.client.resources.ClientPackSource", false, ModPackSource.class.getClassLoader());
-        } catch (ClassNotFoundException ignored) {
-            return null;
-        }
     }
 
     private static PackResources open(PackLocationInfo location, Path jar) {
