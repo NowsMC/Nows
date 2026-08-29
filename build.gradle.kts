@@ -71,8 +71,45 @@ val forbidProductionReflection by tasks.registering {
     }
 }
 
+val forbidDormantSharedTestContracts by tasks.registering {
+    group = "verification"
+    description = "Fails when shared test contracts look executable but are only compiled."
+
+    inputs.files(fileTree(layout.projectDirectory.dir("mc/shared-test/src/test/java")) {
+        include("**/*.java")
+    })
+
+    doLast {
+        val root = layout.projectDirectory.asFile.toPath()
+        val methodPattern = Regex("""^\s*(?:private|protected|public)?\s*(?:static\s+)?[\w<>\[\].?,\s]+\s+(\w+CompileAgainstEveryVersion)\s*\(""")
+        val violations = inputs.files.files
+            .filter { it.isFile }
+            .flatMap { file ->
+                val relative = root.relativize(file.toPath()).toString().replace(File.separatorChar, '/')
+                val lines = file.readLines()
+                lines.mapIndexedNotNull { index, line ->
+                    val methodName = methodPattern.find(line)?.groupValues?.get(1) ?: return@mapIndexedNotNull null
+                    val annotations = lines
+                        .subList(maxOf(0, index - 4), index)
+                        .map { it.trim() }
+                        .filter { it.isEmpty() || it.startsWith("@") }
+                    val isExecutableTest = annotations.any { it.startsWith("@Test") }
+                    if (isExecutableTest) {
+                        null
+                    } else {
+                        "$relative:${index + 1}: $methodName must be an executable @Test or use explicit compile-only naming"
+                    }
+                }
+            }
+        if (violations.isNotEmpty()) {
+            throw GradleException("Dormant shared test contracts found:\n" + violations.joinToString("\n"))
+        }
+    }
+}
+
 tasks.named("check") {
     dependsOn(forbidProductionReflection)
+    dependsOn(forbidDormantSharedTestContracts)
 }
 
 abstract class GpgSigningService : BuildService<BuildServiceParameters.None>
@@ -216,6 +253,8 @@ allprojects {
 }
 
 subprojects {
+    val checkedProject = this
+
     plugins.withId("java") {
         extensions.configure<JavaPluginExtension> {
             toolchain.languageVersion.set(JavaLanguageVersion.of(25))
@@ -228,6 +267,9 @@ subprojects {
         tasks.withType<AbstractArchiveTask>().configureEach {
             isPreserveFileTimestamps = false
             isReproducibleFileOrder = true
+        }
+        rootProject.tasks.named("check").configure {
+            dependsOn(checkedProject.tasks.named("check"))
         }
 
         if (path in mavenPublishedProjectPaths) {
@@ -354,6 +396,7 @@ project(":repos:NowsApiMod") {
 tasks.register("dist") {
     group = "nows"
     description = "Builds all modular Nows artifacts, the installer, Gradle plugin and API mod variants."
+    dependsOn("check")
     dependsOn(
         ":core:jar",
         ":minecraft:jar",
@@ -714,6 +757,7 @@ val publishLayout by tasks.registering {
 tasks.register("publishMavenLayout") {
     group = "nows"
     description = "Publishes developer-facing Maven artifacts into .publishing/maven."
+    dependsOn("check")
     dependsOn(mavenPublishedProjectPaths.map { "$it:publishAllPublicationsToPublishingMavenRepository" })
     dependsOn(":repos:NowsGradlePlugin:publishAllPublicationsToPublishingMavenRepository")
     dependsOn(":repos:NowsApiMod:publishApiModPublicationToPublishingMavenRepository")

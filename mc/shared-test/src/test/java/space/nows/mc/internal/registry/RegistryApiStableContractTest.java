@@ -145,7 +145,7 @@ class RegistryApiStableContractTest {
     }
 
     @SuppressWarnings("unused")
-    private static void stableItemAndBlockSpecCallsCompileAgainstEveryVersion(RegistryApi api) {
+    private static void compileOnlyStableItemAndBlockSpecCalls(RegistryApi api) {
         Item item = api.registerItem(ItemSpec.builder("nows:contract_item")
                 .maxStackSize(16)
                 .fireResistant()
@@ -164,7 +164,7 @@ class RegistryApiStableContractTest {
     }
 
     @SuppressWarnings("unused")
-    private static void stableWrapperCallsCompileAgainstEveryVersion(
+    private static void compileOnlyStableWrapperCalls(
             ConfigUi config,
             KeybindApi keybinds,
             PlayerApi player,
