@@ -66,7 +66,7 @@ public abstract class LoadingOverlayMixin {
         int panelX = (width - panelWidth) / 2;
         int panelY = Math.max(54, height - (height < 540 ? (loading.subTotal() > 0 ? 66 : 46) : (loading.subTotal() > 0 ? 88 : 68)));
         drawLabelValue(graphics, "Nows", loading.displayProgressLabel(), panelX, panelY - 13, panelWidth, statusColor);
-        drawStatusStrip(graphics, panelX, panelY, panelWidth, loading.displayProgress(),
+        drawFramedBar(graphics, panelX, panelY, panelWidth, loading.displayProgress(),
                 fadeColor(loading.failed() ? 0xFFFF4040 : 0xFF40BFFF, alpha));
         String detail = loading.currentDetailLine();
         if (!detail.isBlank()) {
@@ -76,7 +76,7 @@ public abstract class LoadingOverlayMixin {
             int subY = panelY + 22;
             drawLabelValue(graphics, loading.subtask().isBlank() ? "Work" : loading.subtask(),
                     loading.subProgressLabel(), panelX, subY, panelWidth, fadeColor(0xDDFFFFFF, alpha));
-            drawStatusStrip(graphics, panelX, subY + 13, panelWidth, loading.subProgress(), fadeColor(0xFFA0E65C, alpha));
+            drawFramedBar(graphics, panelX, subY + 13, panelWidth, loading.subProgress(), fadeColor(0xFFA0E65C, alpha));
         }
     }
 
@@ -120,7 +120,7 @@ public abstract class LoadingOverlayMixin {
         }
     }
 
-    private static void drawStatusStrip(GuiGraphics graphics, int x, int y, int width, float progress, int color) {
+    private static void drawFramedBar(GuiGraphics graphics, int x, int y, int width, float progress, int color) {
         graphics.fill(x, y, x + width, y + 2, color & 0x44FFFFFF);
         int fillWidth = Math.round(width * Math.max(0.0F, Math.min(1.0F, progress)));
         if (fillWidth > 0) {

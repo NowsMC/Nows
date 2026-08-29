@@ -151,7 +151,7 @@ class TitleScreenAdapterContractTest {
                 version + " LoadingOverlayMixin must render loader diagnostics");
         assertTrue(loadingOverlayMixin.contains("drawFramedBar"),
                 version + " LoadingOverlayMixin must draw a small diagnostics bar");
-        assertTrue(loadingOverlayMixin.contains("loading.overallProgress()"),
+        assertTrue(loadingOverlayMixin.contains("loading.displayProgress()"),
                 version + " LoadingOverlayMixin must draw a real Nows progress bar without replacing vanilla loading");
         assertTrue(loadingOverlayMixin.contains("drawLabelValue"),
                 version + " LoadingOverlayMixin must keep changing counters in fixed positions");
