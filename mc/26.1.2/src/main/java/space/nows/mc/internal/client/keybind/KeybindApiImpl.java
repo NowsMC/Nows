@@ -33,6 +33,8 @@ import java.util.Optional;
 import java.util.concurrent.CopyOnWriteArrayList;
 
 public final class KeybindApiImpl implements KeybindApi {
+    private static final Map<Identifier, KeyMapping.Category> MINECRAFT_CATEGORIES = new LinkedHashMap<>();
+
     private final Map<String, KeybindRegistration> keybinds = new LinkedHashMap<>();
     private final Map<String, KeyMapping.Category> categories = new LinkedHashMap<>();
     private final Map<String, List<Runnable>> pressListeners = new LinkedHashMap<>();
@@ -52,7 +54,7 @@ public final class KeybindApiImpl implements KeybindApi {
         if (category == null || category.isBlank()) {
             throw new IllegalArgumentException("Keybind category must not be blank");
         }
-        categories.computeIfAbsent(category, ignored -> KeyMapping.Category.register(categoryId(category)));
+        categories.computeIfAbsent(category, KeybindApiImpl::category);
     }
 
     @Override
@@ -71,7 +73,7 @@ public final class KeybindApiImpl implements KeybindApi {
         if (keybinds.containsKey(id)) {
             throw new IllegalStateException("Keybind already registered: " + id);
         }
-        KeyMapping mapping = createKeyboardMapping(id, category, glfwKeyCode);
+        KeyMapping mapping = createKeyboardMapping(id, categories.get(category), glfwKeyCode);
         KeybindRegistration registration = new KeybindRegistration(id, category, glfwKeyCode, mapping);
         keybinds.put(id, registration);
         appendToMinecraftOptions(mapping);
@@ -125,8 +127,16 @@ public final class KeybindApiImpl implements KeybindApi {
         return new KeyMapping(id, InputConstants.Type.KEYSYM, glfwKeyCode, category(category));
     }
 
+    private static KeyMapping createKeyboardMapping(String id, KeyMapping.Category category, int glfwKeyCode) {
+        return new KeyMapping(id, InputConstants.Type.KEYSYM, glfwKeyCode, category);
+    }
+
     private static void appendToMinecraftOptions(KeyMapping mapping) {
-        Options options = Minecraft.getInstance().options;
+        Minecraft minecraft = Minecraft.getInstance();
+        if (minecraft == null) {
+            return;
+        }
+        Options options = minecraft.options;
         if (options == null) {
             return;
         }
@@ -147,9 +157,21 @@ public final class KeybindApiImpl implements KeybindApi {
         options.nows$setKeyMappings(next);
     }
 
-    private static KeyMapping.Category category(String category) {
-        KeyMapping.Category value = KeyMapping.Category.register(categoryId(category));
+    private static synchronized KeyMapping.Category category(String category) {
+        Identifier id = categoryId(category);
+        KeyMapping.Category value = MINECRAFT_CATEGORIES.computeIfAbsent(id, KeybindApiImpl::registerMinecraftCategory);
         return value == null ? KeyMapping.Category.MISC : value;
+    }
+
+    private static KeyMapping.Category registerMinecraftCategory(Identifier id) {
+        try {
+            return KeyMapping.Category.register(id);
+        } catch (IllegalArgumentException exception) {
+            if (exception.getMessage() == null || !exception.getMessage().contains("already registered")) {
+                throw exception;
+            }
+            return new KeyMapping.Category(id);
+        }
     }
 
     private static Identifier categoryId(String category) {

@@ -16,11 +16,15 @@
 
 package space.nows.mc.internal.client.keybind;
 
+import com.mojang.blaze3d.platform.InputConstants;
 import net.minecraft.client.KeyMapping;
 import org.junit.jupiter.api.Test;
+import space.nows.mc.api.client.keybind.KeybindRegistration;
 
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
 class KeybindApiImplContractTest {
     @Test
@@ -32,5 +36,38 @@ class KeybindApiImplContractTest {
 
         assertNotNull(mapping);
         assertEquals("key.nows.contract", mapping.getName());
+    }
+
+    @Test
+    void categoryBasedMinecraftVersionsReuseCustomCategoryWhenRegisteringKeyboard() {
+        assumeTrue(hasCategoryBasedKeyMappingConstructor());
+
+        KeybindApiImpl api = new KeybindApiImpl();
+        String suffix = Long.toUnsignedString(System.nanoTime(), 36);
+        String category = "nows:keybind_contract_" + suffix;
+        api.registerCategory(category);
+
+        KeybindRegistration registration = assertDoesNotThrow(() ->
+                api.registerKeyboard("key.nows.contract." + suffix, category, 65));
+
+        assertEquals(category, registration.category());
+    }
+
+    @Test
+    void categoryBasedMinecraftVersionsReuseDefaultCategoryAcrossApiInstances() {
+        assumeTrue(hasCategoryBasedKeyMappingConstructor());
+
+        assertDoesNotThrow(KeybindApiImpl::new);
+        assertDoesNotThrow(KeybindApiImpl::new);
+    }
+
+    private static boolean hasCategoryBasedKeyMappingConstructor() {
+        try {
+            Class<?> categoryType = Class.forName("net.minecraft.client.KeyMapping$Category");
+            KeyMapping.class.getConstructor(String.class, InputConstants.Type.class, int.class, categoryType);
+            return true;
+        } catch (ClassNotFoundException | NoSuchMethodException ignored) {
+            return false;
+        }
     }
 }

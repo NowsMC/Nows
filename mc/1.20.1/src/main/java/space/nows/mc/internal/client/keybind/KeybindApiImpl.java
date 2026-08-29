@@ -127,7 +127,11 @@ public final class KeybindApiImpl implements KeybindApi {
     }
 
     private static void appendToMinecraftOptions(KeyMapping mapping) {
-        Options options = Minecraft.getInstance().options;
+        Minecraft minecraft = Minecraft.getInstance();
+        if (minecraft == null) {
+            return;
+        }
+        Options options = minecraft.options;
         if (options == null) {
             return;
         }
