@@ -1,3 +1,10 @@
+## Unreleased
+
+- Fixed custom keybind category registration for Minecraft adapters that use `KeyMapping.Category`, preventing duplicate category crashes when mods register keybinds with their own categories.
+- Hardened Minecraft adapter keybind coverage so category registration is exercised through the public `registerKeyboard` path across supported adapters.
+- Hardened Nows verification gates so release and Maven layout builds run the full project checks, including shared adapter contract guards that catch dormant compile-only tests.
+- Aligned loading diagnostics overlay contracts across supported Minecraft adapters with the current display progress behavior.
+
 ## 0.10.0
 
 - Removed reflection from the stable Minecraft keybind adapters across every supported `mc/<version>` artifact, using direct version-specific `KeyMapping` construction and typed Nows registrations instead.
