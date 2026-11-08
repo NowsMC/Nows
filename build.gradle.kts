@@ -776,7 +776,7 @@ tasks.register("versionReport") {
         println("Standalone NowsApiMod version: "
                 + providers.fileContents(layout.projectDirectory.file("repos/NowsApiMod/gradle.properties"))
                     .asText.get().lineSequence()
-                    .firstOrNull { it.startsWith("nows_version=") }
+                    .firstOrNull { it.startsWith("api_mod_version=") }
                     ?.substringAfter("=")
                     .orEmpty())
     }
