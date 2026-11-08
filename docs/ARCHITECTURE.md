@@ -144,7 +144,7 @@ Nows launcher profiles should inherit the launcher's normal game folder by defau
 
 The title-screen Nows badge, mod-count display and built-in mod list/menu are required loader proof-of-life, so they belong to `mc/<minecraft version>` rather than `repos/NowsApiMod/`. Each supported `mc/<version>` adapter can declare built-in Mixin configs through `runtime.builtinMixinConfigs` in `nows-minecraft.properties`; runtime registers those configs before mod-declared configs and passes the Nows version, Minecraft version and discovered mod count into the version adapter's client hook.
 
-`repos/NowsApiMod/` builds a normal optional companion mod JAR. It is published as an optional artifact, but the default installer manifest does not install it by default and the loader runtime must not require it.
+`repos/NowsApiMod/` builds a normal optional companion mod JAR. It is released separately with its own version, is not part of the Nows release layout, and the default installer manifest does not install it. The loader runtime must not require it.
 
 Release files are staged locally under `.publishing/` by `publishLayout`. That directory is intentionally ignored by Git because it is an upload staging area for `files.nows.space` backed by CDN/object storage.
 
@@ -237,14 +237,14 @@ plugin defaults and release manifests from that value. `install.properties.templ
 is only a template; `publishLayout` rewrites Nows module coordinates, paths,
 URLs and checksums before staging a release.
 
-`repos/NowsApiMod` is also usable as a standalone repository, so it keeps its own
-`gradle.properties`. Use the root helper when bumping releases:
+`repos/NowsApiMod` and `repos/NowsMCreatorGenerator` keep their own versions in their own
+`gradle.properties`. Use the root helper when bumping Nows releases:
 
 ```bash
 ./gradlew setNowsVersion -Pnew_nows_version=<version>
 ```
 
-That updates both the monorepo and standalone `NowsApiMod` property files. Use
+That updates the monorepo version and the `nows_version` pin in `NowsApiMod`, not its own version. Use
 `./gradlew versionReport` to print the current coordinated version.
 
 ## Technical rules

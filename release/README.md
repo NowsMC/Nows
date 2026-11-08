@@ -29,7 +29,7 @@ To build a different Minecraft target, pass the Gradle property:
 ./gradlew -Pminecraft_version=1.20.1 publishLayout
 ```
 
-The normal installer JAR is staged once per Nows version at `.publishing/releases/nows/<nows-version>/installers/NowsInstaller-<nows-version>.jar`. It lets players select a supported Minecraft version and downloads the matching manifest. `mods/nows-api-mod-<version>-mc-<minecraft-version>.jar` is staged as an optional companion mod artifact; it is not required for the built-in title-screen Nows badge.
+The normal installer JAR is staged once per Nows version at `.publishing/releases/nows/<nows-version>/installers/NowsInstaller-<nows-version>.jar`. It lets players select a supported Minecraft version and downloads the matching manifest. NowsApiMod is released on its own and is not staged here.
 
 Upload `.publishing/maven/` to the Maven repository path, expected as `https://files.nows.space/maven/`. This repo is for mod developers and publishes Nows APIs, Minecraft-version adapters, integrations, runtime and the Gradle plugin marker. POM metadata uses Apache License 2.0 and lists `TamKungZ_` as maintainer and `HollZaterQ` as tester.
 

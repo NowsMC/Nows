@@ -95,7 +95,7 @@ Inspect the coordinated version state:
 
 `gradle.properties` is the source of truth for the monorepo's `nows_version`. Build logic generates installer defaults, runtime version resources, Gradle plugin defaults and release manifests from that value.
 
-`repos/NowsApiMod` is also usable as a standalone repository, so it keeps its own `gradle.properties`. Use `setNowsVersion` to update both the monorepo and standalone companion mod state.
+`repos/NowsApiMod` and `repos/NowsMCreatorGenerator` are separate repositories with their own versions, `api_mod_version` and `plugin_version` in their `gradle.properties`, currently 1.0.0 each. Their `nows_version` is the Nows release they are built against. `setNowsVersion` updates the monorepo version and that pin in NowsApiMod, never their own versions. Neither project is part of the release layout or of the upload to files.nows.space.
 
 ## Installer
 
@@ -145,7 +145,7 @@ The generated launcher metadata keeps `space.nows:nows-mc-*` adapters out of lau
 .publishing/releases/nows/<nows-version>/<minecraft-version>/
 ```
 
-Each staged Minecraft version contains libraries, a processed `install.properties`, `SHA256SUMS`, and `mods/nows-api-mod-<nows-version>-mc-<minecraft-version>.jar` as an optional companion mod artifact. Minecraft client JARs are not staged or uploaded by Nows; the installer prepares the local profile client from the user's vanilla install or Mojang's official services.
+Each staged Minecraft version contains libraries, a processed `install.properties`, and `SHA256SUMS`. Minecraft client JARs are not staged or uploaded by Nows; the installer prepares the local profile client from the user's vanilla install or Mojang's official services.
 
 Expected output:
 
