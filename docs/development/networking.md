@@ -14,4 +14,10 @@ networking.registerHandler("my_mod:main", NetworkDirection.CLIENTBOUND, (packet,
 
 Payloads are backed by Netty `ByteBuf`. Nows expects Minecraft launcher/runtime libraries to provide Netty and does not bundle a second copy.
 
-Sending goes through `NetworkTransport`, which is installed by version-specific code. Until a concrete transport is present, `send(...)` returns `false`.
+Sending goes through `NetworkTransport`, which is installed by version-specific code.
+
+## Known limitation: sending does not work yet
+
+No `mc/<version>` adapter installs a `NetworkTransport`, so on every supported Minecraft version `canSend(...)` and `send(...)` return `false` and nothing reaches the other side. The first dropped message per channel and direction is logged as a warning. Check the result of `send`.
+
+Declaring channels, registering handlers and `receive(...)` work and are tested. Delivery over a real connection is not implemented and has not been run on any version.

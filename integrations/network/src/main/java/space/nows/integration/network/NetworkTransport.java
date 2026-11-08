@@ -16,7 +16,13 @@
 
 package space.nows.integration.network;
 
-/** Version-specific Minecraft code implements this to move packets over the real connection. */
+/**
+ * Version-specific Minecraft code implements this to move packets over the real connection.
+ *
+ * <p>No supported Minecraft version has an implementation yet. Until one is installed with
+ * {@link NowsNetworking#installTransport}, messages cannot be sent to the other side, see
+ * {@link NowsNetworking#send(NetworkChannelId, NetworkDirection, NetworkPayload)}.</p>
+ */
 public interface NetworkTransport {
     boolean canSend(NetworkDirection direction, NetworkChannelId channel);
 

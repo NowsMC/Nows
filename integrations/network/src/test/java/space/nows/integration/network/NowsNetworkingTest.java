@@ -67,6 +67,18 @@ class NowsNetworkingTest {
     }
 
     @Test
+    void keepsRefusingRepeatedSendsWithoutThrowing() throws Exception {
+        NowsNetworking networking = new NowsNetworking(NowsSide.CLIENT);
+        networking.registerChannel("example:main", NetworkDirection.SERVERBOUND);
+
+        for (int attempt = 0; attempt < 3; attempt++) {
+            assertFalse(networking.canSend("example:main", NetworkDirection.SERVERBOUND));
+            assertFalse(networking.send("example:main", NetworkDirection.SERVERBOUND, new byte[] {7}));
+        }
+        assertFalse(networking.send("example:unregistered", NetworkDirection.SERVERBOUND, new byte[] {7}));
+    }
+
+    @Test
     void rejectsInvalidNetworkInputs() {
         NowsNetworking networking = new NowsNetworking(NowsSide.CLIENT);
 

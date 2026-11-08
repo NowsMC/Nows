@@ -17,6 +17,8 @@
 package space.nows.integration.network;
 
 import io.netty.buffer.ByteBuf;
+import reactor.util.Logger;
+import space.nows.integration.logging.NowsLog;
 import space.nows.platform.api.NowsContext;
 import space.nows.platform.api.NowsServices;
 import space.nows.platform.api.NowsSide;
@@ -30,14 +32,19 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 
 /** Mod-facing networking registry and transport facade. */
 public final class NowsNetworking {
+    private static final Logger LOG = NowsLog.get(NowsNetworking.class);
+
     private final NowsSide runtimeSide;
     private final Map<NetworkChannelId, NetworkChannel> channels = new LinkedHashMap<>();
     private final Map<NetworkDirection, Map<NetworkChannelId, List<NetworkPacketHandler>>> handlers =
             new EnumMap<>(NetworkDirection.class);
+    private final Set<String> reportedDrops = ConcurrentHashMap.newKeySet();
     private volatile NetworkTransport transport = UnavailableTransport.INSTANCE;
 
     public NowsNetworking(NowsSide runtimeSide) {
@@ -121,14 +128,34 @@ public final class NowsNetworking {
         return canSend(NetworkChannelId.of(id), direction);
     }
 
+    /** Returns {@code false} for every channel until an adapter installs a {@link NetworkTransport}, see {@link #send}. */
     public boolean canSend(NetworkChannelId id, NetworkDirection direction) {
         Objects.requireNonNull(id, "id");
         Objects.requireNonNull(direction, "direction");
+        return cannotSendReason(id, direction) == null;
+    }
+
+    private String cannotSendReason(NetworkChannelId id, NetworkDirection direction) {
         NetworkChannel channel = channels.get(id);
-        return channel != null
-                && channel.supports(direction)
-                && direction.canSendFrom(runtimeSide)
-                && transport.canSend(direction, id);
+        if (channel == null) {
+            return "the channel is not registered";
+        }
+        if (!channel.supports(direction)) {
+            return "the channel does not support " + direction;
+        }
+        if (!direction.canSendFrom(runtimeSide)) {
+            return "a " + runtimeSide + " runtime cannot send " + direction;
+        }
+        if (transport == UnavailableTransport.INSTANCE) {
+            return "no Nows network transport is installed, no Minecraft adapter provides one yet";
+        }
+        return transport.canSend(direction, id) ? null : "the transport cannot send this channel";
+    }
+
+    private void reportDroppedSend(NetworkChannelId id, NetworkDirection direction) {
+        if (reportedDrops.add(id + "/" + direction)) {
+            LOG.warn("Dropped a {} message on {}: {}", direction, id, cannotSendReason(id, direction));
+        }
     }
 
     public boolean send(String id, NetworkDirection direction, byte[] payload) throws Exception {
@@ -139,10 +166,21 @@ public final class NowsNetworking {
         return send(NetworkChannelId.of(id), direction, NetworkPayload.of(payload));
     }
 
+    /**
+     * Sends a payload over the game connection.
+     *
+     * <p>No Minecraft adapter installs a {@link NetworkTransport} yet, so on every supported version this does not
+     * deliver anything: it returns {@code false} and logs a warning the first time per channel and direction. Check the
+     * result. Receiving and handler dispatch ({@link #receive(NetworkChannelId, NetworkDirection, NetworkPayload)})
+     * work without a transport.</p>
+     *
+     * @return {@code true} only when a transport accepted the payload
+     */
     public boolean send(NetworkChannelId id, NetworkDirection direction, NetworkPayload payload) throws Exception {
         Objects.requireNonNull(id, "id");
         Objects.requireNonNull(direction, "direction");
         if (!canSend(id, direction)) {
+            reportDroppedSend(id, direction);
             return false;
         }
         transport.send(direction, id, payload == null ? NetworkPayload.empty() : payload);
