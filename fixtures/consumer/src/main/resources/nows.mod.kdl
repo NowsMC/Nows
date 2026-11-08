@@ -1,0 +1,21 @@
+mod id="${modId}" name="${modName}" version="${modVersion}" minecraft="${minecraftVersion}" side="client" {
+    info {
+        description "Consumer fixture that calls the documented Nows API from outside the Nows build."
+        license "Apache-2.0"
+    }
+
+    compatibility {
+        requires "minecraft" version="${minecraftVersion}"
+        requires "nows" version="${nowsVersion}"
+    }
+
+    properties {
+        expected-minecraft "${minecraftVersion}"
+    }
+
+    runtime {
+        network-channel "nows_consumer_fixture:main"
+        listener "space.nows.fixture.consumer.FixtureListener"
+        entrypoint "space.nows.fixture.consumer.ConsumerFixture"
+    }
+}
