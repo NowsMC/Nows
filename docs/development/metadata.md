@@ -46,6 +46,8 @@ Grouped KDL is the recommended style, but equivalent flat nodes remain supported
 
 `side` accepts `client`, `server`, `both` or `common`. The current launcher runtime is client-side and rejects server-only mods before loading mod classes.
 
+Dedicated servers do not work yet. The launcher accepts `--nowsSide server` and the installer's `--server` option writes a server folder, but the vanilla server jar does not start under it. With the classpath those scripts build (the Nows libraries and the vanilla server jar) the loader stops at `Install Mixin integration` with a `NoClassDefFoundError` for Guava. With Guava and Log4j added it stops at `Invoke Minecraft main`, because `net.minecraft.server.Main` is inside the vanilla bundler jar and the loader does not unpack it. This was seen on 1.20.1 and 26.2 before the server's EULA step, which is left to the person running the server and was never accepted by a test. The Minecraft adapter is skipped on the server side, so no `MinecraftApi` call is available there. `scripts/verify.ps1` does not start a server.
+
 Mods can query loaded metadata through `NowsContext`:
 
 ```java
