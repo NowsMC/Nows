@@ -28,10 +28,11 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.function.Supplier;
 
 public final class RecipeViewerApiImpl implements RecipeViewerApi {
     private final Map<String, RecipeViewerCategory<?>> categories = new LinkedHashMap<>();
-    private final Map<String, List<ItemStack>> catalysts = new LinkedHashMap<>();
+    private final Map<String, List<Supplier<ItemStack>>> catalysts = new LinkedHashMap<>();
     private final Map<String, List<MenuType<?>>> transfers = new LinkedHashMap<>();
 
     @Override
@@ -40,6 +41,18 @@ public final class RecipeViewerApiImpl implements RecipeViewerApi {
             Class<T> recipeClass,
             Component title,
             ItemStack icon,
+            RecipeViewerLayoutFactory<T> layoutFactory
+    ) {
+        ItemStack copy = icon.copy();
+        return registerCategory(id, recipeClass, title, () -> copy, layoutFactory);
+    }
+
+    @Override
+    public synchronized <T> RecipeViewerCategory<T> registerCategory(
+            String id,
+            Class<T> recipeClass,
+            Component title,
+            Supplier<ItemStack> icon,
             RecipeViewerLayoutFactory<T> layoutFactory
     ) {
         RecipeViewerCategory<T> category = new RecipeViewerCategory<>(id, recipeClass, title, icon, layoutFactory);
@@ -56,8 +69,14 @@ public final class RecipeViewerApiImpl implements RecipeViewerApi {
 
     @Override
     public synchronized void registerCatalyst(String categoryId, ItemStack stack) {
+        ItemStack copy = stack.copy();
+        registerCatalyst(categoryId, () -> copy);
+    }
+
+    @Override
+    public synchronized void registerCatalyst(String categoryId, Supplier<ItemStack> stack) {
         requireCategory(categoryId);
-        catalysts.computeIfAbsent(categoryId, ignored -> new ArrayList<>()).add(stack.copy());
+        catalysts.computeIfAbsent(categoryId, ignored -> new ArrayList<>()).add(stack);
     }
 
     @Override
@@ -73,7 +92,7 @@ public final class RecipeViewerApiImpl implements RecipeViewerApi {
 
     @Override
     public synchronized List<ItemStack> catalysts(String categoryId) {
-        return catalysts.getOrDefault(categoryId, List.of()).stream().map(ItemStack::copy).toList();
+        return catalysts.getOrDefault(categoryId, List.of()).stream().map(Supplier::get).map(ItemStack::copy).toList();
     }
 
     @Override

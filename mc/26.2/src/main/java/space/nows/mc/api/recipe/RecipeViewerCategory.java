@@ -20,13 +20,19 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.world.item.ItemStack;
 
 import java.util.Objects;
+import java.util.function.Supplier;
 
-/** Stable category description for mods that already have JEI-style recipe categories. */
+/**
+ * Stable category description for mods that already have JEI-style recipe categories.
+ *
+ * <p>The icon is resolved when it is read. Newer Minecraft versions cannot build an {@link ItemStack} before a
+ * world is joined, so a category registered during mod initialization must not need one yet.</p>
+ */
 public record RecipeViewerCategory<T>(
         String id,
         Class<T> recipeClass,
         Component title,
-        ItemStack icon,
+        Supplier<ItemStack> iconSupplier,
         RecipeViewerLayoutFactory<T> layoutFactory
 ) {
     public RecipeViewerCategory {
@@ -35,14 +41,34 @@ public record RecipeViewerCategory<T>(
         }
         Objects.requireNonNull(recipeClass, "recipeClass");
         Objects.requireNonNull(title, "title");
-        Objects.requireNonNull(icon, "icon");
+        Objects.requireNonNull(iconSupplier, "icon");
         Objects.requireNonNull(layoutFactory, "layoutFactory");
-        icon = icon.copy();
+    }
+
+    /** Keeps the original constructor for callers that already hold a native icon. */
+    public RecipeViewerCategory(
+            String id,
+            Class<T> recipeClass,
+            Component title,
+            ItemStack icon,
+            RecipeViewerLayoutFactory<T> layoutFactory
+    ) {
+        this(id, recipeClass, title, constant(icon), layoutFactory);
+    }
+
+    public ItemStack icon() {
+        return Objects.requireNonNull(iconSupplier.get(), "icon");
     }
 
     public RecipeViewerLayout layout(T recipe) {
         return Objects.requireNonNull(
                 layoutFactory.build(recipe, RecipeViewerLayout.builder()),
                 "layoutFactory returned null");
+    }
+
+    private static Supplier<ItemStack> constant(ItemStack icon) {
+        Objects.requireNonNull(icon, "icon");
+        ItemStack copy = icon.copy();
+        return () -> copy;
     }
 }

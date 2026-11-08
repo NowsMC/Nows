@@ -26,4 +26,6 @@ dataGen.writeJson(dataGen.recipePath("my_mod:widget"), Map.class, Map.of(
 ));
 ```
 
-Use `PackTarget.SERVER_DATA` for data packs and `PackTarget.CLIENT_RESOURCES` for assets. `CommandSpec` covers simple literal commands through a stable Nows-owned value; the lower-level Brigadier dispatcher callback remains available for commands that need arguments, permissions or native source details.
+Use `PackTarget.SERVER_DATA` for data packs and `PackTarget.CLIENT_RESOURCES` for assets. `CommandSpec` builds a Brigadier literal with optional `CommandArgumentSpec` arguments (string, word, greedy string, integer, decimal, boolean, player and block position), an optional permission level, and a callback that receives the parsed values, the source name and a reply function. Player arguments are passed as the player name, and an optional argument that was not typed is absent from the context. The lower-level Brigadier dispatcher callback remains available for commands that need native source details.
+
+Generated JSON follows the selected Minecraft version. Recipes use the item stack objects of 1.20.5 and the plain id ingredients of 1.21.2 where those versions require them, and recipes and tags are written to the folder names that version reads (`recipes` and `tags/items` up to 1.20.6, `recipe` and `tags/item` from 1.21).

@@ -47,6 +47,26 @@ public final class ClientHooks {
         return ModPackSource.appendClientSource(sources, originalSources, mods);
     }
 
+    private static volatile Runnable registryWindowAction;
+
+    /**
+     * Runs {@code action} while Minecraft's built-in registries are populated but not frozen yet. That is the only
+     * point where a mod can read or register registry content, so the loader defers mod entrypoints to it.
+     */
+    public static boolean deferUntilRegistriesOpen(Runnable action) {
+        registryWindowAction = action;
+        return true;
+    }
+
+    /** Called by the registry window mixin. Runs the deferred action once. */
+    public static void openRegistryWindow() {
+        Runnable action = registryWindowAction;
+        registryWindowAction = null;
+        if (action != null) {
+            action.run();
+        }
+    }
+
     public static String loaderLine() {
         return "Nows Loader " + nowsVersion;
     }

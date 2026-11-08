@@ -27,7 +27,10 @@ val productionReflectionAllowlist = setOf(
     "integrations/geb/src/main/java/space/nows/integration/geb/GebIntegration.java",
     "integrations/mixin/src/main/java/space/nows/integration/mixin/NowsMixinBootstrap.java",
     "integrations/mixin/src/main/java/space/nows/integration/mixin/NowsMixinService.java",
-    "repos/NowsMCreatorGenerator/src/main/java/space/nows/mcreator/NowsMCreatorPlugin.java"
+    "repos/NowsMCreatorGenerator/src/main/java/space/nows/mcreator/NowsMCreatorPlugin.java",
+    // Test fixture, not shipped. It feeds generated recipes to Minecraft's own parser, which differs by version, and
+    // one source has to compile for every adapter.
+    "fixtures/consumer/src/main/java/space/nows/fixture/consumer/ConsumerFixture.java"
 )
 
 val productionReflectionAllowedSuffixes = listOf(

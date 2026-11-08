@@ -249,3 +249,17 @@ nows {
 The plugin owns Minecraft development setup rather than loader core. `nowsPrepareMinecraft` downloads the official client artifact and official `client_mappings` metadata. For modern unobfuscated Minecraft it detects Mojang-named classes and skips remapping. For older obfuscated versions it uses `repos/NowsRemapper` to read Mojang's ProGuard mapping file and remap obfuscated names to official Mojang names locally.
 
 It applies Gradle's Java plugin, wires the prepared development client JAR into `compileOnly`, makes Java compilation depend on preparation, adds `nows-core`, the matching `nows-mc-<minecraft-version>` adapter, default KDL/logging/GEB/network/Mixin compile-time tooling, common Minecraft-owned compile libraries, and expands `${nowsVersion}` plus `${minecraftVersion}` in `nows.mod.kdl`.
+
+## Runtime verification
+
+A passing build does not show that the loader starts or that an outside mod can use the API. One script checks that on every `mc/<version>` adapter:
+
+```powershell
+pwsh scripts/verify.ps1 -JdkRoots G:\Java
+```
+
+For each adapter it runs `build check`, inspects the produced jars (policy and mixin configs, service files, doubled or unremapped classes, jars older than their sources), builds the consumer mod in `fixtures/consumer` through the Gradle plugin, starts the real client with that mod and waits for the main menu and the fixture's summary line. It then scans the full logs for failure patterns, compares the API results between adapters and, with `-BaselineFile`, the startup time against an earlier run. It exits non-zero on any failure, a missing summary line, a hang, a failure-pattern hit or a stale jar.
+
+Requirements: PowerShell 7, a Java 25 JDK for Gradle (`-GradleJdk` or `JAVA_HOME`), the JDKs Minecraft needs for each adapter under `-JdkRoots` (17, 21 and 25 cover the supported versions), network access for Mojang's launcher metadata, libraries and assets (cached in `.nows/smoke`), and a display. Launching is implemented for Windows x64. No GPG key is needed.
+
+Client launches use the dummy token `--accessToken 0`, so Mojang's online services log a fixed set of authentication and Realms errors. The script allows exactly those log entries, matched by their full message, and nothing else. Use `-NoMod -WriteBaselineFile baseline.json` on another checkout to record startup times without the consumer mod.

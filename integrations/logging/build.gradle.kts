@@ -8,6 +8,8 @@ dependencies {
     api("io.projectreactor:reactor-core:${reactorVersion.get()}")
     implementation("com.lmax:disruptor:${disruptorVersion.get()}")
     compileOnly("org.slf4j:slf4j-api:2.0.17")
+    compileOnly("org.apache.logging.log4j:log4j-api:2.24.3")
+    testImplementation("org.apache.logging.log4j:log4j-api:2.24.3")
     testImplementation(platform("org.junit:junit-bom:5.12.2"))
     testImplementation("org.junit.jupiter:junit-jupiter")
     testRuntimeOnly("org.junit.platform:junit-platform-launcher")

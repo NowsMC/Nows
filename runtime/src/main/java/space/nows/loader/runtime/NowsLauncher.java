@@ -185,11 +185,29 @@ public final class NowsLauncher {
                 events.post(new NowsBootstrapReadyEvent(context));
                 events.post(new NowsRegisterEvent(context));
 
-                phase("Run mod entrypoints", () -> runEntrypoints(gameLoader, mods, context, events));
+                ThrowingRunnable beforeMinecraftMain = () -> {
+                    phase("Run mod entrypoints", () -> runEntrypoints(gameLoader, mods, context, events));
 
-                LOG.info("Starting Minecraft {} with {} Nows mod(s)", launch.minecraftVersion(), mods.size());
-                events.post(new NowsMinecraftStartingEvent(
-                        context, minecraftMainClass, launch.minecraftArguments().size()));
+                    LOG.info("Starting Minecraft {} with {} Nows mod(s)", launch.minecraftVersion(), mods.size());
+                    events.post(new NowsMinecraftStartingEvent(
+                            context, minecraftMainClass, launch.minecraftArguments().size()));
+                };
+                // Minecraft 1.17 and newer reject registry access until Bootstrap has run and freeze the
+                // registries right after it. The adapter runs entrypoints inside that window.
+                boolean deferred = runtimeSide == NowsSide.CLIENT && deferEntrypoints(gameLoader, () -> {
+                    try {
+                        beforeMinecraftMain.run();
+                    } catch (RuntimeException | Error failure) {
+                        throw failure;
+                    } catch (Exception failure) {
+                        throw new IllegalStateException("Nows mod entrypoints failed", failure);
+                    }
+                });
+                if (deferred) {
+                    LOG.info("Mod entrypoints will run once Minecraft opens its registries");
+                } else {
+                    beforeMinecraftMain.run();
+                }
                 phase("Invoke Minecraft main", () ->
                         invokeMinecraftMain(gameLoader, minecraftMainClass,
                                 launch.minecraftArguments().toArray(String[]::new)));
@@ -252,6 +270,17 @@ public final class NowsLauncher {
             LOG.info("Minecraft client hooks configured from {} for {} mod(s)", hookClassName, mods.size());
         } catch (ClassNotFoundException ignored) {
             LOG.info("No Minecraft client hooks available for {}", minecraftVersion);
+        }
+    }
+
+    private static boolean deferEntrypoints(ClassLoader loader, Runnable action) throws Exception {
+        String hookClassName = "space.nows.mc.internal.ClientHooks";
+        try {
+            Class<?> hookClass = Class.forName(hookClassName, true, loader);
+            Method defer = hookClass.getMethod("deferUntilRegistriesOpen", Runnable.class);
+            return (Boolean) defer.invoke(null, action);
+        } catch (ClassNotFoundException | NoSuchMethodException ignored) {
+            return false;
         }
     }
 

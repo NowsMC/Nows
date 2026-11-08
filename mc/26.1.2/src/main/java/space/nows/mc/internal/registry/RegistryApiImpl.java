@@ -181,7 +181,8 @@ public final class RegistryApiImpl implements RegistryApi {
 
     @Override
     public Block registerBlock(BlockSpec spec) {
-        return registerCustomBlock(spec.id(), properties -> new Block(applyBlockSpec(blockProperties(spec), spec)));
+        return registerCustomBlock(spec.id(), properties -> new Block(applyBlockSpec(
+                blockProperties(spec).setId(ResourceKey.create(Registries.BLOCK, identifier(spec.id()))), spec)));
     }
 
     @Override
