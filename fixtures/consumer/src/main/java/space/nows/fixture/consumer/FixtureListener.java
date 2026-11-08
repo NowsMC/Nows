@@ -10,6 +10,8 @@ public final class FixtureListener implements NowsLifecycleListener {
     static volatile boolean bootstrapReady;
     static volatile boolean register;
     static volatile boolean minecraftStarting;
+    static volatile boolean entrypointFinished;
+    static volatile boolean startedAfterEntrypoint;
 
     @Override
     public void onNowsBootstrapReady(NowsBootstrapReadyEvent event) {
@@ -24,5 +26,6 @@ public final class FixtureListener implements NowsLifecycleListener {
     @Override
     public void onNowsMinecraftStarting(NowsMinecraftStartingEvent event) {
         minecraftStarting = true;
+        startedAfterEntrypoint = entrypointFinished;
     }
 }

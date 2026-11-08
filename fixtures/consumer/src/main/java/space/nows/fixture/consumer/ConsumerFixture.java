@@ -76,7 +76,7 @@ public final class ConsumerFixture implements ModInitializer {
 
     /** Every API area this fixture is responsible for. A catalogue entry with no result is a failure. */
     private static final List<String> CATALOGUE = List.of(
-            "metadata.descriptor", "lifecycle.listener", "lifecycle.minecraftStarting", "config.files",
+            "metadata.descriptor", "lifecycle.entrypointWindow", "lifecycle.listener", "lifecycle.minecraftStarting", "config.files",
             "values.ids", "values.geometry", "text.component", "nbt.roundtrip",
             "registry.item", "registry.itemStack", "registry.block", "registry.blockItemStack",
             "registry.sound", "registry.effect",
@@ -106,6 +106,12 @@ public final class ConsumerFixture implements ModInitializer {
             eq("expected-minecraft", Optional.of(ctx.minecraftVersion()), descriptor.property("expected-minecraft"));
             eq("client side", true, ctx.isClient());
             return "id=" + descriptor.id();
+        });
+        check("lifecycle.entrypointWindow", () -> {
+            RegistryApi registries = MinecraftApi.registries(ctx);
+            eq("vanilla items are readable while the entrypoint runs", true, registries.item("minecraft:stone").isPresent());
+            eq("vanilla blocks are readable while the entrypoint runs", true, registries.block("minecraft:stone").isPresent());
+            return "vanilla items and blocks are registered when the entrypoint runs";
         });
         check("lifecycle.listener", () -> {
             eq("bootstrapReady fired before entrypoint", true, FixtureListener.bootstrapReady);
@@ -404,6 +410,7 @@ public final class ConsumerFixture implements ModInitializer {
                 titleScreenSeen = true;
             }
         });
+        FixtureListener.entrypointFinished = true;
     }
 
     private static void finish() {
@@ -418,6 +425,7 @@ public final class ConsumerFixture implements ModInitializer {
         });
         check("lifecycle.minecraftStarting", () -> {
             eq("event fired", true, FixtureListener.minecraftStarting);
+            eq("event came after the entrypoint finished", true, FixtureListener.startedAfterEntrypoint);
             return "seen";
         });
         int pass = 0;
