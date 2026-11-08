@@ -217,7 +217,8 @@ public enum NbtApiImpl implements NbtApi {
 
     @Override
     public ListTag getList(CompoundTag tag, String key) {
-        return tag.contains(key) ? tag.getList(key, END) : list();
+        // getList(key, END) only matches empty lists, so read the stored tag and check its type instead.
+        return tag.get(key) instanceof ListTag stored ? stored : list();
     }
 
     @Override
