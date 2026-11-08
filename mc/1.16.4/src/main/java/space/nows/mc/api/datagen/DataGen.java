@@ -70,15 +70,15 @@ public interface DataGen {
     }
 
     default String recipePath(String id) {
-        return "data/" + namespace(id) + "/recipe/" + pathPart(id) + ".json";
+        return "data/" + namespace(id) + "/recipes/" + pathPart(id) + ".json";
     }
 
     default void writeTag(TagSpec tag) throws IOException {
         String relativePath = switch (tag.target()) {
             case ITEMS -> itemTagPath(tag.id());
             case BLOCKS -> blockTagPath(tag.id());
-            case FLUIDS -> "data/" + namespace(tag.id()) + "/tags/fluid/" + pathPart(tag.id()) + ".json";
-            case ENTITY_TYPES -> "data/" + namespace(tag.id()) + "/tags/entity_type/" + pathPart(tag.id()) + ".json";
+            case FLUIDS -> "data/" + namespace(tag.id()) + "/tags/fluids/" + pathPart(tag.id()) + ".json";
+            case ENTITY_TYPES -> "data/" + namespace(tag.id()) + "/tags/entity_types/" + pathPart(tag.id()) + ".json";
         };
         writeJson(relativePath, ordered("replace", false, "values", tag.values()));
     }
@@ -146,11 +146,11 @@ public interface DataGen {
     }
 
     default String itemTagPath(String id) {
-        return "data/" + namespace(id) + "/tags/item/" + pathPart(id) + ".json";
+        return "data/" + namespace(id) + "/tags/items/" + pathPart(id) + ".json";
     }
 
     default String blockTagPath(String id) {
-        return "data/" + namespace(id) + "/tags/block/" + pathPart(id) + ".json";
+        return "data/" + namespace(id) + "/tags/blocks/" + pathPart(id) + ".json";
     }
 
     private static String namespace(String id) {
