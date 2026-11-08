@@ -59,9 +59,10 @@ public final class NowsLog {
                 case "console" -> Loggers.useConsoleLoggers();
                 case "verbose-console" -> Loggers.useVerboseConsoleLoggers();
                 case "jdk" -> Loggers.useJdkLoggers();
-                case "slf4j" -> Loggers.useSl4jLoggers();
+                case "log4j2" -> useLog4j2();
+                case "slf4j" -> useSlf4jOrLog4j2();
                 default -> {
-                    Loggers.useSl4jLoggers();
+                    useSlf4jOrLog4j2();
                     Loggers.getLogger(NowsLog.class).warn(
                             "Unknown Nows logging backend '{}', using slf4j", selectedBackend);
                 }
@@ -71,6 +72,22 @@ public final class NowsLog {
             Loggers.getLogger(NowsLog.class).warn(
                     "Nows logging backend '{}' is unavailable, using jdk fallback", selectedBackend, failure);
         }
+    }
+
+    // SLF4J is preferred. Minecraft before 1.17 has no SLF4J binding but always has Log4j 2.
+    private static void useSlf4jOrLog4j2() {
+        try {
+            Loggers.useSl4jLoggers();
+        } catch (RuntimeException | LinkageError slf4jUnavailable) {
+            useLog4j2();
+            Loggers.getLogger(NowsLog.class).info("SLF4J is not available, Nows logs through the Log4j 2 API");
+        }
+    }
+
+    private static void useLog4j2() {
+        // Fails with a LinkageError when the Log4j 2 API is missing, before the factory is replaced.
+        new Log4j2Logger(NowsLog.class.getName());
+        Loggers.useCustomLoggers(Log4j2Logger::new);
     }
 
     public static final class Phase implements AutoCloseable {
