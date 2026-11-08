@@ -94,27 +94,28 @@ public interface DataGen {
                 json.put("type", "minecraft:crafting_shaped");
                 json.put("pattern", recipe.pattern());
                 Map<String, Object> keys = new LinkedHashMap<>();
-                recipe.keys().forEach((key, ingredient) -> keys.put(String.valueOf(key), ingredientJson(ingredient)));
+                recipe.keys().forEach((key, ingredient) -> keys.put(String.valueOf(key), ingredientValue(ingredient)));
                 json.put("key", keys);
-                json.put("result", stackJson(recipe.result().itemId(), recipe.result().count()));
+                json.put("result", resultValue(recipe.result().itemId(), recipe.result().count()));
             }
             case SHAPELESS_CRAFTING -> {
                 json.put("type", "minecraft:crafting_shapeless");
-                json.put("ingredients", recipe.ingredients().stream().map(DataGen::ingredientJson).toList());
-                json.put("result", stackJson(recipe.result().itemId(), recipe.result().count()));
+                json.put("ingredients", recipe.ingredients().stream().map(DataGen::ingredientValue).toList());
+                json.put("result", resultValue(recipe.result().itemId(), recipe.result().count()));
             }
             case SMELTING, BLASTING, SMOKING, CAMPFIRE_COOKING -> {
                 json.put("type", "minecraft:" + recipe.kind().name().toLowerCase());
-                json.put("ingredient", recipe.ingredients().isEmpty() ? ordered("item", "minecraft:stone") : ingredientJson(recipe.ingredients().get(0)));
-                json.put("result", recipe.result().itemId());
+                json.put("ingredient", ingredientValue(
+                        recipe.ingredients().isEmpty() ? IngredientSpec.item("minecraft:stone") : recipe.ingredients().get(0)));
+                json.put("result", simpleResultValue(recipe.result().itemId()));
                 json.put("experience", recipe.experience());
                 json.put("cookingtime", recipe.cookingTime());
             }
             case STONECUTTING -> {
                 json.put("type", "minecraft:stonecutting");
-                json.put("ingredient", recipe.ingredients().isEmpty() ? ordered("item", "minecraft:stone") : ingredientJson(recipe.ingredients().get(0)));
-                json.put("result", recipe.result().itemId());
-                json.put("count", recipe.result().count());
+                json.put("ingredient", ingredientValue(
+                        recipe.ingredients().isEmpty() ? IngredientSpec.item("minecraft:stone") : recipe.ingredients().get(0)));
+                putStonecuttingResult(json, recipe.result().itemId(), recipe.result().count());
             }
         }
         return json;
@@ -134,6 +135,30 @@ public interface DataGen {
 
     static Map<String, Object> stackJson(String itemId, int count) {
         return count == 1 ? ordered("item", itemId) : ordered("item", itemId, "count", count);
+    }
+
+    // From Minecraft 1.21.2 an ingredient is an item id, a #tag id, or an array of item ids.
+    private static Object ingredientValue(IngredientSpec ingredient) {
+        if (ingredient.tagId() != null) {
+            return "#" + ingredient.tagId();
+        }
+        if (ingredient.itemIds().size() == 1) {
+            return ingredient.itemIds().get(0);
+        }
+        return List.copyOf(ingredient.itemIds());
+    }
+
+    // From Minecraft 1.20.5 every recipe result is an item stack object that names its item with "id".
+    private static Object resultValue(String itemId, int count) {
+        return count == 1 ? ordered("id", itemId) : ordered("id", itemId, "count", count);
+    }
+
+    private static Object simpleResultValue(String itemId) {
+        return ordered("id", itemId);
+    }
+
+    private static void putStonecuttingResult(Map<String, Object> json, String itemId, int count) {
+        json.put("result", resultValue(itemId, count));
     }
 
     /** Insertion ordered map, because Map.of iterates in a different order on every JVM run. */
