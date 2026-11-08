@@ -155,9 +155,10 @@ function Read-JarText([string] $jar, [string] $entry) {
         try { return $reader.ReadToEnd() } finally { $reader.Dispose() }
     } finally { $zip.Dispose() }
 }
+# The jar of the current version only. Jars of earlier versions stay in build/libs and must never be picked up.
 function Get-BuiltJar([string] $moduleDir, [string] $prefix) {
-    Get-ChildItem (Join-Path $RepoRoot "$moduleDir\build\libs") -Filter "$prefix-*.jar" -ErrorAction SilentlyContinue |
-        Where-Object { $_.Name -notmatch 'sources|javadoc' } | Select-Object -First 1
+    Get-ChildItem (Join-Path $RepoRoot "$moduleDir\build\libs") -Filter "$prefix-$nowsVersion.jar" -ErrorAction SilentlyContinue |
+        Select-Object -First 1
 }
 $nowsModules = @(
     @{ Dir = 'core'; Prefix = 'nows-core' }, @{ Dir = 'minecraft'; Prefix = 'nows-minecraft' },
