@@ -45,8 +45,8 @@ public interface DataGen {
 
     @SuppressWarnings({"unchecked", "rawtypes"})
     default void writeJson(String relativePath, Object value) throws IOException {
-        Class<?> type = value == null ? Object.class : value.getClass();
-        writeJson(relativePath, (JsonAdapter<Object>) moshi().adapter((Class) type), value);
+        // The Object adapter resolves the runtime type but maps concrete collections such as LinkedHashMap to Map.
+        writeJson(relativePath, moshi().adapter(Object.class), value);
     }
 
     default <T> void writeJson(String relativePath, Class<T> type, T value) throws IOException {
