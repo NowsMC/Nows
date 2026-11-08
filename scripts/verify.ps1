@@ -6,7 +6,7 @@ Builds Nows, inspects the artifacts and starts every Minecraft adapter on the re
 .DESCRIPTION
 One gate for "the loader starts and an outside mod can use the API". Per adapter it checks:
   1. build and check pass (Gradle);
-  2. artifacts: policy and mixin configs, service files, no doubled or unremapped classes, jars newer than sources;
+  2. artifacts: policy and mixin configs, service files, no doubled or unremapped classes, and no stale jar;
   3. the consumer fixture (fixtures/consumer) builds through the Gradle plugin and its jar is well formed;
   4. the real client starts, reaches the main menu, and the fixture reports a result for every API it covers;
   5. the full log has no failure pattern, except the narrow client-launch allowlist below;
@@ -32,10 +32,16 @@ param(
     [string[]] $JdkRoots = @(),
     [int] $LaunchTimeoutSec = 300,
     # JSON map of adapter to seconds until the main menu, from an earlier run. Fails when startup is much slower.
+    # JSON from an earlier run of this script (-WriteBaselineFile) on the ref to compare against.
     [string] $BaselineFile,
     [string] $WriteBaselineFile,
-    [double] $MaxSlowdown = 1.5,
-    [int] $SlowdownSlackSec = 5,
+    # Main menu launches per adapter whose median is compared. A median slower than baseline times this fails.
+    [int] $StartupRuns = 5,
+    [double] $MaxSlowdown = 1.15,
+    # Git ref whose public API is compared with this checkout. A removed or changed signature fails unless it is listed
+    # in scripts/api-changes.txt. Additions are printed.
+    [string] $ApiBaseRef,
+    [string] $AcceptedApiChangesFile = (Join-Path $PSScriptRoot 'api-changes.txt'),
     # Start the game without the consumer fixture. Used to measure a baseline on a ref that has no fixture.
     [switch] $NoMod,
     [switch] $SkipGradle
@@ -92,6 +98,16 @@ if (-not $SkipGradle) {
         exit 1
     }
     Pass 'gradle' 'build and check passed'
+} else {
+    # Without a build in this run, the jars on disk are only trustworthy if Gradle has nothing left to rebuild.
+    $output = Invoke-Gradle @('-p', $RepoRoot, 'jar')
+    if ($LASTEXITCODE -ne 0) { $output | Select-Object -Last 30 | ForEach-Object { Write-Host $_ }; Fail 'gradle' 'jar failed'; exit 1 }
+    # Only the jars this script launches with count. The Gradle plugin's own included build also runs jar.
+    $launched = @(@('core', 'minecraft', 'runtime', 'integrations:kdl', 'integrations:geb', 'integrations:logging',
+            'integrations:network', 'integrations:mixin') + @($Versions | ForEach-Object { "mc:$_" }) | ForEach-Object { "> Task :${_}:jar" })
+    $rebuilt = @($output | Where-Object { $launched -contains $_.Trim() })
+    foreach ($task in $rebuilt) { Fail 'stale jar' "$($task.Substring(7)) had to be rebuilt, the jar on disk was stale" }
+    if ($rebuilt.Count -eq 0) { Pass 'gradle' 'no launched jar had to be rebuilt, the jars on disk match the sources' }
 }
 
 # Gradle init script that prints the runtime classpath the way the installer lays it out.
@@ -143,15 +159,6 @@ function Get-BuiltJar([string] $moduleDir, [string] $prefix) {
     Get-ChildItem (Join-Path $RepoRoot "$moduleDir\build\libs") -Filter "$prefix-*.jar" -ErrorAction SilentlyContinue |
         Where-Object { $_.Name -notmatch 'sources|javadoc' } | Select-Object -First 1
 }
-function Get-NewestSource([string[]] $dirs) {
-    $newest = [datetime]::MinValue
-    foreach ($dir in $dirs | Where-Object { Test-Path $_ }) {
-        $latest = Get-ChildItem $dir -Recurse -File | Sort-Object LastWriteTime -Descending | Select-Object -First 1
-        if ($latest -and $latest.LastWriteTime -gt $newest) { $newest = $latest.LastWriteTime }
-    }
-    $newest
-}
-
 $nowsModules = @(
     @{ Dir = 'core'; Prefix = 'nows-core' }, @{ Dir = 'minecraft'; Prefix = 'nows-minecraft' },
     @{ Dir = 'runtime'; Prefix = 'nows-runtime' }, @{ Dir = 'integrations\kdl'; Prefix = 'nows-integration-kdl' },
@@ -169,14 +176,6 @@ function Test-Artifacts([string] $version) {
         return $null
     }
     $jars = @($adapterJar) + $moduleJars
-
-    # Jars must be newer than the sources they were built from.
-    foreach ($module in $nowsModules) {
-        $jar = Get-BuiltJar $module.Dir $module.Prefix
-        if ($jar.LastWriteTime -lt (Get-NewestSource @(Join-Path $RepoRoot "$($module.Dir)\src")).AddSeconds(-2)) { Fail $scope "$($jar.Name) is older than its sources (stale jar)" }
-    }
-    $newestAdapter = Get-NewestSource @((Join-Path $RepoRoot "mc\$version\src"), (Join-Path $RepoRoot 'mc\shared-main\src'))
-    if ($adapterJar.LastWriteTime -lt $newestAdapter.AddSeconds(-2)) { Fail $scope "$($adapterJar.Name) is older than its sources (stale jar)" }
 
     # Policy and mixin configs.
     $minecraftJar = Get-BuiltJar 'minecraft' 'nows-minecraft'
@@ -323,7 +322,9 @@ function Test-LibraryRules($rules) {
 
 $MenuMarkers = @('Invoking Minecraft main class', 'Mixin applied: .*TitleScreenMixin', 'Sound engine started')
 
-function Start-Adapter([string] $version, [string] $modJar) {
+# Metadata, libraries, natives and assets are resolved once per version, not on every launch.
+$PreparedLaunch = @{}
+function Resolve-LaunchInputs([string] $version) {
     $scope = "launch $version"
     if (-not $IsWindows) { Fail $scope 'launching is implemented for Windows x64 only'; return $null }
     $meta = Get-MojangMetadata $version
@@ -335,9 +336,6 @@ function Start-Adapter([string] $version, [string] $modJar) {
     $natives = Join-Path $runDir 'natives'; $game = Join-Path $runDir 'game'
     $libraries = Join-Path $Cache 'libraries'; $assets = Join-Path $Cache 'assets'
     New-Item -ItemType Directory -Force $natives, "$game\mods", $libraries, $assets | Out-Null
-    foreach ($stale in 'logs', 'crash-reports', 'nows-fixture-results.txt', 'config', 'nows') { Remove-Item (Join-Path $game $stale) -Recurse -Force -ErrorAction SilentlyContinue }
-    Get-ChildItem "$game\mods" -Filter *.jar | Remove-Item -Force
-    Get-ChildItem $game -Filter 'hs_err_pid*.log' | Remove-Item -Force
 
     $classpath = [System.Collections.Generic.List[string]]::new()
     foreach ($library in $meta.libraries) {
@@ -376,15 +374,28 @@ function Start-Adapter([string] $version, [string] $modJar) {
         $log4j = Join-Path $Cache "log4j-$($meta.logging.client.file.id)"
         Get-VerifiedFile $meta.logging.client.file.url $log4j $meta.logging.client.file.sha1
     }
+    @{ Java = $java; Natives = $natives; Game = $game; Assets = $assets; AssetIndex = $meta.assetIndex.id; Classpath = $classpath; Log4j = $log4j }
+}
+
+function Start-Adapter([string] $version, [string] $modJar) {
+    if (-not $PreparedLaunch.ContainsKey($version)) { $PreparedLaunch[$version] = Resolve-LaunchInputs $version }
+    $prepared = $PreparedLaunch[$version]
+    if (-not $prepared) { return $null }
+    $java = $prepared.Java; $game = $prepared.Game
+
+    foreach ($stale in 'logs', 'crash-reports', 'nows-fixture-results.txt', 'config', 'nows') { Remove-Item (Join-Path $game $stale) -Recurse -Force -ErrorAction SilentlyContinue }
+    Get-ChildItem "$game\mods" -Filter *.jar | Remove-Item -Force
+    Get-ChildItem $game -Filter 'hs_err_pid*.log' | Remove-Item -Force
     if ($modJar) { Copy-Item $modJar "$game\mods\" }
 
     $adapterJar = Get-BuiltJar "mc\$version" "nows-mc-$version"
     $clientJar = Join-Path $RepoRoot "mc\$version\build\nows\minecraft\$version\client-dev.jar"
-    $arguments = @('-Xmx1G') + $(if ($log4j) { "-Dlog4j.configurationFile=$log4j" }) + @(
-        "-Djava.library.path=$natives", "-Dnows.clientJar=$clientJar", "-Dnows.minecraftAdapterPath=$($adapterJar.FullName)",
+    foreach ($old in Get-ChildItem $WorkDir -Filter "hs_err_${version}_*.log" -ErrorAction SilentlyContinue) { Remove-Item $old.FullName -Force }
+    $arguments = @('-Xmx1G', "-XX:ErrorFile=$(Join-Path $WorkDir "hs_err_${version}_%p.log")") + $(if ($prepared.Log4j) { "-Dlog4j.configurationFile=$($prepared.Log4j)" }) + @(
+        "-Djava.library.path=$($prepared.Natives)", "-Dnows.clientJar=$clientJar", "-Dnows.minecraftAdapterPath=$($adapterJar.FullName)",
         "-Dnows.minecraftVersion=$version", '-Dnows.side=client', '-Dnows.profileId=verify',
-        '-cp', (($nowsClasspath + $classpath) -join ';'), 'space.nows.loader.runtime.NowsLauncher',
-        '--username', 'NowsVerify', '--version', $version, '--gameDir', $game, '--assetsDir', $assets, '--assetIndex', $meta.assetIndex.id,
+        '-cp', (($nowsClasspath + $prepared.Classpath) -join ';'), 'space.nows.loader.runtime.NowsLauncher',
+        '--username', 'NowsVerify', '--version', $version, '--gameDir', $game, '--assetsDir', $prepared.Assets, '--assetIndex', $prepared.AssetIndex,
         '--uuid', '00000000-0000-0000-0000-000000000000', '--accessToken', '0', '--userType', 'legacy',
         '--versionType', 'release', '--width', '854', '--height', '480')
     $stdout = Join-Path $WorkDir "$version.stdout.log"; $stderr = Join-Path $WorkDir "$version.stderr.log"
@@ -403,7 +414,7 @@ function Wait-ForMarkers($launch, [string[]] $markers) {
     $clock = [Diagnostics.Stopwatch]::StartNew()
     $menuSeconds = $null
     while ($clock.Elapsed.TotalSeconds -lt $LaunchTimeoutSec) {
-        if ($launch.Process.HasExited) { return @{ Ok = $false; Reason = "the game exited with code $($launch.Process.ExitCode) before the markers appeared"; MenuSeconds = $menuSeconds } }
+        if ($launch.Process.HasExited) { return @{ Ok = $false; Reason = "the game exited with code $($launch.Process.ExitCode) before the markers appeared"; MenuSeconds = $menuSeconds; ExitCode = $launch.Process.ExitCode } }
         $text = Read-AllLogs $launch
         if ($null -eq $menuSeconds -and -not @($MenuMarkers | Where-Object { $text -notmatch $_ })) { $menuSeconds = [Math]::Round($clock.Elapsed.TotalSeconds, 1) }
         $missing = @($markers | Where-Object { $text -notmatch $_ })
@@ -416,6 +427,86 @@ function Wait-ForMarkers($launch, [string[]] $markers) {
 # The fixture's own areas that need a loaded world are reported as not exercised. Anything else must pass.
 $AlwaysNotExercised = @('networking.transport', 'players.current', 'events.serverTick', 'events.levelTick', 'registry.blockEntityAndMenu')
 $NotExercisedFrom26 = @('registry.itemStack', 'registry.blockItemStack', 'recipeViewer.catalystStack', 'datagen.recipeAccepted')   # item components bind on world join
+
+function Get-PublicSignatures([string] $jar) {
+    $classes = @(Get-JarEntries $jar | Where-Object { $_ -like '*.class' -and $_ -notmatch '/internal/|module-info|package-info' } |
+        ForEach-Object { $_.Substring(0, $_.Length - 6).Replace('/', '.') } | Sort-Object)
+    if ($classes.Count -eq 0) { return [System.Collections.Generic.HashSet[string]]::new() }
+    $javap = Join-Path $GradleJdk ($IsWindows ? 'bin\javap.exe' : 'bin/javap')
+    $lines = & $javap -public -cp $jar @classes 2>$null | Where-Object { $_ -and $_ -notmatch '^Compiled from' } | ForEach-Object { $_.Trim() }
+    [System.Collections.Generic.HashSet[string]]::new([string[]]@($lines))
+}
+
+# Builds $ref in a temporary worktree and compares the public signatures of every module jar. A removed or changed
+# signature fails unless scripts/api-changes.txt lists it as "<jar prefix>: <signature>". Additions are only printed.
+function Test-PublicApi([string] $ref) {
+    $scope = "api vs $ref"
+    $baseDir = Join-Path $WorkDir 'api-base'
+    $links = @('repos', '.gradle-bootstrap')
+    function Remove-BaseWorktree {
+        foreach ($link in $links) {
+            $path = Join-Path $baseDir $link
+            if ((Test-Path $path) -and (Get-Item $path -Force).LinkType -eq 'Junction') { [IO.Directory]::Delete($path, $false) }
+        }
+        git -C $RepoRoot worktree remove --force $baseDir 2>&1 | Out-Null
+        git -C $RepoRoot worktree prune
+    }
+    if (Test-Path $baseDir) { Remove-BaseWorktree }
+    git -C $RepoRoot worktree add --detach $baseDir $ref 2>&1 | Out-Null
+    if ($LASTEXITCODE -ne 0) { Fail $scope "cannot check out $ref"; return }
+    try {
+        foreach ($link in $links) {
+            $path = Join-Path $baseDir $link
+            if (Test-Path $path) { Remove-Item $path -Recurse -Force }   # an empty folder left by the submodule entry
+            New-Item -ItemType Junction -Path $path -Target (Join-Path $RepoRoot $link) | Out-Null
+        }
+        $output = Invoke-Gradle @('-q', '-p', $baseDir, 'jar')
+        if ($LASTEXITCODE -ne 0) { $output | Select-Object -Last 20 | ForEach-Object { Write-Host $_ }; Fail $scope "could not build $ref"; return }
+
+        $accepted = @(if (Test-Path $AcceptedApiChangesFile) { Get-Content $AcceptedApiChangesFile | Where-Object { $_.Trim() -and -not $_.StartsWith('#') } })
+        $modules = $nowsModules + @($Versions | ForEach-Object { @{ Dir = "mc\$_"; Prefix = "nows-mc-$_" } })
+        $totalAdded = 0; $totalAcknowledged = 0; $unacknowledged = 0
+        foreach ($module in $modules) {
+            $baseJar = Get-ChildItem (Join-Path $baseDir "$($module.Dir)\build\libs") -Filter "$($module.Prefix)-*.jar" -ErrorAction SilentlyContinue |
+                Where-Object { $_.Name -notmatch 'sources|javadoc' } | Select-Object -First 1
+            $currentJar = Get-BuiltJar $module.Dir $module.Prefix
+            if (-not $baseJar -or -not $currentJar) { continue }
+            $before = Get-PublicSignatures $baseJar.FullName
+            $after = Get-PublicSignatures $currentJar.FullName
+            $removed = @($before | Where-Object { -not $after.Contains($_) })
+            $added = @($after | Where-Object { -not $before.Contains($_) })
+            $totalAdded += $added.Count
+            foreach ($signature in $removed) {
+                if ($accepted -contains "$($module.Prefix): $signature") { $totalAcknowledged++ }
+                else { $unacknowledged++; Fail $scope "$($module.Prefix) removed or changed: $signature" }
+            }
+            foreach ($signature in $added | Select-Object -First 3) { Write-Host "     added in $($module.Prefix): $signature" }
+        }
+        if ($unacknowledged -eq 0) { Pass $scope "$($modules.Count) modules: no removed or unacknowledged changed signature, $totalAcknowledged acknowledged, $totalAdded added" }
+    } finally {
+        Remove-BaseWorktree
+    }
+}
+
+$NativeCrashExitCodes = @(-1073741819, 139)   # access violation on Windows, SIGSEGV elsewhere
+$retries = [System.Collections.Generic.List[string]]::new()
+
+function Measure-Startup([string] $version, [int] $runs) {
+    $samples = [System.Collections.Generic.List[double]]::new()
+    for ($run = 1; $run -le $runs; $run++) {
+        $launch = Start-Adapter $version $null
+        if (-not $launch) { return $null }
+        try { $wait = Wait-ForMarkers $launch $MenuMarkers } finally {
+            if (-not $launch.Process.HasExited) { Stop-Process -Id $launch.Process.Id -Force; $launch.Process.WaitForExit() }
+        }
+        if (-not $wait.Ok) { Fail "startup $version" "timing run $run did not reach the main menu: $($wait.Reason)"; return $null }
+        $samples.Add($wait.MenuSeconds)
+    }
+    $sorted = @($samples | Sort-Object)
+    $middle = [int][Math]::Floor($sorted.Count / 2)
+    $median = if ($sorted.Count % 2) { $sorted[$middle] } else { ($sorted[$middle - 1] + $sorted[$middle]) / 2 }
+    @{ median = [Math]::Round($median, 2); samples = $sorted }
+}
 
 $results = @{}      # adapter -> api -> status
 $startup = @{}
@@ -434,23 +525,42 @@ foreach ($version in $Versions) {
         Test-FixtureJar $version $modJar.FullName
     }
 
-    $launch = Start-Adapter $version ($modJar ? $modJar.FullName : $null)
+    # One launch is repeated, once, and only when the JVM itself dies with an access violation before the markers
+    # appear. That signature was seen on 1.18.2 about once in 100 launches and is not tied to Nows code. The retry is
+    # printed and listed in the summary, and a second crash fails.
+    $launch = $null
+    $wait = $null
+    $attempt = 0
+    do {
+        $attempt++
+        $launch = Start-Adapter $version ($modJar ? $modJar.FullName : $null)
+        if (-not $launch) { break }
+        try {
+            $markers = $MenuMarkers + $(if ($NoMod) { @() } else { @('NOWS_FIXTURE_SUMMARY') })
+            $wait = Wait-ForMarkers $launch $markers
+        } finally {
+            if (-not $launch.Process.HasExited) { Stop-Process -Id $launch.Process.Id -Force; $launch.Process.WaitForExit() }
+        }
+        $nativeCrash = (-not $wait.Ok) -and $wait.ContainsKey('ExitCode') -and ($NativeCrashExitCodes -contains $wait.ExitCode)
+        if ($nativeCrash -and $attempt -eq 1) {
+            $kept = Join-Path $WorkDir 'native-crashes'
+            New-Item -ItemType Directory -Force $kept | Out-Null
+            $crashFiles = @(Get-ChildItem $WorkDir -Filter "hs_err_${version}_*.log" -ErrorAction SilentlyContinue)
+            foreach ($crashFile in $crashFiles) { Move-Item $crashFile.FullName (Join-Path $kept "$($crashFile.BaseName)-$(Get-Date -Format yyyyMMdd-HHmmss).log") -Force }
+            $note = "$version died natively (exit code $($wait.ExitCode)) on the first attempt, JVM crash file: $(if ($crashFiles) { $kept } else { 'none was written' })"
+            $retries.Add($note)
+            Write-Host "RETRY [$scope] $note. Repeating this launch once." -ForegroundColor Yellow
+        }
+    } while ($nativeCrash -and $attempt -lt 2)
     if (-not $launch) { continue }
-    try {
-        $markers = $MenuMarkers + $(if ($NoMod) { @() } else { @('NOWS_FIXTURE_SUMMARY') })
-        $wait = Wait-ForMarkers $launch $markers
-        if (-not $wait.Ok) { Fail $scope $wait.Reason } else { Pass $scope "reached the main menu in $($wait.MenuSeconds)s$($NoMod ? '' : ' and the fixture reported')" }
-        $startup[$version] = $wait.MenuSeconds
-        $text = Read-AllLogs $launch
-        if ($text -notmatch [regex]::Escape("nows-mc-$version-$nowsVersion.jar")) { Fail $scope "the log does not show the adapter jar that was just built ($($launch.AdapterJar.Name)) being loaded" }
-    } finally {
-        if (-not $launch.Process.HasExited) { Stop-Process -Id $launch.Process.Id -Force; $launch.Process.WaitForExit() }
-    }
+    if (-not $wait.Ok) { Fail $scope $wait.Reason } else { Pass $scope "reached the main menu in $($wait.MenuSeconds)s$($NoMod ? '' : ' and the fixture reported')$(if ($attempt -gt 1) { ' on the second attempt' })" }
+    $text = Read-AllLogs $launch
+    if ($text -notmatch [regex]::Escape("nows-mc-$version-$nowsVersion.jar")) { Fail $scope "the log does not show the adapter jar that was just built ($($launch.AdapterJar.Name)) being loaded" }
 
     # Failure patterns over the complete logs, crash reports and JVM crash files.
     $logFiles = @($launch.Stdout, $launch.Stderr, (Join-Path $launch.Game 'logs\latest.log')) +
         @(Get-ChildItem (Join-Path $launch.Game 'crash-reports') -File -ErrorAction SilentlyContinue | ForEach-Object FullName) +
-        @(Get-ChildItem $launch.Game -Filter 'hs_err_pid*.log' -ErrorAction SilentlyContinue | ForEach-Object FullName)
+        @(Get-ChildItem $WorkDir -Filter "hs_err_${version}_*.log" -ErrorAction SilentlyContinue | ForEach-Object FullName)
     $hits = 0
     $allowedSeen = [System.Collections.Generic.SortedSet[string]]::new()
     foreach ($file in $logFiles | Where-Object { Test-Path $_ } | Where-Object { (Split-Path $_ -Leaf) -ne ((Split-Path $launch.Stdout -Leaf)) }) {
@@ -481,17 +591,27 @@ foreach ($version in $Versions) {
         else { Pass $scope $summary }
         $results[$version] = $map
     }
+
+    # Timing runs start the game without the consumer mod, so they compare with a baseline taken the same way.
+    if ($StartupRuns -gt 0) {
+        $measured = Measure-Startup $version $StartupRuns
+        if ($measured) {
+            $startup[$version] = $measured
+            Pass "startup $version" "median $($measured.median)s over $StartupRuns runs ($($measured.samples -join ', '))"
+        }
+    }
 }
 
 # ---- 4. Startup time and parity -----------------------------------------------------------------------------------
 if ($BaselineFile) {
     $baseline = Get-Content $BaselineFile -Raw | ConvertFrom-Json -AsHashtable
     foreach ($version in $startup.Keys | Sort-Object) {
-        if ($baseline.ContainsKey($version) -and $startup[$version]) {
-            $limit = $baseline[$version] * $MaxSlowdown + $SlowdownSlackSec
-            if ($startup[$version] -gt $limit) { Fail "startup $version" "$($startup[$version])s to the main menu, baseline $($baseline[$version])s (limit $([Math]::Round($limit, 1))s)" }
-            else { Pass "startup $version" "$($startup[$version])s to the main menu, baseline $($baseline[$version])s" }
-        }
+        if (-not $baseline.ContainsKey($version)) { Fail "startup $version" 'the baseline file has no entry for this adapter'; continue }
+        $reference = $baseline[$version].median
+        $change = ($startup[$version].median - $reference) / $reference * 100
+        $text = "median $($startup[$version].median)s, baseline $($reference)s ($([Math]::Round($change, 1))%)"
+        if ($startup[$version].median -gt $reference * $MaxSlowdown) { Fail "startup $version" "$text, above the allowed $([Math]::Round(($MaxSlowdown - 1) * 100))%" }
+        else { Pass "startup $version" $text }
     }
 }
 if ($WriteBaselineFile) { $startup | ConvertTo-Json | Set-Content $WriteBaselineFile; Write-Host "wrote startup times to $WriteBaselineFile" }
@@ -507,7 +627,10 @@ if ($results.Count -gt 1) {
     if (-not @($failures | Where-Object { $_.StartsWith('[parity]') })) { Pass 'parity' "$($apis.Count) APIs behave the same on $($results.Count) adapters" }
 }
 
+if ($ApiBaseRef) { Test-PublicApi $ApiBaseRef }
+
 Write-Host ''
+foreach ($note in $retries) { Write-Host "RETRIED: $note" -ForegroundColor Yellow }
 if ($failures.Count -gt 0) {
     Write-Host "FAILED: $($failures.Count) problem(s)" -ForegroundColor Red
     $failures | ForEach-Object { Write-Host "  $_" }
