@@ -547,8 +547,13 @@ public final class ConsumerFixture implements ModInitializer {
      */
     private static String rejectionByGame(String json) throws Exception {
         ClassLoader loader = ConsumerFixture.class.getClassLoader();
-        Object element = Class.forName("com.google.gson.JsonParser", true, loader)
-                .getMethod("parseString", String.class).invoke(null, json);
+        Class<?> jsonParser = Class.forName("com.google.gson.JsonParser", true, loader);
+        Object element;
+        try {
+            element = jsonParser.getMethod("parseString", String.class).invoke(null, json);
+        } catch (NoSuchMethodException beforeGson286) {
+            element = jsonParser.getMethod("parse", String.class).invoke(jsonParser.getConstructor().newInstance(), json);
+        }
         Class<?> recipe = Class.forName("net.minecraft.world.item.crafting.Recipe", true, loader);
         try {
             Object codec = recipe.getField("CODEC").get(null);
