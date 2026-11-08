@@ -22,6 +22,8 @@
 - Fixed `NowsClassLoader.close` leaving jars open, which prevented deleting them on Windows. Closing a second time does nothing.
 - Changed `NowsNetworking.send` to log a warning, once per channel and direction, when the message cannot be sent. It still returns `false`.
 - Updated the NowsInstaller submodule for the fix that stopped Windows paths such as `C:\dir\install.properties` from being parsed as a URI scheme.
+- Changed the release and Maven layouts so that NowsApiMod is no longer staged under `mods/` or published with Nows. The install manifest never listed it.
+- Updated the NowsApiMod and NowsMCreatorGenerator submodules to their 1.0.0 releases. Both now have their own versions and are built against Nows 0.11.0. NowsApiMod still builds only through this repository.
 - Added `fixtures/consumer`, a separate Gradle build that uses Nows through the Gradle plugin like an outside mod and checks an observable result for each API area in the running game, with one source for every adapter.
 - Added `scripts/verify.ps1`, which builds, inspects the jars, starts every adapter on the real client with the consumer fixture, scans the logs, compares the adapters, compares the median startup time and the public API against a baseline, and exits non-zero on any failure.
 - Moved the fixture's reflection into a source directory that the production reflection guard does not scan, so the guard has no exemption for it.
