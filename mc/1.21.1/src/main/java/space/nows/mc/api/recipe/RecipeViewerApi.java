@@ -26,6 +26,7 @@ import space.nows.mc.api.text.NativeTextBridge;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.function.Supplier;
 
 /** Registry for recipe display metadata that can be bridged to JEI, REI, EMI or a built-in viewer. */
 public interface RecipeViewerApi {
@@ -48,16 +49,38 @@ public interface RecipeViewerApi {
                 id,
                 recipeClass,
                 NativeTextBridge.nativeComponent(title, Component.class),
-                NativeItemStackBridge.nativeStack(icon, ItemStack.class),
+                () -> NativeItemStackBridge.nativeStack(icon, ItemStack.class),
                 layoutFactory);
+    }
+
+    /**
+     * Registers a category whose icon is built when it is read. Implementations should keep the supplier, because
+     * newer Minecraft versions cannot create an {@link ItemStack} before a world is joined.
+     */
+    default <T> RecipeViewerCategory<T> registerCategory(
+            String id,
+            Class<T> recipeClass,
+            Component title,
+            Supplier<ItemStack> icon,
+            RecipeViewerLayoutFactory<T> layoutFactory
+    ) {
+        return registerCategory(id, recipeClass, title, icon.get(), layoutFactory);
     }
 
     Optional<RecipeViewerCategory<?>> category(String id);
 
     void registerCatalyst(String categoryId, ItemStack stack);
 
+    /**
+     * Registers a catalyst whose stack is built when it is read. Implementations should keep the supplier, see
+     * the category overload.
+     */
+    default void registerCatalyst(String categoryId, Supplier<ItemStack> stack) {
+        registerCatalyst(categoryId, stack.get());
+    }
+
     default void registerCatalyst(String categoryId, McItemStack stack) {
-        registerCatalyst(categoryId, NativeItemStackBridge.nativeStack(stack, ItemStack.class));
+        registerCatalyst(categoryId, () -> NativeItemStackBridge.nativeStack(stack, ItemStack.class));
     }
 
     default void registerCatalyst(String categoryId, String itemId) {
