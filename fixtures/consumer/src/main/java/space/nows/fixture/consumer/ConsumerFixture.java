@@ -293,7 +293,7 @@ public final class ConsumerFixture implements ModInitializer {
             List<String> rejected = new ArrayList<>();
             for (Map.Entry<String, RecipeSpec> spec : specs.entrySet()) {
                 String json = dataGen.jsonAdapter(Object.class).toJson(dataGen.recipeJson(spec.getValue()));
-                String reason = rejectionByGame(json);
+                String reason = RecipeParserProbe.rejectionByGame(json);
                 if (reason != null) {
                     rejected.add(spec.getKey() + " -> " + reason);
                 }
@@ -539,53 +539,6 @@ public final class ConsumerFixture implements ModInitializer {
             }
         }
         return false;
-    }
-
-    /**
-     * Gives a recipe JSON to Minecraft's own parser and returns null when it accepts it, otherwise the reason. The
-     * parser differs by version, so it is found by reflection: Recipe.CODEC from 1.20.5, RecipeManager.fromJson before.
-     */
-    private static String rejectionByGame(String json) throws Exception {
-        ClassLoader loader = ConsumerFixture.class.getClassLoader();
-        Class<?> jsonParser = Class.forName("com.google.gson.JsonParser", true, loader);
-        Object element;
-        try {
-            element = jsonParser.getMethod("parseString", String.class).invoke(null, json);
-        } catch (NoSuchMethodException beforeGson286) {
-            element = jsonParser.getMethod("parse", String.class).invoke(jsonParser.getConstructor().newInstance(), json);
-        }
-        Class<?> recipe = Class.forName("net.minecraft.world.item.crafting.Recipe", true, loader);
-        try {
-            Object codec = recipe.getField("CODEC").get(null);
-            Class<?> dynamicOps = Class.forName("com.mojang.serialization.DynamicOps", true, loader);
-            Object jsonOps = Class.forName("com.mojang.serialization.JsonOps", true, loader).getField("INSTANCE").get(null);
-            Object lookup = Class.forName("net.minecraft.data.registries.VanillaRegistries", true, loader)
-                    .getMethod("createLookup").invoke(null);
-            Object ops = Class.forName("net.minecraft.resources.RegistryOps", true, loader)
-                    .getMethod("create", dynamicOps, Class.forName("net.minecraft.core.HolderLookup$Provider", true, loader))
-                    .invoke(null, jsonOps, lookup);
-            Object result = Class.forName("com.mojang.serialization.Codec", true, loader)
-                    .getMethod("parse", dynamicOps, Object.class).invoke(codec, ops, element);
-            Class<?> dataResult = Class.forName("com.mojang.serialization.DataResult", true, loader);
-            if (((Optional<?>) dataResult.getMethod("result").invoke(result)).isPresent()) {
-                return null;
-            }
-            Object error = ((Optional<?>) dataResult.getMethod("error").invoke(result)).orElseThrow();
-            java.lang.reflect.Method message = error.getClass().getMethod("message");
-            message.setAccessible(true);
-            return String.valueOf(message.invoke(error));
-        } catch (NoSuchFieldException beforeCodecs) {
-            Class<?> manager = Class.forName("net.minecraft.world.item.crafting.RecipeManager", true, loader);
-            Class<?> location = Class.forName("net.minecraft.resources.ResourceLocation", true, loader);
-            Object id = location.getConstructor(String.class, String.class).newInstance("probe", "recipe");
-            try {
-                manager.getMethod("fromJson", location, Class.forName("com.google.gson.JsonObject", true, loader))
-                        .invoke(null, id, element);
-                return null;
-            } catch (java.lang.reflect.InvocationTargetException rejected) {
-                return String.valueOf(rejected.getTargetException());
-            }
-        }
     }
 
     /** Exception type, message and the first frames inside Nows or Minecraft, so a failure can be located. */

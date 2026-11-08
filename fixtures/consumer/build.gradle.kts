@@ -10,3 +10,7 @@ nows {
     nowsVersion.set(providers.gradleProperty("nows_version"))
     addMixin.set(false)
 }
+
+sourceSets.main {
+    java.srcDir("src/verification/java")
+}
