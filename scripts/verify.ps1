@@ -461,6 +461,14 @@ function Test-PublicApi([string] $ref) {
             if (Test-Path $path) { Remove-Item $path -Recurse -Force }   # an empty folder left by the submodule entry
             New-Item -ItemType Junction -Path $path -Target (Join-Path $RepoRoot $link) | Out-Null
         }
+        # The prepared Minecraft jars depend on the Minecraft version, not on Nows. Reuse them instead of downloading
+        # every client again, which also keeps this stage independent of Mojang's servers.
+        foreach ($prepared in Get-ChildItem (Join-Path $RepoRoot 'mc') -Directory -ErrorAction SilentlyContinue |
+                ForEach-Object { Get-ChildItem (Join-Path $_.FullName 'build\nows\minecraft') -Directory -ErrorAction SilentlyContinue }) {
+            $target = Join-Path $baseDir ($prepared.FullName.Substring($RepoRoot.Length).TrimStart('\', '/'))
+            New-Item -ItemType Directory -Force (Split-Path $target) | Out-Null
+            Copy-Item $prepared.FullName $target -Recurse -Force
+        }
         $output = Invoke-Gradle @('-q', '-p', $baseDir, 'jar')
         if ($LASTEXITCODE -ne 0) { $output | Select-Object -Last 20 | ForEach-Object { Write-Host $_ }; Fail $scope "could not build $ref"; return }
 
