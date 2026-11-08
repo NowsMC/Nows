@@ -28,6 +28,7 @@
 - Known limitations: sending network messages does not work because no adapter installs a `NetworkTransport`, and dedicated server loading does not work because the vanilla server jar does not start under the loader.
 - Not verified by any automated check: the player API, server and level tick callbacks, block entity and menu registration, and native item stacks on 26.1.2 and 26.2. The checks enter the main menu and never load a world.
 - Known issue: one launch of the 1.18.2 adapter in about ten ended with a native JVM crash without a crash file during testing and did not recur in 25 further launches. `scripts/verify.ps1` repeats such a launch once and prints the retry.
+- Bumped Nows release metadata to 0.11.0.
 
 ## 0.10.0
 
