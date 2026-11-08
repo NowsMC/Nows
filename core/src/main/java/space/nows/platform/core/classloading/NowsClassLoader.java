@@ -23,6 +23,7 @@ import java.io.InputStream;
 import java.net.JarURLConnection;
 import java.net.URL;
 import java.net.URLClassLoader;
+import java.net.URLConnection;
 import java.net.URISyntaxException;
 import java.security.CodeSource;
 import java.security.cert.Certificate;
@@ -32,6 +33,7 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * Stable class-loading kernel. Integration-specific parent-first packages are
@@ -49,6 +51,7 @@ public final class NowsClassLoader extends URLClassLoader {
     private final Set<String> parentFirstPrefixes = ConcurrentHashMap.newKeySet();
     private final Set<String> childFirstPrefixes = ConcurrentHashMap.newKeySet();
     private final Set<String> childOnlyPrefixes = ConcurrentHashMap.newKeySet();
+    private final AtomicBoolean closed = new AtomicBoolean();
     private volatile ClassGenerator classGenerator;
 
     public NowsClassLoader(URL[] urls, ClassLoader parent) {
@@ -77,6 +80,37 @@ public final class NowsClassLoader extends URLClassLoader {
         try (InputStream input = parent.getResourceAsStream(resource)) {
             return input == null ? null : input.readAllBytes();
         }
+    }
+
+    /**
+     * Closes the loader and evicts its jars from the JVM-wide jar URL cache. Reading class bytes through
+     * {@code jar:} URLs opens cached {@link java.util.jar.JarFile}s that {@link URLClassLoader#close()} does
+     * not own, and a jar that stays open cannot be deleted on Windows.
+     */
+    @Override
+    public void close() throws IOException {
+        if (!closed.compareAndSet(false, true)) {
+            return;
+        }
+        IOException failure = null;
+        try {
+            super.close();
+        } catch (IOException e) {
+            failure = e;
+        }
+        for (URL url : getURLs()) {
+            if (!"file".equals(url.getProtocol()) || !url.getPath().endsWith(".jar")) continue;
+            try {
+                URLConnection connection = new URL("jar:" + url + "!/").openConnection();
+                if (connection instanceof JarURLConnection jarConnection) {
+                    jarConnection.setUseCaches(true);
+                    jarConnection.getJarFile().close();
+                }
+            } catch (IOException e) {
+                if (failure == null) failure = e; else failure.addSuppressed(e);
+            }
+        }
+        if (failure != null) throw failure;
     }
 
     @Override

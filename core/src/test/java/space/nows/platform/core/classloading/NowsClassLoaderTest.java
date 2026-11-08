@@ -72,6 +72,26 @@ class NowsClassLoaderTest {
     }
 
     @Test
+    void closeReleasesJarsOnceAndIsIdempotent(@TempDir Path tempDirectory) throws Exception {
+        Path jar = tempDirectory.resolve("closable.jar");
+        try (InputStream input = getClass().getClassLoader().getResourceAsStream(PROBE_RESOURCE);
+             JarOutputStream output = new JarOutputStream(Files.newOutputStream(jar))) {
+            output.putNextEntry(new JarEntry(PROBE_RESOURCE));
+            output.write(input.readAllBytes());
+            output.closeEntry();
+        }
+
+        NowsClassLoader loader = new NowsClassLoader(
+                new URL[]{jar.toUri().toURL()}, ClassLoader.getPlatformClassLoader());
+        loader.loadClass(PROBE_CLASS);
+        loader.close();
+        loader.close();
+
+        Files.delete(jar);
+        assertTrue(Files.notExists(jar));
+    }
+
+    @Test
     void childOnlyPackagesDoNotFallBackToParent() throws Exception {
         URL classes = CodeSourceProbe.class.getProtectionDomain().getCodeSource().getLocation();
 
