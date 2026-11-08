@@ -80,7 +80,7 @@ public interface DataGen {
             case FLUIDS -> "data/" + namespace(tag.id()) + "/tags/fluid/" + pathPart(tag.id()) + ".json";
             case ENTITY_TYPES -> "data/" + namespace(tag.id()) + "/tags/entity_type/" + pathPart(tag.id()) + ".json";
         };
-        writeJson(relativePath, Map.of("replace", false, "values", tag.values()));
+        writeJson(relativePath, ordered("replace", false, "values", tag.values()));
     }
 
     default void writeRecipe(RecipeSpec recipe) throws IOException {
@@ -105,14 +105,14 @@ public interface DataGen {
             }
             case SMELTING, BLASTING, SMOKING, CAMPFIRE_COOKING -> {
                 json.put("type", "minecraft:" + recipe.kind().name().toLowerCase());
-                json.put("ingredient", recipe.ingredients().isEmpty() ? Map.of("item", "minecraft:stone") : ingredientJson(recipe.ingredients().get(0)));
+                json.put("ingredient", recipe.ingredients().isEmpty() ? ordered("item", "minecraft:stone") : ingredientJson(recipe.ingredients().get(0)));
                 json.put("result", recipe.result().itemId());
                 json.put("experience", recipe.experience());
                 json.put("cookingtime", recipe.cookingTime());
             }
             case STONECUTTING -> {
                 json.put("type", "minecraft:stonecutting");
-                json.put("ingredient", recipe.ingredients().isEmpty() ? Map.of("item", "minecraft:stone") : ingredientJson(recipe.ingredients().get(0)));
+                json.put("ingredient", recipe.ingredients().isEmpty() ? ordered("item", "minecraft:stone") : ingredientJson(recipe.ingredients().get(0)));
                 json.put("result", recipe.result().itemId());
                 json.put("count", recipe.result().count());
             }
@@ -122,18 +122,27 @@ public interface DataGen {
 
     static Map<String, Object> ingredientJson(IngredientSpec ingredient) {
         if (ingredient.tagId() != null) {
-            return Map.of("tag", ingredient.tagId());
+            return ordered("tag", ingredient.tagId());
         }
         if (ingredient.itemIds().size() == 1) {
-            return Map.of("item", ingredient.itemIds().get(0));
+            return ordered("item", ingredient.itemIds().get(0));
         }
         List<Map<String, Object>> values = new ArrayList<>();
-        ingredient.itemIds().forEach(id -> values.add(Map.of("item", id)));
-        return Map.of("items", values);
+        ingredient.itemIds().forEach(id -> values.add(ordered("item", id)));
+        return ordered("items", values);
     }
 
     static Map<String, Object> stackJson(String itemId, int count) {
-        return count == 1 ? Map.of("item", itemId) : Map.of("item", itemId, "count", count);
+        return count == 1 ? ordered("item", itemId) : ordered("item", itemId, "count", count);
+    }
+
+    /** Insertion ordered map, because Map.of iterates in a different order on every JVM run. */
+    private static Map<String, Object> ordered(Object... keysAndValues) {
+        Map<String, Object> map = new LinkedHashMap<>();
+        for (int index = 0; index < keysAndValues.length; index += 2) {
+            map.put((String) keysAndValues[index], keysAndValues[index + 1]);
+        }
+        return map;
     }
 
     default String itemTagPath(String id) {
